@@ -264,8 +264,10 @@ def _off(enablement: dict[str, Any]) -> set[str]:
 
 
 def _same(folder: Path) -> str:
-    """A folder written one way, to compare two of them."""
-    return os.path.normcase(os.path.normpath(str(folder)))
+    """A folder written one way, to compare two of them: resolved, since `project_folder` resolves
+    the folder the Gemini CLI wrote, and a folder asked for by a short name (`C:\\Users\\RUNNER~1`),
+    a junction or a link must still match it (found on GitHub's Windows runners, 24/10/2026)."""
+    return os.path.normcase(os.path.realpath(folder))
 
 
 def _read(file: Path) -> dict[str, Any]:

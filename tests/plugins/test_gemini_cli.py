@@ -351,6 +351,26 @@ def test_with_no_login_it_says_to_log_in(script: Script) -> None:
         asyncio.run(scenario())
 
 
+def test_a_session_is_listed_for_its_folder_however_the_folder_is_spelled(
+    script: Script, tmp_path: Path
+) -> None:
+    # A short name (C:\Users\RUNNER~1), a junction or a link: the Gemini CLI's own record of the
+    # folder is read resolved, so the folder asked for must be too (GitHub's runners, 24/10/2026).
+    script.write({"say": "First."})
+    session = _session(_run(script, Host(), "Look around."))
+    alias = tmp_path / "alias"
+    if sys.platform == "win32":
+        import _winapi  # noqa: PLC0415 - Windows's only
+
+        _winapi.CreateJunction(str(script.project), str(alias))
+    else:
+        alias.symlink_to(script.project, target_is_directory=True)
+
+    listed = asyncio.run(gemini().sessions(folder=alias))
+
+    assert [info.id for info in listed] == [session]
+
+
 def test_a_session_is_listed_read_back_and_goes_on_without_its_replay(script: Script) -> None:
     script.write({"say": "First."}, {"command": "ls"})
     first = _run(script, Host(), "Look around.")
