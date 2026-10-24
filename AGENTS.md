@@ -5,8 +5,15 @@ CI enforces them. Name new concepts in [docs/GLOSSARY.md](docs/GLOSSARY.md) firs
 
 - **Language.** Code, comments, logs and these docs are in English. The roadmap
   ([ROADMAP.md](ROADMAP.md)) is in Portuguese.
-- **Nothing personal in the repository.** No real names, client names, home folders or conversation
-  data in code, tests, fixtures or docs. User state lives in `ATLAS_HOME`.
+- **The repository is public.** Every commit, its message included, is published the moment it
+  is pushed, and `main` cannot be rewritten afterwards. Before a push, read the diff as a stranger
+  would.
+- **Nothing personal in the repository.** No real names, client names, e-mail addresses, home
+  folders, tokens or conversation data in code, tests, fixtures, docs or commit messages; tests use
+  `example.com` and made-up names. User state lives in `ATLAS_HOME`.
+- **Nothing copied without its license.** Code or text taken from another project keeps that
+  project's license in an SPDX header in the file (docs/ARCHITECTURE.md); otherwise it is written
+  in Atlas's own words. Comments say what Atlas does and why, never which project it came from.
 - **Porting from Atlas V3.** V3 is a separate private repository. Code comes over only through the
   gate at the end of the architecture document: read it, check it, port it in English while fixing
   it, and bring its tests.
