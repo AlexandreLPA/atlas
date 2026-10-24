@@ -3233,6 +3233,65 @@ limite de gasto da organização; o estudo foi feito direto no código.
   Ela precisa de uma chave da DeepSeek com saldo (o cofre não tem uma) e só roda depois de
   perguntar.
 
+### Voz (decidida em 24/10, passo 17a)
+
+Pedido do usuário em 24/10: mandar áudio pelo Telegram e pelo app, e conversar por voz com o Atlas
+como se fala com uma pessoa, de microfone aberto. Hoje o áudio chega ao modelo só como nota (16g),
+e o canal só manda texto de volta.
+
+- **Um plugin oficial, `voz`, no repositório, desligado como os outros.** Decidido pelo usuário em
+  24/10. As duas partes usam a mesma base (ouvir e falar), por isso um plugin só. **O núcleo não
+  ganha nenhuma linha de voz:** só três aberturas no SDK, que servem a qualquer plugin:
+  - transformar um anexo antes do turno (o áudio vira texto no mesmo ponto que decide imagem,
+    documento e nota, e assim o Telegram e o app ganham juntos);
+  - o canal mandar um arquivo de volta (o áudio como balão de voz no Telegram);
+  - o plugin pôr um botão na caixa de mensagem e na conversa.
+- **Tudo pela OpenAI, com o `OPENAI_API_KEY` que já está no cofre** (decidido pelo usuário em
+  24/10: a conversa por voz tem de ser a melhor possível, paga). Sem a chave, o plugin diz que falta
+  e não liga a voz. A transcrição local e a voz grátis ficam de fora.
+- **Áudio que chega** (Telegram, ou solto na caixa do app): transcrito uma vez, quando a mensagem
+  chega, e guardado com o anexo, como a descrição de imagem do 16g; o modelo recebe o texto marcado
+  como transcrição, com o caminho do arquivo. Menos de US$ 0,01 por minuto. Falhou: a nota de hoje,
+  dizendo que não deu para transcrever.
+- **O 🎤 da caixa dita** (decidido pelo usuário em 24/10): grava, e o texto aparece na caixa para
+  corrigir antes de enviar. Não manda o áudio.
+- **O Atlas só fala quando pedem** (decidido pelo usuário em 24/10): uma ferramenta de fala que o
+  modelo chama quando o usuário pede ("me manda isso em áudio"); sai como balão de voz no Telegram
+  e como arquivo na conversa do app. Receber áudio não faz o Atlas responder em áudio.
+- **A conversa por voz:** um botão na conversa abre o modo voz, e quem fala com o usuário é o
+  `gpt-live-1` da OpenAI, que ouve enquanto fala, aceita ser interrompido e lida com barulho.
+  - Ele não tem ferramentas: o que pede trabalho de verdade ele passa ao Atlas (a delegação do
+    `gpt-live-1`), que responde com as ferramentas, a memória e as aprovações de sempre, e a voz
+    fala a resposta. Enquanto o Atlas trabalha, ela diz que está vendo; o que é só conversa ela
+    responde sozinha.
+  - Cada pedido passado vira um turno normal na conversa aberta, com o que o usuário disse e o que
+    o Atlas respondeu na tela. O turno leva uma nota (não o prompt de sistema) dizendo que é fala
+    transcrita e que a resposta vai ser falada (curta, sem Markdown, sem lista), e as últimas falas,
+    porque um "não, quinta" sozinho não diz nada. O que o Atlas está fazendo chega à voz como
+    contexto, para ela contar se perguntarem.
+  - **Quem responde os turnos de voz** (decidido pelo usuário em 24/10): o usuário escolhe entre o
+    modelo da conversa e um modelo fixo só para voz, que vem como GPT-6 Luna, com o raciocínio
+    desligado nos turnos de voz.
+  - A chave fica no servidor: ele só abre a sessão (troca a oferta WebRTC do app pela resposta da
+    OpenAI) e o áudio vai do app direto para a OpenAI.
+  - **Custo:** US$ 0,05 por minuto de sessão, contando o silêncio, mais os turnos do Atlas. Por
+    isso, **escolha própria, marcada:** a sessão fecha sozinha depois de 2 minutos calada, além de
+    fechar pela frase de parar e pelo botão.
+- **Fica de fora:** o telefone (ligar e receber ligação; seria outro plugin, `telefone`, que
+  depende deste, e o nó é o endereço público para a operadora alcançar o Atlas); a resposta em
+  áudio automática; a transcrição local e as vozes grátis; e a conversa por voz encadeada
+  (transcrever, turno, falar), que só faria falta sem a chave da OpenAI.
+- **A prova:**
+  - testes contra uma OpenAI falsa: o anexo de áudio transcrito uma vez e lido de volta, a falha
+    virando nota, o ditado na caixa, a ferramenta de fala chegando como arquivo ao Telegram falso, a
+    sessão aberta sem a chave sair do servidor, e uma delegação virando turno com a nota e o modelo
+    escolhido;
+  - de ponta a ponta no app, com o modelo falso e a OpenAI falsa: o botão abre o modo voz, uma
+    delegação aparece como turno e a resposta volta;
+  - com a OpenAI de verdade (perguntar antes): um áudio pelo Telegram, um ditado, um áudio pedido, e
+    uns 5 minutos de conversa por voz (cerca de US$ 0,25 mais os turnos no GPT-6 Luna). O áudio de
+    verdade, falado e ouvido, só o usuário prova.
+
 ## Assuntos de desenho ainda abertos
 
 A arquitetura do código foi decidida em 07/10 e está em `docs/ARCHITECTURE.md`: laço próprio sem
@@ -3334,6 +3393,7 @@ cumpriu.
 | 16q | O DeepSeek (`dsh`) como executor, pelo cliente ACP do 16p, com os logs que ele manda à DeepSeek mostrados ou desligados | 16p | ✅ 21/10 no código e nas leituras reais sem prompt (o handshake, as opções, o `--patch` dos logs e o modo de permissão); a prova real com o modelo (`scripts/prove_deepseek.py --vault`) fica para quando houver uma chave da DeepSeek com saldo no cofre |
 | 16r | A prova do SDK com os dois plugins do usuário (decidida em 21/10: A prova do SDK com os plugins do usuário, acima): o do ERP contra o MCP dele, depois o de vídeo com o Remotion; o que faltar no SDK entra só quando um deles precisar (a tela mostrar arquivos, o Python avisar a tela, os pacotes do Node) | 16n | |
 | 17 | Plugins oficiais, um de cada vez, cada um com a sua tela | 16 | |
+| 17a | O plugin `voz` (decidido em 24/10: Voz, acima): o áudio do Telegram e do app transcrito pela OpenAI, o 🎤 da caixa que dita, a fala só quando o usuário pede, e a conversa por voz de microfone aberto com o `gpt-live-1` passando o trabalho ao Atlas, no modelo da conversa ou num fixo só para voz (GPT-6 Luna por padrão); o núcleo só ganha três aberturas no SDK. Pedido do usuário em 24/10 | 16g, 16m | |
 | 18 | Instalador de uma linha, e a chave pedida pela tela na primeira abertura (decidido em 13/10: Instalador, acima). Decidido pelo usuário em 13/10: vem antes do 15, para mandar o Atlas a testadores convidados no repositório privado; os scripts num gist público; a chave conferida sem custo e barrada só quando recusada; sem o login OAuth da OpenRouter. Desenho fechado em 13/10 | 10 | ✅. Os dois testadores convidados instalaram com a linha do gist e usaram sem problema: um num MacBook e outro no Windows, além do Windows do usuário e do CI no Windows e no Ubuntu. Achado do testador no Windows: com a chave gratuita do Gemini, o Gemini 3.6 Flash respondeu HTTP 503 ("high demand", o Google recusando quem não paga quando está cheio); com outra chave funcionou. Não é defeito do instalador nem da tela de chave |
 | 18b | O app empacotado sem assinatura (decidido em 15/10: Instalador, acima): o `Setup.exe` do NSIS no Windows, o DMG com a assinatura ad-hoc no Mac, o AppImage no Linux; instala, põe o atalho na área de trabalho e se atualiza pelo próprio app (o electron-updater no Windows e no Linux, um atualizador nosso no Mac). Grátis, com o aviso do Windows e do Mac na primeira abertura. Dividido pelo usuário em 15/10 | 18 | |
 | 18c | A assinatura do app empacotado: MSIX pela Microsoft Store ou SignPath no Windows, DMG notarizado no Mac (estudados em 13/10: Instalador, acima). Tira os avisos do 18b e troca o atualizador nosso do Mac pelo do Electron. Vem quando o repositório abrir | 18b | |
