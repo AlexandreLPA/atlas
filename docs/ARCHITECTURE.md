@@ -1085,9 +1085,10 @@ Cut to what a first screen needs: about 6 runtime packages.
 - **Memory proposals** (step 9b): the review's row offers to review the change; the proposal is a
   card in the conversation the review read, beside the other cards, until it is decided; and the
   sidebar counts the open proposals, only when there are some, and opens the list of all. A card
-  shows the whole entry that goes and the whole new text, with approve and discard; one that can no
-  longer apply says why and offers only discard; an approved one says what it overwrote or
-  removed.
+  shows a replace as the entry once, with the words that go struck and the words that come marked
+  (asked for by the user on 24/10/2026), and both texts whole a click away; what is added or removed
+  shows whole. Then approve and discard; one that can no longer apply says why and offers only
+  discard; an approved one says what it overwrote or removed.
 - **The agent map** (decided with the user on 12/10 and 14/10/2026): a pill in the
   box while the conversation's subagents or background commands run, counting each; a click opens
   the subagents as a tree (Subagents, below) and the background commands below it, each named by

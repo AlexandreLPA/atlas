@@ -4,6 +4,9 @@ import { t } from '@/i18n'
 import type { ProposalApproved, ProposalChange, ProposalRow } from '@/protocol/protocol.generated'
 import { approveProposal, discardProposal, putAwayApproved } from '@/store/app'
 
+import { Brain } from './ui/icons'
+import { shared, wordDiff } from './word-diff'
+
 type ProposalCardProps = {
   /** What approving it did, once it was approved here. */
   approved?: ProposalApproved
@@ -13,10 +16,10 @@ type ProposalCardProps = {
 }
 
 /**
- * A memory proposal waiting for the user, drawn as a card (docs/ARCHITECTURE.md,
- * Desktop app). It shows the whole entry each change takes out and the whole new text, since a
- * replace overwrites the whole entry, with approve and discard. One that can no
- * longer apply says why and offers only discard (decided on 11/10/2026, so it is not found out
+ * A memory proposal waiting for the user, drawn as a card as neutral as the app's other panels
+ * (docs/ARCHITECTURE.md, Desktop app). A replace shows what differs, word by word, with the whole
+ * entry and the whole new text a click away, since it overwrites the whole entry; then approve and
+ * discard. One that can no longer apply says why and offers only discard (decided on 11/10/2026, so it is not found out
  * only on approval); one approved here says what it overwrote or removed.
  */
 export function ProposalCard({ approved, proposal, source }: ProposalCardProps) {
@@ -41,13 +44,16 @@ export function ProposalCard({ approved, proposal, source }: ProposalCardProps) 
   return (
     <section
       aria-label={title}
-      className="space-y-3 rounded-lg border border-violet-300 bg-violet-50 p-4 dark:border-violet-800 dark:bg-violet-950/40"
+      className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
       data-proposal={proposal.id}
       data-testid="proposal-card"
     >
-      <h2 className="text-sm font-semibold">{title}</h2>
+      <h2 className="flex items-center gap-2 text-sm font-semibold">
+        <Brain aria-hidden className="text-neutral-500" size={16} stroke={1.75} />
+        {title}
+      </h2>
       {source}
-      <ul className="space-y-2 text-sm">
+      <ul className="space-y-3 text-sm">
         {proposal.changes.map((change, index) => (
           // The same change can come twice in one call; its place is its identity.
           <ChangeView change={change} key={index} />
@@ -65,7 +71,7 @@ export function ProposalCard({ approved, proposal, source }: ProposalCardProps) 
           <div className="flex gap-2">
             {!proposal.problem && (
               <button
-                className="rounded-md bg-violet-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50"
+                className={PRIMARY}
                 disabled={busy}
                 onClick={() => {
                   act(() => approveProposal(proposal))
@@ -76,7 +82,7 @@ export function ProposalCard({ approved, proposal, source }: ProposalCardProps) 
               </button>
             )}
             <button
-              className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900"
+              className={SECONDARY}
               disabled={busy}
               onClick={() => {
                 act(() => discardProposal(proposal.id))
@@ -93,40 +99,84 @@ export function ProposalCard({ approved, proposal, source }: ProposalCardProps) 
 }
 
 function ChangeView({ change }: { change: ProposalChange }) {
-  const gone = 'whitespace-pre-wrap text-neutral-600 line-through decoration-red-500/70 dark:text-neutral-400'
-  const kept = 'whitespace-pre-wrap text-green-800 dark:text-green-300'
-
   switch (change.action) {
     case 'add':
       return (
-        <li>
+        <li className="space-y-1">
           <Label text={t.proposals.adds} />
-          <p className={kept}>{change.content}</p>
+          <p className={`${BOX} ${ADDED}`}>{change.content}</p>
         </li>
       )
 
     case 'remove':
       return (
-        <li>
+        <li className="space-y-1">
           <Label text={t.proposals.removes} />
-          <p className={gone}>{change.entry}</p>
+          <p className={`${BOX} ${REMOVED}`}>{change.entry}</p>
         </li>
       )
 
     case 'replace':
       return (
-        <li>
+        <li className="space-y-1">
           <Label text={t.proposals.replaces} />
-          <p className={gone}>{change.entry}</p>
-          <Label text={t.proposals.with} />
-          <p className={kept}>{change.content}</p>
+          <Replaced after={change.content} before={change.entry ?? ''} />
         </li>
       )
   }
 }
 
+/**
+ * A replace overwrites the whole entry, but what the user has to judge is what differs: the entry
+ * once, with the words that go struck and the words that come marked (asked for by the user on
+ * 24/10/2026). When the two share too little for that to read, the old text above the new. Both
+ * whole stay a click away.
+ */
+function Replaced({ after, before }: { after: string; before: string }) {
+  const pieces = wordDiff(before, after)
+
+  return (
+    <>
+      {shared(pieces) < 0.3 ? (
+        <div className="space-y-1">
+          <p className={`${BOX} ${REMOVED}`}>{before}</p>
+          <p className={`${BOX} ${ADDED}`}>{after}</p>
+        </div>
+      ) : (
+        <p className={BOX} data-testid="proposal-diff">
+          {pieces.map((piece, index) =>
+            piece.kind === 'same' ? (
+              piece.text
+            ) : piece.kind === 'removed' ? (
+              // Pieces come in order and repeat; their place is their identity.
+              <del className={`rounded-sm px-0.5 ${REMOVED}`} key={index}>
+                {piece.text}
+              </del>
+            ) : (
+              <ins className={`rounded-sm px-0.5 no-underline ${ADDED}`} key={index}>
+                {piece.text}
+              </ins>
+            )
+          )}
+        </p>
+      )}
+      <details className="group text-xs text-neutral-500">
+        <summary className="cursor-pointer select-none hover:text-neutral-800 dark:hover:text-neutral-200">
+          {t.proposals.whole}
+        </summary>
+        <div className="mt-2 space-y-2">
+          <Label text={t.proposals.before} />
+          <p className={BOX}>{before}</p>
+          <Label text={t.proposals.after} />
+          <p className={BOX}>{after}</p>
+        </div>
+      </details>
+    </>
+  )
+}
+
 function Label({ text }: { text: string }) {
-  return <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">{text}</p>
+  return <p className="text-xs font-medium text-neutral-500">{text}</p>
 }
 
 function Approved({ proposalId, result }: { proposalId: string; result: ProposalApproved }) {
@@ -157,7 +207,7 @@ function Approved({ proposalId, result }: { proposalId: string; result: Proposal
       )}
       {lost && <p className="text-neutral-500">{t.proposals.readd}</p>}
       <button
-        className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900"
+        className={SECONDARY}
         onClick={() => {
           putAwayApproved(proposalId)
         }}
@@ -168,3 +218,14 @@ function Approved({ proposalId, result }: { proposalId: string; result: Proposal
     </div>
   )
 }
+
+const PRIMARY =
+  'rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900'
+const SECONDARY =
+  'rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800'
+/** An entry's text, as the memory's screen draws one. */
+const BOX =
+  'rounded-md border border-neutral-200 px-3 py-2 text-sm whitespace-pre-wrap text-neutral-800 dark:border-neutral-800 dark:text-neutral-200'
+const REMOVED =
+  'bg-red-100 text-red-800 line-through decoration-red-600 decoration-1 dark:bg-red-950 dark:text-red-300 dark:decoration-red-400'
+const ADDED = 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300'

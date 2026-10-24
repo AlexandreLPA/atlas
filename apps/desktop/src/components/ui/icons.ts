@@ -13,6 +13,7 @@ export {
   IconBrandVscode as VsCode,
   IconRoute as Route,
   IconBrowser as Preview,
+  IconBrain as Brain,
   IconBulb as Bulb,
   IconCalendarTime as CalendarTime,
   IconCheck as Check,

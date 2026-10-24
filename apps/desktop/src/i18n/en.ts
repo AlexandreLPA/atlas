@@ -199,9 +199,11 @@ export const en = {
   },
   proposals: {
     adds: 'Adds',
+    after: 'After',
     applied: 'Applied.',
     approve: 'Approve',
     back: 'Back to the conversation',
+    before: 'Before',
     discard: 'Discard',
     empty: 'No memory proposals.',
     fromConversation: 'From the conversation',
@@ -213,13 +215,13 @@ export const en = {
     readd: 'Ask Atlas to add back anything you still want.',
     removed: 'Removed:',
     removes: 'Removes',
-    replaces: 'Replaces, whole',
+    replaces: 'Changes',
     review: 'Review',
     title: 'Memory proposals',
     titleBotMemory: (bot: string) => `Change to the memory of the bot ${bot}`,
     titleMemory: 'Change to the memory',
     titleUser: 'Change to your profile',
-    with: 'With'
+    whole: 'See before and after in full'
   },
   plugins: {
     approve: 'Let in',

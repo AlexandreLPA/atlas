@@ -100,7 +100,7 @@ describe('the approval card', () => {
 const proposal = (row: Partial<ProposalRow> = {}): ProposalRow => ({
   bot: null,
   changes: [
-    { action: 'replace', content: 'Lives in Lisbon.', entry: 'Lives in Porto; works remotely.' },
+    { action: 'replace', content: 'Lives in Lisbon; works remotely.', entry: 'Lives in Porto; works remotely.' },
     { action: 'remove', content: '', entry: 'Old habit.' },
     { action: 'add', content: 'Likes tea.', entry: null }
   ],
@@ -113,13 +113,16 @@ const proposal = (row: Partial<ProposalRow> = {}): ProposalRow => ({
 })
 
 describe('a memory proposal', () => {
-  it('shows the whole entry each change takes out and the whole new text, to approve or discard', () => {
+  it('marks the words a replace changes, keeps both texts whole a click away, to approve or discard', () => {
     const approved = vi.spyOn(app, 'approveProposal').mockResolvedValue(undefined)
     render(<ProposalCard proposal={proposal()} />)
 
     expect(screen.getByRole('region', { name: 'Change to your profile' })).toBeTruthy()
+    const diff = screen.getByTestId('proposal-diff')
+    expect([...diff.querySelectorAll('del')].map(node => node.textContent)).toEqual(['Porto'])
+    expect([...diff.querySelectorAll('ins')].map(node => node.textContent)).toEqual(['Lisbon'])
     expect(screen.getByText('Lives in Porto; works remotely.')).toBeTruthy()
-    expect(screen.getByText('Lives in Lisbon.')).toBeTruthy()
+    expect(screen.getByText('Lives in Lisbon; works remotely.')).toBeTruthy()
     expect(screen.getByText('Old habit.')).toBeTruthy()
     expect(screen.getByText('Likes tea.')).toBeTruthy()
     expect(screen.getAllByRole('button').map(button => button.textContent)).toEqual(['Approve', 'Discard'])

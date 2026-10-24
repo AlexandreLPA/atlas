@@ -203,9 +203,11 @@ export const ptBR: Override<Messages> = {
   },
   proposals: {
     adds: 'Acrescenta',
+    after: 'Depois',
     applied: 'Aplicada.',
     approve: 'Aprovar',
     back: 'Voltar à conversa',
+    before: 'Antes',
     discard: 'Descartar',
     empty: 'Nenhuma proposta de memória.',
     fromConversation: 'Da conversa',
@@ -217,13 +219,13 @@ export const ptBR: Override<Messages> = {
     readd: 'Peça ao Atlas para acrescentar de volta o que você ainda quer.',
     removed: 'Tirou:',
     removes: 'Tira',
-    replaces: 'Troca, inteira',
+    replaces: 'Altera',
     review: 'Revisar',
     title: 'Propostas de memória',
     titleBotMemory: (bot: string) => `Mudança na memória do bot ${bot}`,
     titleMemory: 'Mudança na memória',
     titleUser: 'Mudança no seu perfil',
-    with: 'Por'
+    whole: 'Ver antes e depois inteiros'
   },
   plugins: {
     approve: 'Deixar entrar',
