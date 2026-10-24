@@ -260,6 +260,7 @@ export const ptBR: Override<Messages> = {
     shipped: 'vem com o Atlas',
     stored: 'guardado',
     notStored: 'não guardado',
+    changeSecret: 'Trocar',
     title: 'Plugins',
     waits: (code: string) => `espera com ${code}`,
     waiting: (count: number) => (count === 1 ? '1 esperando' : `${count} esperando`)

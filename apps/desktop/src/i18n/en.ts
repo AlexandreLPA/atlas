@@ -255,6 +255,7 @@ export const en = {
     shipped: 'ships with Atlas',
     stored: 'stored',
     notStored: 'not stored',
+    changeSecret: 'Change',
     title: 'Plugins',
     waits: (code: string) => `waits with ${code}`,
     waiting: (count: number) => (count === 1 ? '1 waits' : `${count} wait`)

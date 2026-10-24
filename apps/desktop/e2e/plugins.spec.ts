@@ -109,6 +109,11 @@ test('Telegram is turned on from the Plugins screen with consent, and a person l
   await row.getByTestId('plugin-secret-save').click()
   await expect(row.getByTestId('plugin-state')).toHaveText('running')
   await expect(row.getByTestId('plugin-problem')).toHaveCount(0)
+  // Stored, it is no longer asked for: only a way to change it.
+  await expect(row.getByTestId('plugin-secret')).toHaveAttribute('data-stored', 'true')
+  await expect(row.getByTestId('plugin-secret-input')).toHaveCount(0)
+  await row.getByTestId('plugin-secret-change').click()
+  await expect(row.getByTestId('plugin-secret-input')).toBeVisible()
 
   // A stranger writes: they get a code, the screen shows them waiting, and the user lets them in.
   await fake.say(ANA, 'hi')

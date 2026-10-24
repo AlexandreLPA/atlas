@@ -180,14 +180,30 @@ function Plugin({ plugin }: { plugin: PluginRow }) {
   )
 }
 
+/** A secret the plugin reads: a field to paste it in while the vault has none; once stored, only
+ *  that it is, and a button to change it. A key stored for something else, such as the OpenAI
+ *  provider's, counts: the field would read as if it were asked for again. */
 function Secret({ plugin, secret }: { plugin: string; secret: PluginSecretRow }) {
   const [value, setValue] = useState('')
+  const [changing, setChanging] = useState(false)
 
   return (
-    <div className="mt-3 text-sm" data-testid="plugin-secret">
+    <div className="mt-3 text-sm" data-stored={secret.stored} data-testid="plugin-secret">
       <p>
         <span className="font-mono">{secret.name}</span>
         <span className="ml-2 text-neutral-500">{secret.stored ? t.plugins.stored : t.plugins.notStored}</span>
+        {secret.stored && !changing && (
+          <button
+            className="ml-2 text-violet-600 hover:underline"
+            data-testid="plugin-secret-change"
+            onClick={() => {
+              setChanging(true)
+            }}
+            type="button"
+          >
+            {t.plugins.changeSecret}
+          </button>
+        )}
       </p>
       {secret.description && (
         <p className="text-neutral-500">
@@ -199,33 +215,36 @@ function Secret({ plugin, secret }: { plugin: string; secret: PluginSecretRow })
           )}
         </p>
       )}
-      <form
-        className="mt-1 flex gap-2"
-        onSubmit={event => {
-          event.preventDefault()
-          void storePluginSecret(plugin, secret.name, value).then(done => {
-            if (done) {
-              setValue('')
-            }
-          })
-        }}
-      >
-        <input
-          aria-label={secret.name}
-          autoComplete="off"
-          className={INPUT}
-          data-testid="plugin-secret-input"
-          onChange={event => {
-            setValue(event.target.value)
+      {(!secret.stored || changing) && (
+        <form
+          className="mt-1 flex gap-2"
+          onSubmit={event => {
+            event.preventDefault()
+            void storePluginSecret(plugin, secret.name, value).then(done => {
+              if (done) {
+                setValue('')
+                setChanging(false)
+              }
+            })
           }}
-          placeholder={t.plugins.secretPlaceholder}
-          type="password"
-          value={value}
-        />
-        <button className={BUTTON} data-testid="plugin-secret-save" disabled={!value.trim()} type="submit">
-          {t.plugins.save}
-        </button>
-      </form>
+        >
+          <input
+            aria-label={secret.name}
+            autoComplete="off"
+            className={INPUT}
+            data-testid="plugin-secret-input"
+            onChange={event => {
+              setValue(event.target.value)
+            }}
+            placeholder={t.plugins.secretPlaceholder}
+            type="password"
+            value={value}
+          />
+          <button className={BUTTON} data-testid="plugin-secret-save" disabled={!value.trim()} type="submit">
+            {t.plugins.save}
+          </button>
+        </form>
+      )}
     </div>
   )
 }
