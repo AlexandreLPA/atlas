@@ -667,6 +667,7 @@ class Gateway:
                 agents=agents,
                 monitors=monitors,
                 slash=parts.commands,
+                readers=parts.readers,
             )
             self._calls = {(call.plugin, call.name): call for call in parts.calls}
             self._plugin_providers(await asyncio.to_thread(self.plugins.providers))

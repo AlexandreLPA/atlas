@@ -1228,7 +1228,7 @@ way the conversation's model allows. Asked for by the user on 2026-10-16. Roadma
   before answering instead of asking the user to paste it. The model reads it with `read_file`,
   which converts and pages it. A PDF never goes to the model whole.
 - **A video** goes to a model whose catalog entry takes video, else the note with its
-  path. **Audio** gets the note; transcription is left for later.
+  path. **Audio** gets the note, or what a plugin's reader wrote down of it (Voice, below).
 - **What failed is told to the model**: a type not taken, a file that did not open, a
   document with no text. At most five such markers a message, the rest folded into one
   "N more attachments skipped".
@@ -1248,8 +1248,8 @@ way the conversation's model allows. Asked for by the user on 2026-10-16. Roadma
   shows its thumbnail with the format in a corner. Send waits for every chip to arrive. In the
   conversation the chips sit above the user's message, the same when reopened, and a click opens
   the file in the side panel (step 16f) when the server is on this machine.
-- **Left out**: a whole PDF to the model and scanned pages seen as images,
-  transcription (a voice plugin of its own, on the roadmap), and attachments by URL.
+- **Left out**: a whole PDF to the model and scanned pages seen as images, and attachments by
+  URL. Transcription came with the voice plugin (step 17a).
 - **A channel's files** (SDK version 7, decided with the user on 16/10/2026): `Inbound.files`
   carries each file a person sent as its name and bytes, nothing of the platform's own; the
   server keeps them in `attachments/` and sends the message with them, and one it cannot keep
@@ -1257,7 +1257,7 @@ way the conversation's model allows. Asked for by the user on 2026-10-16. Roadma
   video, an audio file and a voice message through `getFile` (20 MB at most for a bot, said in
   the chat past it), the caption as the text, and keeps its manifest at `api: 1`, so the
   consent already given holds (it ships with Atlas, as the Claude Code plugin keeps `api: 2`).
-  A voice message reaches the model as a note until a voice plugin transcribes it.
+  A voice message reaches the model as a note, or written down when the voice plugin is on.
 - **An executor's files** (SDK version 13, asked for by the user on 19/10/2026, step 16i): the
   session's box takes files as Atlas's does, the same chips and the same `attachment.add`, when
   its executor says it does (`Capabilities.files`, `ExecutorRow.files`); `workbench.prompt` takes
@@ -2417,6 +2417,40 @@ Step 16n. Researched on 21/10/2026 with Claude Code's plugin docs (`/reload-plug
   screen, a broken save and its fix, and a plugin turned off and on from the terminal; and end to
   end in the real app, a page that changes in place when its author saves both halves.
   **Found while testing it:** loading a screen again took its page off the screen.
+
+### Voice — decided 2026-10-24
+
+Step 17a, asked for by the user on 24/10/2026: sending audio from Telegram and the app, and talking
+to Atlas by voice with the microphone open. One plugin Atlas ships, `voice`, off as the others:
+both halves hear and speak through the same provider. **No voice in the core** (decided with the
+user): the core gains openings in the plugin SDK that any plugin may use, and the plugin brings the
+rest. Everything goes through OpenAI, on the `OPENAI_API_KEY` the vault already holds (decided by
+the user: the voice conversation is to be the best there is, paid).
+
+- **Attachment readers** (SDK version 21, `PluginContext.register_reader`, `atlas.readers` in the
+  manifest, shown at consent and counted in its fingerprint): a plugin's code that turns one kind of
+  attachment into text before the turn, `audio` for now. Atlas hands it the file's path and media
+  type and keeps what it returns as the attachment's `description`, the field an image's
+  description already uses, so a file is read once, the stored message keeps it, and no protocol
+  or codec changes. The attachments' one piece (Attachments, above) gives it to the model in the
+  note's place, saying a speech model wrote it down and may have misheard a word. One reader a kind,
+  the first loaded, the others logged; a reader gets 2 minutes, and one that fails, says nothing or
+  runs out leaves the note, logged. **Atlas's own, marked:** an image is described only as a
+  turn starts, but a voice note sent while a turn runs is common on a phone, so a steer with a file
+  to read is read first and delivered then, steering the turn or starting the next one.
+- **The voice plugin's reader** (`atlas/plugins/bundled/voice`): OpenAI's
+  `audio/transcriptions` with `gpt-transcribe` (released 05/08/2026, US$ 0.0045 a minute), the
+  file sent as it is (Telegram's OGG voice notes, MP3, M4A, WAV and WebM up to 25 MB, past
+  Atlas's 20 MB for audio). The model and the address are settings.
+- **Atlas speaks only when asked** (decided by the user): receiving audio never makes Atlas
+  answer in audio. Speaking is a tool the model calls when the user asks for it; it comes with the
+  rest of step 17a, with the box's microphone, which dictates into the box, and the live voice
+  conversation.
+- **Proved** against the fake model server, which takes OpenAI's multipart transcription too: the
+  manifest and its refusals, a reader not declared, one reader a kind; an audio file written down
+  once, kept with it and read again at the next call; no key and a refusal leaving the note while
+  the turn goes on; a voice note sent while a turn runs reaching the model written down; and a
+  Telegram voice message through a real server and the Telegram plugin.
 
 ## The executors tab and the side panel — decided 2026-10-15
 

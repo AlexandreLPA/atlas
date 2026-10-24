@@ -3239,16 +3239,17 @@ Pedido do usuário em 24/10: mandar áudio pelo Telegram e pelo app, e conversar
 como se fala com uma pessoa, de microfone aberto. Hoje o áudio chega ao modelo só como nota (16g),
 e o canal só manda texto de volta.
 
-- **Um plugin oficial, `voz`, no repositório, desligado como os outros.** Decidido pelo usuário em
-  24/10. As duas partes usam a mesma base (ouvir e falar), por isso um plugin só. **O núcleo não
+- **Um plugin oficial, `voice` (a voz), no repositório, desligado como os outros.** Decidido pelo
+  usuário em 24/10; o nome em inglês, como o dos outros plugins. As duas partes usam a mesma base (ouvir e falar), por isso um plugin só. **O núcleo não
   ganha nenhuma linha de voz:** só três aberturas no SDK, que servem a qualquer plugin:
   - transformar um anexo antes do turno (o áudio vira texto no mesmo ponto que decide imagem,
     documento e nota, e assim o Telegram e o app ganham juntos);
   - o canal mandar um arquivo de volta (o áudio como balão de voz no Telegram);
   - o plugin pôr um botão na caixa de mensagem e na conversa.
 - **Tudo pela OpenAI, com o `OPENAI_API_KEY` que já está no cofre** (decidido pelo usuário em
-  24/10: a conversa por voz tem de ser a melhor possível, paga). Sem a chave, o plugin diz que falta
-  e não liga a voz. A transcrição local e a voz grátis ficam de fora.
+  24/10: a conversa por voz tem de ser a melhor possível, paga). Sem a chave, a tela de Plugins
+  mostra que ela falta e o áudio chega como a nota de hoje. A transcrição local e a voz grátis
+  ficam de fora.
 - **Áudio que chega** (Telegram, ou solto na caixa do app): transcrito uma vez, quando a mensagem
   chega, e guardado com o anexo, como a descrição de imagem do 16g; o modelo recebe o texto marcado
   como transcrição, com o caminho do arquivo. Menos de US$ 0,01 por minuto. Falhou: a nota de hoje,
@@ -3393,7 +3394,7 @@ cumpriu.
 | 16q | O DeepSeek (`dsh`) como executor, pelo cliente ACP do 16p, com os logs que ele manda à DeepSeek mostrados ou desligados | 16p | ✅ 21/10 no código e nas leituras reais sem prompt (o handshake, as opções, o `--patch` dos logs e o modo de permissão); a prova real com o modelo (`scripts/prove_deepseek.py --vault`) fica para quando houver uma chave da DeepSeek com saldo no cofre |
 | 16r | A prova do SDK com os dois plugins do usuário (decidida em 21/10: A prova do SDK com os plugins do usuário, acima): o do ERP contra o MCP dele, depois o de vídeo com o Remotion; o que faltar no SDK entra só quando um deles precisar (a tela mostrar arquivos, o Python avisar a tela, os pacotes do Node) | 16n | |
 | 17 | Plugins oficiais, um de cada vez, cada um com a sua tela | 16 | |
-| 17a | O plugin `voz` (decidido em 24/10: Voz, acima): o áudio do Telegram e do app transcrito pela OpenAI, o 🎤 da caixa que dita, a fala só quando o usuário pede, e a conversa por voz de microfone aberto com o `gpt-live-1` passando o trabalho ao Atlas, no modelo da conversa ou num fixo só para voz (GPT-6 Luna por padrão); o núcleo só ganha três aberturas no SDK. Pedido do usuário em 24/10 | 16g, 16m | |
+| 17a | O plugin `voice` (decidido em 24/10: Voz, acima): o áudio do Telegram e do app transcrito pela OpenAI, o 🎤 da caixa que dita, a fala só quando o usuário pede, e a conversa por voz de microfone aberto com o `gpt-live-1` passando o trabalho ao Atlas, no modelo da conversa ou num fixo só para voz (GPT-6 Luna por padrão); o núcleo só ganha três aberturas no SDK. Pedido do usuário em 24/10 | 16g, 16m | **Parte 1, código pronto em 24/10 (docs/ARCHITECTURE.md, Voice):** o leitor de anexo no SDK (versão 21, `register_reader`, declarado em `atlas.readers` e mostrado no consentimento) e o plugin `voice` com o `gpt-transcribe` da OpenAI (US$ 0,0045 por minuto). O áudio é transcrito uma vez e guardado com o anexo, no mesmo ponto da descrição de imagem; sem chave, ou com a OpenAI recusando, fica a nota de hoje e o turno segue. **Escolha própria, marcada:** um áudio mandado no meio de um turno é transcrito antes de entrar (a imagem nesse caso não é descrita), porque mandar áudio no meio é comum no celular. Provado contra o servidor falso, que agora também faz a transcrição da OpenAI, e pelo Telegram num servidor de verdade. Faltam o 🎤, a fala pedida e a conversa por voz |
 | 18 | Instalador de uma linha, e a chave pedida pela tela na primeira abertura (decidido em 13/10: Instalador, acima). Decidido pelo usuário em 13/10: vem antes do 15, para mandar o Atlas a testadores convidados no repositório privado; os scripts num gist público; a chave conferida sem custo e barrada só quando recusada; sem o login OAuth da OpenRouter. Desenho fechado em 13/10 | 10 | ✅. Os dois testadores convidados instalaram com a linha do gist e usaram sem problema: um num MacBook e outro no Windows, além do Windows do usuário e do CI no Windows e no Ubuntu. Achado do testador no Windows: com a chave gratuita do Gemini, o Gemini 3.6 Flash respondeu HTTP 503 ("high demand", o Google recusando quem não paga quando está cheio); com outra chave funcionou. Não é defeito do instalador nem da tela de chave |
 | 18b | O app empacotado sem assinatura (decidido em 15/10: Instalador, acima): o `Setup.exe` do NSIS no Windows, o DMG com a assinatura ad-hoc no Mac, o AppImage no Linux; instala, põe o atalho na área de trabalho e se atualiza pelo próprio app (o electron-updater no Windows e no Linux, um atualizador nosso no Mac). Grátis, com o aviso do Windows e do Mac na primeira abertura. Dividido pelo usuário em 15/10 | 18 | |
 | 18c | A assinatura do app empacotado: MSIX pela Microsoft Store ou SignPath no Windows, DMG notarizado no Mac (estudados em 13/10: Instalador, acima). Tira os avisos do 18b e troca o atualizador nosso do Mac pelo do Electron. Vem quando o repositório abrir | 18b | |

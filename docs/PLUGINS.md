@@ -72,6 +72,7 @@ what it keeps while it runs (caches, `node_modules`, renders) goes in its data f
 - `settings` are values the user may change, with their defaults (`ctx.setting`).
 - `network` lists the hosts it reaches. It is shown at consent and not enforced.
 - `hooks` names the events its Python hooks into (needs `api` 15).
+- `readers` names the kinds of attachment its Python reads into text, `audio` (needs `api` 21).
 
 Claude Code's `userConfig` works too: each option is a setting, and a `sensitive` one goes to the
 vault as `<PLUGIN>_<KEY>` (`erp` and `apiToken`: `ERP_API_TOKEN`). An MCP server reads an option
@@ -230,6 +231,32 @@ def register(ctx: PluginContext) -> None:
 
 A stop runs when the plugin is turned off, when Atlas loads it again, and when Atlas closes. It
 may be `async`. A stop that raises is logged, and the others still run.
+
+## Readers
+
+A reader turns one kind of attachment into text before the model reads it: the voice plugin
+writes down what an audio file says. Declare it under `atlas.readers` (`"api": 21`), and register
+it:
+
+```python
+from pathlib import Path
+
+
+def register(ctx: PluginContext) -> None:
+    async def read(path: Path, media_type: str) -> str:
+        return await my_speech_service(path.read_bytes(), media_type)
+
+    ctx.register_reader("audio", read)
+```
+
+- **It reads every such file the user sends,** dropped in the app or sent on a channel, before
+  the turn. What it returns goes to the model in the file's note, and Atlas keeps it with the
+  file, so each is read once.
+- **One reader a kind:** when two plugins read audio, the first loaded reads it, and the other is
+  logged.
+- **It has 2 minutes.** One that raises, returns nothing or runs out leaves the file's note as it
+  was, and the turn goes on.
+- `audio` is the only kind for now.
 
 ## Two examples
 

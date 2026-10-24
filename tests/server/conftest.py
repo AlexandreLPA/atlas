@@ -31,9 +31,13 @@ def serve(
     database = Database(home.database_file)
     migrate(database, SCHEMAS)
 
-    def serve(**gateway: Any) -> AtlasServer:
+    def serve(*, providers: tuple[str, ...] = (), **gateway: Any) -> AtlasServer:
+        """`providers`: more built-in providers pointed at the fake, so a key a test stores for
+        one of them (a plugin's) never sends a side call, a title, to the real provider."""
         chosen = ModelSettings(provider="openrouter")
-        models = connect(fake, "openrouter", settings=chosen, ledger=CallLedger(database))
+        models = connect(
+            fake, "openrouter", *providers, settings=chosen, ledger=CallLedger(database)
+        )
         settings = Settings(home=home.root, model=chosen, workspace=WorkspaceSettings(work))
         server = AtlasServer(home, settings, models, vault, **gateway).__enter__()
         started.append(server)

@@ -86,7 +86,8 @@ test('Telegram is turned on from the Plugins screen with consent, and a person l
   const fake = telegram
 
   await openSettings(page, 'plugins')
-  const row = page.getByTestId('plugin-row').filter({ hasText: 'telegram' })
+  // By its name: another plugin's description may name Telegram (voice's does).
+  const row = page.locator('[data-testid="plugin-row"][data-plugin="telegram"]')
   await expect(row).toContainText('telegram')
   await expect(row.getByTestId('plugin-state')).toHaveText('off')
 

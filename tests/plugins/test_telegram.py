@@ -160,7 +160,8 @@ def test_a_file_past_what_telegram_lets_a_bot_download_is_said_so(telegram: Fake
         telegram.send_file(100, "video", b"small", name="aula.mp4", size=30 * 1024 * 1024)
         telegram.send_file(100, "document", b"x", name="notas.pdf", caption="Read it", size=1)
         telegram.fail("getFile", 400, "Bad Request: file is too big")
-        await _until(lambda: len(telegram.sent(100)) == 2)
+        # The caption reaches Atlas after the notice is sent: wait for both.
+        await _until(lambda: len(telegram.sent(100)) == 2 and bool(host.received))
 
     _running(telegram, host, scenario)
     assert telegram.sent(100) == [

@@ -87,6 +87,9 @@ HOOKS_API = 15
 PYTHON_API = 16
 #: The SDK version of a screen's calls to the plugin's Python (step 16m).
 CALLS_API = 17
+#: The SDK version of attachment readers (step 17a), and the kinds a reader may read.
+READERS_API = 21
+READER_KINDS = ("audio",)
 #: A plugin's screen, its desktop half (step 16m).
 SCREEN_FILE = "desktop/plugin.js"
 #: A hook's event, Claude Code's way of naming them.
@@ -227,6 +230,8 @@ class Manifest:
     screen: bool = False
     #: What its screen may call in its Python (`atlas.calls`, version 17).
     calls: tuple[str, ...] = ()
+    #: The kinds of attachment its Python reads into text (`atlas.readers`, version 21): `audio`.
+    readers: tuple[str, ...] = ()
     #: The other plugins it needs on (Claude Code's `dependencies`, step 16n).
     dependencies: tuple[Dependency, ...] = ()
 
@@ -318,6 +323,12 @@ class Manifest:
                 f"Its screen calls its Python ({', '.join(self.calls)}), which answers with your "
                 "user's permissions on the computer Atlas runs on."
             )
+        lines += [
+            f"Reads the {kind} files you send, in the app and through your channels, before the "
+            "model does: its Python gets each file and writes down what it holds, which the model "
+            "reads."
+            for kind in self.readers
+        ]
         if self.dependencies:
             lines.append(
                 f"Needs the plugins {', '.join(map(str, self.dependencies))}, turned on first."
@@ -375,6 +386,8 @@ class Manifest:
             declared["screen"] = True
         if self.calls:
             declared["calls"] = sorted(self.calls)
+        if self.readers:
+            declared["readers"] = sorted(self.readers)
         text = json.dumps(declared, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -462,6 +475,17 @@ def parse_manifest(
         raise ManifestError(f"{name} declares calls but brings no {PYTHON}.")
     if calls and api < CALLS_API:
         raise ManifestError(f"{name} declares calls, which need atlas.api {CALLS_API}.")
+    readers = _names(own, "readers", _NAME)
+    if readers and not python:
+        raise ManifestError(f"{name} declares readers but brings no {PYTHON}.")
+    if readers and api < READERS_API:
+        raise ManifestError(f"{name} declares readers, which need atlas.api {READERS_API}.")
+    unknown = sorted(set(readers) - set(READER_KINDS))
+    if unknown:
+        raise ManifestError(
+            f"{name} declares readers for {', '.join(unknown)}; a reader reads "
+            f"{', '.join(READER_KINDS)}."
+        )
     secrets = tuple(
         SecretDeclaration(entry["name"], entry.get("description", ""), entry.get("url", ""))
         for entry in _entries(own, "secrets", _SECRET)
@@ -524,6 +548,7 @@ def parse_manifest(
         providers=providers,
         screen=screen,
         calls=calls,
+        readers=readers,
         dependencies=_dependencies(name, data.get("dependencies")),
     )
 

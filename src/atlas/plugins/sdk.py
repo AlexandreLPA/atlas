@@ -50,7 +50,9 @@ Version 19 lets an executor say whether its plan pays on past its limits (`PlanU
 Claude's extra usage, Codex's credits), so a limit that bills rather than stops is shown
 (21/10/2026). Version 20 lets it say how many tokens of context a session holds
 (`Transcript.context`), so a switch of account says what its first message reads again
-(22/10/2026).
+(22/10/2026). Version 21 lets a plugin read one kind of attachment into text before the turn
+(`PluginContext.register_reader`, step 17a): the voice plugin writes down what an audio file says,
+from the app and from every channel alike.
 
 **What costs credit is declared and shown:** `llm` and `notify` call the user's model on the
 plugin's own initiative, so the manifest says `"llm": true` or `"notify": true` and the consent
@@ -92,8 +94,8 @@ from typing import Any, Literal, Protocol
 #: folders; 13, the files attached to its prompts; 14, tools, and what stops when it is turned off;
 #: 15, hooks; 16, commands, terminal commands, the user's model, and messages to a conversation;
 #: 17, the calls its screen makes; 18, the ACP client (`atlas.plugins.acp`); 19, whether the plan
-#: pays on past its limits; 20, a session's tokens of context.
-API_VERSION = 20
+#: pays on past its limits; 20, a session's tokens of context; 21, attachment readers.
+API_VERSION = 21
 
 
 @dataclass(frozen=True, slots=True)
@@ -791,6 +793,12 @@ type CliRun = Callable[[list[str]], Awaitable[int | None] | int | None]
 #: message. It runs on the computer Atlas runs on, wherever the app is.
 type CallRun = Callable[[Any], Awaitable[Any]]
 
+#: What a reader makes of an attachment (version 21): the file's path on the computer Atlas runs
+#: on and its media type (`audio/ogg`), and the text that stands for it to the model (what an
+#: audio file says). Atlas keeps it with the attachment, so a file is read once. Raising, or empty
+#: text, leaves the attachment's note as it was; it gets 2 minutes.
+type ReadRun = Callable[[Path, str], Awaitable[str]]
+
 
 @dataclass(frozen=True, slots=True)
 class LlmMessage:
@@ -937,4 +945,11 @@ class PluginContext(Protocol):
     def register_call(self, name: str, run: CallRun) -> None:
         """A call the manifest names under `calls` (version 17), which the plugin's screen makes
         with `ctx.call(name, params)` in the app."""
+        ...
+
+    def register_reader(self, kind: Literal["audio"], run: ReadRun) -> None:
+        """A reader for the kind of attachment the manifest names under `readers` (version 21):
+        `audio`. Before a turn, Atlas hands it each such file the user sent, from the app or a
+        channel, and gives the model what it returns in the file's note. One reader a kind: a
+        second plugin's is left out and logged."""
         ...

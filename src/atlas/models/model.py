@@ -77,7 +77,8 @@ class Attachment:
     media_type: str
     size: int
     kind: AttachmentKind
-    #: What the description model saw in an image, for a model that does not see images.
+    #: What stands for the file to a model: what the description model saw in an image, for a
+    #: model that does not see images, or what a plugin's reader wrote down of an audio file.
     description: str = ""
 
 

@@ -547,3 +547,35 @@ def test_a_photo_and_a_document_from_telegram_reach_the_model_as_a_dropped_file_
     assert users[-1]["attachments"][0]["kind"] == "document"
     stored = home.attachments_folder / users[-1]["attachments"][0]["id"] / "contrato.pdf"
     assert stored.read_bytes() == pdf
+
+
+def test_a_voice_message_from_telegram_reaches_the_model_written_down(
+    serve: Serve, fake: FakeModelServer, telegram: FakeTelegram, home: Home, vault: Vault
+) -> None:
+    """Step 17a: with the voice plugin on, the reader writes the voice note down before the turn,
+    through the same piece as a file dropped in the app; the fake model server is OpenAI's
+    transcription too."""
+    plugins = _turn_on(home, vault, telegram)
+    plugins.set_setting("voice", "api_url", fake.base_url)
+    plugins.set_secret("voice", "OPENAI_API_KEY", "fake-key")
+    manifest = plugins.view("voice").manifest
+    assert manifest is not None
+    fake.transcribe("Book a table for two at eight.")
+    fake.reply(
+        FakeReply(text="Hi.", when="You are Atlas"),
+        FakeReply(text="Booked for eight.", when="You are Atlas"),
+    )
+    # OpenAI too on the fake: the key stored for the plugin is the title model's as well.
+    with serve(providers=("openai",)).client() as client:
+        # Turned on as the Plugins screen does, which answers once the plugins are loaded.
+        client.result("plugin.enable", {"name": "voice", "consent": manifest.fingerprint()})
+        _paired(client, telegram)
+        telegram.say(ANA, "hello")
+        _until(lambda: "Hi." in telegram.sent(ANA))
+        telegram.send_file(ANA, "voice", b"OggS" + b"\x00" * 64)
+        _until(lambda: "Booked for eight." in telegram.sent(ANA))
+
+    [heard] = fake.heard
+    assert (heard["file_name"], heard["model"]) == ("voice.ogg", "gpt-transcribe")
+    voice_turn = next(b for b in fake.bodies(CHAT) if "voice.ogg" in json.dumps(b))
+    assert "Book a table for two at eight." in json.dumps(voice_turn["messages"][-1])

@@ -19,6 +19,9 @@ every request it gets, and can behave like a particular provider:
   reads), errors inside the stream, and streams cut before they finish.
 - **A real provider's reply played back** (`FakeRaw`, step 9c): a recorded body sent byte for
   byte, past the checks that only the fake's own replies could pass (its thought signatures).
+- **OpenAI's transcription** (`/v1/audio/transcriptions`, step 17a): the multipart form OpenAI
+  takes, its fields and its file recorded (`heard`), answered from a script of its own
+  (`transcribe`), or a 500 when it runs out.
 - **Driven from outside**, for the desktop app's end-to-end tests: `python tests/fake_model.py`
   serves until stopped and writes `FAKE_MODEL_READY port=<n>`; `POST /_fake/reply` queues replies
   given as JSON (`reply_from_json`), and `GET /_fake/requests` returns the bodies the model got.
@@ -184,6 +187,11 @@ class FakeModelServer:
         #: The cached prefixes of Anthropic's requests, by hash, for the cache a request reads.
         self._cached: set[str] = set()
         self._issued = 0
+        #: What the transcriptions answer, in order: a text, or an error.
+        self._transcripts: deque[str | FakeError] = deque()
+        #: Each transcription asked for: its form's fields, and the file as `file_name`,
+        #: `file_type` and `file_bytes`.
+        self.heard: list[dict[str, Any]] = []
         self._server: uvicorn.Server | None = None
         self._thread: threading.Thread | None = None
         self._host = host
@@ -194,6 +202,10 @@ class FakeModelServer:
     def reply(self, *items: FakeReply | FakeError | FakeRaw) -> None:
         """Queue what the next model calls get, in order."""
         self._script.extend(items)
+
+    def transcribe(self, *items: str | FakeError) -> None:
+        """Queue what the next transcriptions answer: the text, or an error."""
+        self._transcripts.extend(items)
 
     def refuse_check(self, error: FakeError) -> None:
         """The next key check (`/models`, `/key`) gets this error."""
@@ -222,6 +234,7 @@ class FakeModelServer:
                 Route("/v1/messages", self._messages, methods=["POST"]),
                 Route("/v1/models", self._check, methods=["GET"]),
                 Route("/v1/key", self._check, methods=["GET"]),
+                Route("/v1/audio/transcriptions", self._transcription, methods=["POST"]),
                 Route("/_fake/reply", self._queue, methods=["POST"]),
                 Route("/_fake/requests", self._recorded, methods=["GET"]),
             ]
@@ -303,6 +316,35 @@ class FakeModelServer:
         return JSONResponse(
             {"object": "list", "data": [{"id": "fake-model", "object": "model", "owned_by": "x"}]}
         )
+
+    async def _transcription(self, request: Request) -> Response:
+        """OpenAI's `audio/transcriptions`: a multipart form with the model and the file."""
+        form = await request.form()
+        heard: dict[str, Any] = {}
+        for name, value in form.multi_items():
+            if isinstance(value, str):
+                heard[name] = value
+            else:
+                heard["file_name"] = value.filename
+                heard["file_type"] = value.content_type
+                heard["file_bytes"] = await value.read()
+        self.heard.append(heard)
+        self.requests.append(
+            Recorded(request.method, request.url.path, dict(request.headers), None)
+        )
+        refused = self._refused_key(request)
+        if refused is not None:
+            return refused
+        if "file_bytes" not in heard or not heard.get("model"):
+            return _error(FakeError(400, "A transcription takes a file and a model."))
+        if not self._transcripts:
+            return _error(
+                FakeError(500, "The fake has no scripted transcription left.", type="server_error")
+            )
+        item = self._transcripts.popleft()
+        if isinstance(item, FakeError):
+            return _error(item)
+        return JSONResponse({"text": item})
 
     async def _queue(self, request: Request) -> Response:
         """Queue the replies a test outside this process gives as JSON."""

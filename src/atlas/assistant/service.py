@@ -156,7 +156,7 @@ from atlas.models import (
     UserMessage,
     sees_images,
 )
-from atlas.plugins import Executor, LoadedCommand, LoadedTool, Transcript
+from atlas.plugins import Executor, LoadedCommand, LoadedReader, LoadedTool, Transcript
 from atlas.secrets import SecretsError, Vault
 from atlas.skills import (
     Curator,
@@ -230,6 +230,8 @@ SKILL_FILES_NAMED = 20
 #: A subagent's input budget: its 250 calls are the cap; the tokens are left to compaction, as in
 #: the user's turns.
 _CHILD_LIMIT = TurnLimit(MAX_CHILD_CALLS, 1 << 62)
+#: How long a plugin's reader may take over one file (step 17a), as the SDK promises.
+READ_SECONDS = 120.0
 
 _logger = logging.getLogger("atlas.assistant")
 #: The vault's names of the account tokens step 16h kept on 18/10/2026
@@ -290,6 +292,8 @@ class _Shared:
     monitors: tuple[PluginMonitor, ...] = ()
     #: The plugins' slash commands (step 16l), by what is typed after the slash (`video:status`).
     slash: dict[str, LoadedCommand] = field(default_factory=dict[str, LoadedCommand])
+    #: The plugins' attachment readers (step 17a), by the kind each reads (`audio`).
+    readers: dict[str, LoadedReader] = field(default_factory=dict[str, LoadedReader])
     last_active: datetime | None = None
     #: The process's subagents, made once the assistant is.
     subagents: "Subagents | None" = None
@@ -721,6 +725,7 @@ class Assistant:
         agents: Mapping[str, Sequence[Path]] | None = None,
         monitors: Sequence[PluginMonitor] = (),
         slash: Sequence[LoadedCommand] = (),
+        readers: Sequence[LoadedReader] = (),
     ) -> None:
         """What the plugins that are on bring now (step 16j): their tools, which join the
         conversations behind the tool search as the MCP servers' do; their skills folders, listed
@@ -733,6 +738,7 @@ class Assistant:
         shared.programs = tuple(programs)
         shared.agents = _agents(agents or {})
         shared.slash = {command.typed: command for command in slash}
+        shared.readers = {reader.kind: reader for reader in readers}
         if tuple(monitors) != shared.monitors:
             shared.monitors = tuple(monitors)
             # Each conversation starts them again as they are now, when their time comes.
@@ -1011,6 +1017,8 @@ class OpenConversation:
         self.fixed = info.bot is not None and info.source == BOT
         self._bot: Bot | None = None
         self._inbox: list[UserMessage] = []
+        #: Steers whose files a reader is reading before they are sent (step 17a).
+        self._reading: set[asyncio.Task[None]] = set()
         #: Notices that came while a turn ran: each starts a turn after it as a follow-up,
         #: never steering the one running.
         self._notices: list[_Notice] = []
@@ -1089,6 +1097,16 @@ class OpenConversation:
         skill: its invocation message in its place, the words the user's instruction, from
         the app and from a channel alike."""
         message = text if isinstance(text, UserMessage) else UserMessage(text)
+        if self.running and self._unread(message):
+            # A steer reaches the loop between its calls, with no wait for a reader: it is read
+            # first, and sent then, steering the turn or starting one after it.
+            reading = asyncio.create_task(self._read_then_send(message))
+            self._reading.add(reading)
+            reading.add_done_callback(self._reading.discard)
+            return Sent.STEERED
+        return self._deliver(message)
+
+    def _deliver(self, message: UserMessage) -> Sent:
         message = self._invoked(message)
         if self.running:
             self._inbox.append(message)
@@ -1160,13 +1178,18 @@ class OpenConversation:
         return await answer_for_user(client, instruction, self.history, asked, self.id)
 
     async def wait(self) -> None:
-        """Until the turn, and the review that followed it, end."""
-        while self.busy or (self._titling is not None and not self._titling.done()):
-            tasks = (self._turn, self._review, self._titling)
+        """Until the turn, and the review that followed it, end; a steer being read (step 17a)
+        too, with the turn it may start."""
+        while (
+            self.busy
+            or (self._titling is not None and not self._titling.done())
+            or any(not reading.done() for reading in self._reading)
+        ):
+            tasks = (self._turn, self._review, self._titling, *self._reading)
             await asyncio.wait({task for task in tasks if task is not None and not task.done()})
 
     async def close(self) -> None:
-        for task in (self._turn, self._review, self._titling):
+        for task in (*self._reading, self._turn, self._review, self._titling):
             if task is not None and not task.done():
                 await stop(task)
         for commands in self._commands:
@@ -1345,7 +1368,7 @@ class OpenConversation:
         started: set[str] = set()
         finished: set[str] = set()
         try:
-            message = await self._described(message, loop.client)
+            message = await self._described(await self._read(message), loop.client)
             events = loop.run(self.history, message, scope=self.id, steering=self._take)
             async with aclosing(events) as stream:
                 async for event in stream:
@@ -1471,6 +1494,36 @@ class OpenConversation:
             ),
         )
         return self._loop
+
+    def _unread(self, message: UserMessage) -> bool:
+        """Whether the message holds a file a plugin's reader reads that it has not read yet."""
+        readers = self._shared.readers
+        return any(
+            attachment.kind.value in readers and not attachment.description
+            for attachment in message.attachments
+        )
+
+    async def _read(self, message: UserMessage) -> UserMessage:
+        """The message with its files read by the plugins' readers (step 17a), an audio file
+        written down: once, as it is sent, and kept with it. A reader that fails or says nothing
+        leaves the file's note."""
+        if not self._unread(message):
+            return message
+        shared = self._shared
+        read: list[Attachment] = []
+        for attachment in message.attachments:
+            reader = shared.readers.get(attachment.kind.value)
+            path = shared.attachments.path(attachment.id)
+            if reader is not None and path is not None and not attachment.description:
+                said = await _run_reader(reader, path, attachment)
+                if said:
+                    attachment = replace(attachment, description=said)
+            read.append(attachment)
+        return replace(message, attachments=tuple(read))
+
+    async def _read_then_send(self, message: UserMessage) -> None:
+        # Delivered as read, even when the reader failed: never read again in a loop.
+        self._deliver(await self._read(message))
 
     async def _described(self, message: UserMessage, client: ModelClient) -> UserMessage:
         """The message with its images described, when the conversation's model does not see
@@ -1726,6 +1779,26 @@ def _joined(messages: Sequence[UserMessage]) -> UserMessage | None:
         "\n\n".join(message.text for message in messages if message.text.strip()),
         tuple(attachment for message in messages for attachment in message.attachments),
     )
+
+
+async def _run_reader(reader: LoadedReader, path: Path, attachment: Attachment) -> str:
+    """What a plugin's reader made of a file, within its deadline; empty when it failed, which
+    is logged: the file keeps its note."""
+    try:
+        # Stripped inside: a reader that returns no text fails as one that raises.
+        return (
+            await asyncio.wait_for(reader.run(path, attachment.media_type), READ_SECONDS)
+        ).strip()
+    except asyncio.CancelledError:
+        raise
+    except Exception as error:  # noqa: BLE001 - a plugin's own code: the note stays, it is logged
+        _logger.warning(
+            "%s could not read %s: %s",
+            reader.plugin,
+            attachment.name,
+            str(error) or type(error).__name__,
+        )
+        return ""
 
 
 def _stopped_calls(

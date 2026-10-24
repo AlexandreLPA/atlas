@@ -71,7 +71,11 @@ function Plugin({ plugin }: { plugin: PluginRow }) {
   const screenError = useStore($screenErrors)[plugin.name]
 
   return (
-    <div className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800" data-testid="plugin-row">
+    <div
+      className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
+      data-plugin={plugin.name}
+      data-testid="plugin-row"
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="font-medium">

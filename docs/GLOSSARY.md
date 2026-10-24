@@ -76,6 +76,8 @@ becomes an identifier. Portuguese is listed because the roadmap is written in Po
 | `executor file` | arquivo do executor | An attachment sent with a prompt to an executor's session (`ExecutorFile`, step 16i): the harness gets it its own way, Claude Code an image as itself and every file by its path in the home's `attachments/`, which it reads as one of its folders |
 | `description model` | modelo de descrição | The model that describes an attached image for a conversation whose model does not see images: the title models, as side calls |
 | `image description` | descrição da imagem | What the description model wrote about an attached image, given to a model that does not see images in the image's place |
+| `reader` | leitor | A plugin's code that turns one kind of attachment into text before the turn (`register_reader`, SDK version 21): the voice plugin's, for audio |
+| `audio transcript` | transcrição do áudio | What a reader wrote down of an audio attachment, kept with it as its `description` and given to the model in the note's place |
 | `turn` | turno | One user message and everything the agent does until it answers |
 | `instructions` | instruções | The system prompt of a conversation, built by Atlas: what the agent is (its soul), how to use its memory, and the memory snapshot |
 | `agent loop` | laço do agente | The code that runs a turn: it calls the model, runs the tools the model asks for, and calls it again until it answers |

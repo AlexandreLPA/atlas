@@ -265,7 +265,7 @@ def test_a_user_plugin_named_as_a_shipped_one_is_refused(
 def test_atlas_ships_its_channel_and_executor_plugins_off(home: Home, vault: Vault) -> None:
     database = Database(home.database_file)
     migrate(database, (SCHEMA,))
-    claude, codex, deepseek, gemini, telegram = Plugins(
+    claude, codex, deepseek, gemini, telegram, voice = Plugins(
         home, database, vault, bundled_folder=BUNDLED_FOLDER
     ).all()
     assert (telegram.name, telegram.bundled, telegram.enabled, telegram.problem) == (
@@ -307,6 +307,10 @@ def test_atlas_ships_its_channel_and_executor_plugins_off(home: Home, vault: Vau
     assert deepseek.manifest.executors == ("deepseek",)
     assert deepseek.settings == {"program": "", "session_logs": "off"}, "its uploads off"
     assert deepseek.secrets == {"DEEPSEEK_API_KEY": False}
+    assert (voice.name, voice.bundled, voice.enabled, voice.problem) == ("voice", True, False, None)
+    assert voice.manifest is not None
+    assert voice.manifest.readers == ("audio",)
+    assert voice.secrets == {"OPENAI_API_KEY": False}, "the OpenAI provider's own key"
 
 
 #: The SDK: its pure module, and its ACP client since version 18.
@@ -329,7 +333,7 @@ def test_a_plugin_atlas_ships_imports_only_the_sdk_from_atlas() -> None:
                 if name == "atlas" or name.startswith("atlas."):
                     assert name in SDK, f"{source}: imports {name}"
         checked.append(source.parent.name)
-    assert {"telegram", "claude-code", "codex", "gemini-cli", "deepseek"} <= set(checked)
+    assert {"telegram", "claude-code", "codex", "gemini-cli", "deepseek", "voice"} <= set(checked)
 
 
 def test_secrets_and_settings_are_only_those_declared(plugins: Plugins, home: Home) -> None:

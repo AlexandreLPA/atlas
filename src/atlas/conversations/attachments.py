@@ -12,7 +12,7 @@ model call the cheapest way that call's model allows (docs/ARCHITECTURE.md, Atta
   - a text file up to 100 KB goes whole, wrapped as untrusted; every other file gets a document
     note, its name, type and path and the order to read it, which read_file does;
   - a video goes as itself to a model that takes video over Chat Completions, else a note; audio
-    gets a note;
+    gets what a plugin's reader wrote down of it when one did (step 17a), else a note;
   - what could not be read is told to the model, at most five markers a message.
 """
 
@@ -296,6 +296,8 @@ class Attachments:
                         continue
                     shown.append(Image(attachment.media_type, data))
                     notes.append(f"[Video attached at: {path}]")
+                case AttachmentKind.AUDIO if attachment.description.strip():
+                    notes.append(_heard_audio(attachment, path))
                 case AttachmentKind.VIDEO | AttachmentKind.AUDIO:
                     notes.append(_media_note(attachment, path))
                 case AttachmentKind.TEXT if attachment.size <= INLINE_TEXT_BYTES:
@@ -328,6 +330,15 @@ def _unseen_image(attachment: Attachment, path: Path) -> str:
     return (
         f"[The user sent an image: '{attachment.name}', saved at: {path}. This model does not see "
         "images, and it could not be described. Say so if the request depends on what it shows.]"
+    )
+
+
+def _heard_audio(attachment: Attachment, path: Path) -> str:
+    """The note for an audio file a plugin's reader wrote down (step 17a)."""
+    return (
+        f"[The user sent an audio file: '{attachment.name}', saved at: {path}. A speech model "
+        "wrote down what it says, and may have misheard a word; take it as what the user said:\n"
+        f"{attachment.description.strip()}]"
     )
 
 

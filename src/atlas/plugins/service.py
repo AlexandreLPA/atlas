@@ -65,6 +65,7 @@ from atlas.plugins.sdk import (
     LlmMessage,
     LlmResult,
     PluginLlm,
+    ReadRun,
     ToolRun,
 )
 from atlas.plugins.store import (
@@ -179,6 +180,15 @@ class LoadedCall:
 
 
 @dataclass(frozen=True, slots=True)
+class LoadedReader:
+    """What a plugin registered to read one kind of attachment into text (SDK version 21)."""
+
+    plugin: str
+    kind: str
+    run: ReadRun
+
+
+@dataclass(frozen=True, slots=True)
 class PluginScreen:
     """A plugin's screen for the app (step 16m): its `desktop/plugin.js`, as the app loads it."""
 
@@ -193,12 +203,13 @@ SCREEN_BYTES = 2 * 1024 * 1024
 @dataclass(frozen=True, slots=True)
 class PluginParts:
     """What the Python of the plugins that are on registered for the loop: tools (version 14),
-    hooks (version 15) and slash commands (version 16)."""
+    hooks (version 15), slash commands (version 16) and attachment readers (version 21)."""
 
     tools: list[LoadedTool] = field(default_factory=list[LoadedTool])
     hooks: list[PluginCallback] = field(default_factory=list[PluginCallback])
     commands: list[LoadedCommand] = field(default_factory=list[LoadedCommand])
     calls: list[LoadedCall] = field(default_factory=list[LoadedCall])
+    readers: list[LoadedReader] = field(default_factory=list[LoadedReader])
 
 
 class PluginHost(Protocol):
@@ -434,13 +445,25 @@ class Plugins:
         await self.stop(kind="parts")
         parts = PluginParts()
         wanted: Callable[[Manifest], bool] = lambda m: bool(  # noqa: E731
-            m.tools or m.python_hooks or m.slash_commands or m.calls
+            m.tools or m.python_hooks or m.slash_commands or m.calls or m.readers
         )
         for context in await self._load(wanted, None, kind="parts"):
             parts.tools.extend(context.tools)
             parts.hooks.extend(context.hooks)
             parts.commands.extend(context.commands)
             parts.calls.extend(context.calls)
+            for reader in context.readers:
+                taken = next((r for r in parts.readers if r.kind == reader.kind), None)
+                if taken is None:
+                    parts.readers.append(reader)
+                else:
+                    # One reader a kind, the first loaded: a file is read once, by one plugin.
+                    _logger.warning(
+                        "%s reads %s attachments, which %s already reads; it is left out.",
+                        reader.plugin,
+                        reader.kind,
+                        taken.plugin,
+                    )
         return parts
 
     def screens(self) -> list[PluginScreen]:
@@ -730,6 +753,7 @@ class _Context:
         self.commands: list[LoadedCommand] = []
         self.cli: list[LoadedCli] = []
         self.calls: list[LoadedCall] = []
+        self.readers: list[LoadedReader] = []
         self.stops: list[Stop] = []
         #: Set once the load gave up: what the plugin registers after is ignored.
         self.abandoned = threading.Event()
@@ -868,6 +892,19 @@ class _Context:
             return
         self.calls = [call for call in self.calls if call.name != name]
         self.calls.append(LoadedCall(self.name, name, run))
+
+    def register_reader(self, kind: str, run: ReadRun) -> None:
+        if kind not in self._manifest.readers:
+            raise PluginError(
+                f"{self.name} registered a reader for {kind}, which it does not declare under "
+                "atlas.readers."
+            )
+        if not callable(run):
+            raise PluginError(f"{self.name} registered a reader for {kind} with nothing to run.")
+        if self.abandoned.is_set():
+            return
+        self.readers = [reader for reader in self.readers if reader.kind != kind]
+        self.readers.append(LoadedReader(self.name, kind, run))
 
     @property
     def llm(self) -> PluginLlm:
