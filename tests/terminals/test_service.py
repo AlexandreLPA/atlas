@@ -87,9 +87,9 @@ def test_a_shell_opens_where_asked_writes_its_marks_and_runs_what_is_typed(
 
     terminals.write("client", opened.id, "exit 3\r")
     assert screen.ended.wait(20)
-    # Windows PowerShell's own exit code reads as 1 under ConPTY, whatever it exited with (cmd's
-    # reads right; found by this test, 19/10/2026): a command's code comes from its marks anyway.
-    assert screen.code == (1 if WINDOWS else 3)
+    # The shell's own code. It read as 1 on Windows while the program was named twice, which ran
+    # a second PowerShell inside the first (24/10/2026).
+    assert screen.code == 3
     assert not (tmp_path / "scratch" / nonce).exists(), "its start-up files go with it"
 
 

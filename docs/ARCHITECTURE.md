@@ -3077,8 +3077,10 @@ never the server itself.
   server. `pywinpty` is the `terminal` extra: without it the terminal is said to be unavailable.
   **Found moving it**: the server runs under `uv run`, so the shell would get Atlas's environment
   first on its PATH (every terminal's `python` Atlas's), and a
-  container's server its token: both are taken out. Windows PowerShell's own exit code reads as 1
-  under ConPTY; a command's comes from its marks, unaffected. Whoever holds the token already runs
+  container's server its token: both are taken out. The shell gets its arguments alone, since
+  pywinpty puts the program in front of them: named twice, PowerShell 7 took its own path for a
+  script and stopped, and Windows PowerShell ran a second shell inside the first, whose exit code
+  read as 1 (found on GitHub's Windows runners, 24/10/2026). Whoever holds the token already runs
   commands through the agent, so the terminal opens nothing new.
 - **The preview**: files and artifacts come from the server (`preview.read`, the app's step-16f
   reader moved there with its rules: an absolute path, 5 MB at most, by what the file is; one path,

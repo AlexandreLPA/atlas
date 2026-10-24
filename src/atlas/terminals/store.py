@@ -137,7 +137,9 @@ if sys.platform == "win32":
 
             self._pty = PTY(cols, rows)
             block = "".join(f"{name}={value}\0" for name, value in env.items()) + "\0"
-            line = subprocess.list2cmdline([program, *args])
+            # The arguments only: pywinpty puts the program, quoted, in front of them itself. Given
+            # it again, PowerShell 7 took its own path for the script to run, and failed.
+            line = subprocess.list2cmdline(args) if args else None
             try:
                 self._pty.spawn(program, cmdline=line, cwd=cwd, env=block)
             except Exception as error:  # winpty's own error, untyped
