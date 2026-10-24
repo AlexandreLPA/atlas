@@ -3,7 +3,8 @@
 Decided on 09/10/2026, with what Atlas V3 learned:
 
 - **The system's own shell**: PowerShell on Windows (`pwsh` when installed), bash elsewhere (`sh`
-  without it). The description names it, so the model writes that shell's syntax. On Windows a
+  without it). The description names it, PowerShell's edition included, with 5.1's pitfalls, so
+  the model writes that shell's syntax (it writes PowerShell 7's when not told). On Windows a
   preamble makes PowerShell read and write UTF-8 (V3: accents came back garbled, and `Get-Content`
   read UTF-8 files as ANSI).
 - **Foreground** returns the output, standard error and standard output together, and the exit
@@ -37,7 +38,7 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any
 
 from atlas.agent import SpillFolder, Tool
@@ -93,6 +94,12 @@ _POWERSHELL_EPILOGUE = (
     "\n$atlasOk = $?; if ($null -ne $LASTEXITCODE -and $LASTEXITCODE -ne 0) "
     "{ exit $LASTEXITCODE } elseif (-not $atlasOk) { exit 1 }"
 )
+#: What Windows PowerShell 5.1 does differently from PowerShell 7, which models write by default:
+#: an `ssh-keygen -N ''` arrived as `-N` with nothing after it, and the key was never made.
+_WINDOWS_POWERSHELL = (
+    "Windows PowerShell 5.1, not 7: no `&&` or `||` (write `a; if ($?) { b }`), and it drops an "
+    "empty argument to a program (write `'\"\"'`, not `''`)."
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -101,6 +108,15 @@ class Shell:
 
     name: str
     program: str
+
+    @property
+    def described(self) -> str:
+        """The shell as the model reads it: PowerShell's edition, and 5.1's pitfalls."""
+        if self.name != "PowerShell":
+            return f"{self.name}."
+        if PureWindowsPath(self.program).stem.lower() == "pwsh":
+            return "PowerShell 7 (pwsh)."
+        return _WINDOWS_POWERSHELL
 
     def arguments(self, command: str) -> list[str]:
         if self.name == "PowerShell":
@@ -184,11 +200,11 @@ class Commands:
         return Tool(
             name="run_command",
             description=(
-                f"Runs a command in {self.shell.name} and returns its output (errors included) "
-                f"and exit code; it stops at `timeout` seconds. For a server or a long build, set "
-                "`background`: it returns at once, the output goes to a file you read with "
-                "read_file, and its last line says when the command ended. For files, prefer "
-                "find_files, read_file and edit_file."
+                "Runs a command and returns its output (errors included) and exit code; it "
+                "stops at `timeout` seconds. For a server or a long build, set `background`: it "
+                "returns at once, the output goes to a file you read with read_file, and its last "
+                "line says when the command ended. For files, prefer find_files, read_file and "
+                f"edit_file. The shell is {self.shell.described}"
             ),
             parameters={
                 "type": "object",

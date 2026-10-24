@@ -6,6 +6,7 @@ file stops growing, the grandchild is gone.
 """
 
 import asyncio
+import shutil
 import sys
 import time
 from collections.abc import Callable, Coroutine
@@ -14,7 +15,7 @@ from typing import Any
 
 import pytest
 
-from atlas.tools import BackgroundCommand, Commands, Workspace, system_shell
+from atlas.tools import BackgroundCommand, Commands, Shell, Workspace, system_shell
 from atlas.tools.commands import SCREEN_OUTPUT_CHARS
 
 SCRIPT = r"""
@@ -99,7 +100,49 @@ def test_the_description_names_the_shell() -> None:
     tool = Commands(Workspace(Path.cwd()), Path.cwd()).tool()
 
     assert shell.name == ("PowerShell" if sys.platform == "win32" else "bash")
-    assert f"in {shell.name} " in tool.description
+    assert tool.description.endswith(f"The shell is {shell.described}")
+
+
+def test_the_description_names_powershells_edition_and_51s_pitfalls() -> None:
+    def described(program: str) -> str:
+        shell = Shell("PowerShell", program)
+        return Commands(Workspace(Path.cwd()), Path.cwd(), shell=shell).tool().description
+
+    seven = described("C:\\Program Files\\PowerShell\\7\\pwsh.exe")
+    builtin = described("C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe")
+
+    assert "PowerShell 7 (pwsh)." in seven
+    assert "5.1" not in seven
+    assert "Windows PowerShell 5.1" in builtin
+    assert "`&&`" in builtin
+    assert "`'\"\"'`, not `''`" in builtin
+    assert (
+        "bash."
+        in Commands(Workspace(Path.cwd()), Path.cwd(), shell=Shell("bash", "/bin/bash"))
+        .tool()
+        .description
+    )
+
+
+@pytest.mark.skipif(
+    sys.platform != "win32" or shutil.which("powershell.exe") is None,
+    reason="Windows PowerShell 5.1 is Windows's own",
+)
+def test_51_drops_an_empty_argument_and_keeps_the_one_the_description_advises(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "work"
+    root.mkdir()
+    (root / "argv.py").write_text("import sys\nprint(sys.argv[1:])\n", encoding="utf-8")
+    shell = Shell("PowerShell", "powershell.exe")
+    commands = Commands(Workspace(root), tmp_path / "commands", shell=shell)
+    program = f"& '{sys.executable}' '{root / 'argv.py'}'"
+
+    dropped = _run(lambda: _call(commands, command=f"{program} -N '' end"))
+    kept = _run(lambda: _call(commands, command=f"{program} -N '\"\"' end"))
+
+    assert "['-N', 'end']" in dropped
+    assert "['-N', '', 'end']" in kept
 
 
 def test_output_and_errors_come_together_with_the_exit_code(commands: Commands) -> None:
