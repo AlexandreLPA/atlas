@@ -1,4 +1,4 @@
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { expect, type Page, test } from '@playwright/test'
@@ -650,19 +650,23 @@ test('another account is added by its nickname, logs in in its own folder, and a
   await expect(workAccount).toBeEnabled(STARTED)
   const before = readFileSync(original, 'utf8')
 
-  // Switched, after the user read what changes: a copy on the other account, the original as it was.
+  // Switched, after the user read what changes: a copy on the other account, the original untouched
+  // until the copy is kept.
   await workAccount.click()
   const note = page.getByTestId('account-switch')
   await expect(note).toContainText('Go on on work (other@example.com)?', STARTED)
   await expect(note.getByTestId('account-switch-missing')).toContainText('files')
   await note.getByTestId('account-switch-confirm').click()
   await expect(page.getByTestId('session-header')).toContainText('other@example.com', STARTED)
+  expect(readFileSync(original, 'utf8')).toBe(before)
   await box.fill('Again.')
   await box.press('Enter')
   await expect(page.getByTestId('assistant-message').last()).toContainText('Running on .claude-work.', STARTED)
-  expect(readFileSync(original, 'utf8')).toBe(before)
   const copies = path.join(user, '.claude-work', 'projects', projectFolder(folder))
   expect(readdirSync(copies).filter(name => name.endsWith('.jsonl'))).toHaveLength(1)
+  // Once the copy is kept, the original is deleted on the main account, where it would be left
+  // dead (decided with the user on 22/10/2026). It goes in the background, after the turn.
+  await expect.poll(() => existsSync(original), STARTED).toBe(false)
 })
 
 test('a file pasted or picked in a session goes to Claude Code as the SDK sends it, and stays on screen reopened', async () => {
