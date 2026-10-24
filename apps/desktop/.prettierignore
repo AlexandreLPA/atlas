@@ -1,0 +1,9 @@
+out/
+node_modules/
+test-results/
+playwright-report/
+package-lock.json
+# Written by scripts/gen_protocol.py; tests/server/test_protocol_generated.py holds it.
+*.generated.ts
+# Written by tests/server/test_turns.py and test_recordings.py (ATLAS_WRITE_TURNS=1), which hold them.
+src/store/turns/

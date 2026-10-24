@@ -1,0 +1,19 @@
+{
+  "name": "codex",
+  "version": "0.1.0",
+  "description": "Codex on Atlas's workbench: the Codex installed on this computer, with your own login, working in your folders for you or for Atlas; what it asks reaches you through Atlas.",
+  "author": { "name": "the Atlas contributors" },
+  "license": "MIT",
+  "keywords": ["executor", "codex"],
+  "atlas": {
+    "api": 13,
+    "executors": ["codex"],
+    "settings": [
+      {
+        "name": "program",
+        "default": "",
+        "description": "The codex program to run, as a JSON list of the program and the arguments before Codex's own; empty, the codex on the PATH or the Codex app's."
+      }
+    ]
+  }
+}

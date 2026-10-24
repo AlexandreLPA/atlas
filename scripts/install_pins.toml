@@ -1,0 +1,43 @@
+# The tools the installer downloads, each at a fixed version, checked by its SHA-256 before use
+# (docs/ARCHITECTURE.md, The installer). Each version is at least 14 days old when pinned.
+#
+# After changing a version: `uv run python scripts/gen_install_pins.py --refresh`, which reads the
+# SHA-256s from where each project publishes them and writes the scripts' blocks again.
+
+[uv]
+# The uv CI runs (.github/workflows/ci.yml), released 14/08/2026.
+version = "0.12.5"
+sha256.win32-x64 = "4c4d49d8738847d9b71ba319e49a5688c93eac0fe6204b1df24e98528dddf39a"
+sha256.win32-arm64 = "724279317fee6e5fa8ad1908e4eba2bbe764ef1ece5b3f4597927b62b1fe562a"
+sha256.linux-x64 = "68a509da24b06b4223a1c0175fb5eb5bc79342b76cbeff0cfe51ac3f5b17b6b2"
+sha256.linux-arm64 = "9bf43b4d1a07665bf64d4c4e710930b382321a785e0eb10aac07f46471f86a31"
+sha256.darwin-x64 = "b3b2137477cf96c9686ebfb71524614cec780c673fd73e59bce099aef02e70e8"
+sha256.darwin-arm64 = "5bb0e5fe008a773c3dbcb97ff79cd89e1241464fe9d2f986d52ad8f1b037bd62"
+
+[node]
+# Node 24 LTS, released 07/09/2026, with npm 11.19.0: the app's engines take ^24.11.0 and an npm
+# from 11.17.0 (apps/desktop/package.json).
+version = "24.21.0"
+sha256.win32-x64 = "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541"
+sha256.win32-arm64 = "8779b1bde1d39f8d420e3b57aa657b39891af434d3de44a919044cec06785921"
+sha256.linux-x64 = "6e1db87ef58b8819e5d5402eff1536491b18edd8eb7bee5ef7897876e88dc5ff"
+sha256.linux-arm64 = "724282c3b43aec998aa9527380465b45d229e021b58035f5f4f63095eabfe5d5"
+sha256.darwin-x64 = "1462cb3b3046b815cf8ea436d3da450ec1a9f11dac7e5a46b0ada5305d7e8097"
+sha256.darwin-arm64 = "bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057"
+
+[gh]
+# Released 15/09/2026; 2.102.0 was 13 days old when this was pinned.
+version = "2.101.0"
+sha256.win32-x64 = "bc6c814367b193cd8e713611d61e36013c0ef843b8f516458fe3eda039192794"
+sha256.win32-arm64 = "e6cbb2d4afdad3e70f3d38b8d1ebaa3a0870a897cfc0e4cf569826710b96b4fd"
+sha256.linux-x64 = "9bca2d1c16825f109907a23307628a2f0698fbf99662b73a5cf0b020293072b8"
+sha256.linux-arm64 = "b57e8063f18862647c9d22727c32e9da1b963f8bf9db648fe123a6975695640f"
+sha256.darwin-x64 = "a6fd66c88e2f07d6e4e058173db341d07dd74d58cf8f19ae668293d2bb614ca3"
+sha256.darwin-arm64 = "e4303e39d8f07141c4bad4b99b01079f05029c59b27076e8fbc825c985ecdd8b"
+
+[git]
+# Git for Windows' PortableGit, released 20/08/2026 (v2.55.0.windows.5); 2.56.0 was 8 days old.
+# Linux and macOS use the system's Git.
+version = "2.55.0.5"
+sha256.win32-x64 = "5aa8a20f6e9abb2c755f0e73c91c687701a46b309ad84a0ca6509380fa4ae290"
+sha256.win32-arm64 = "49d1dd3158017fa9805d07268433dbab7021b2ec1c1cc3fbabaf8b8255764dd0"

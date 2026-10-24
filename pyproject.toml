@@ -1,0 +1,503 @@
+[project]
+name = "atlas-agent"
+version = "0.0.1"
+description = "Open-source personal agent and a platform for orchestrating agents and harnesses."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE", "LICENSES/*"]
+requires-python = ">=3.13"
+# Every direct dependency is pinned to an exact version (see docs/ARCHITECTURE.md, Dependencies),
+# and every one carries a line saying why it is here.
+dependencies = [
+    # The official OpenAI SDK, the core's one model adapter (atlas.models). Through
+    # OpenAI-compatible endpoints it reaches OpenAI, OpenRouter, Gemini and local servers (Ollama,
+    # vLLM); it brings pydantic and httpx2.
+    "openai==3.26.0",
+    # HTTP for web_fetch and the keyed search APIs (atlas.tools.web); the same version the OpenAI
+    # SDK already brings, declared because Atlas imports it.
+    "httpx2==2.13.1",
+    # Parses the pages web_fetch reads (atlas.tools.web), to keep a page's main content and drop
+    # its scripts and menus; markdownify runs on it already.
+    "beautifulsoup4==4.15.0",
+    # HTML to Markdown for web_fetch, as Claude Code turns pages into Markdown. Pure Python, on
+    # BeautifulSoup.
+    "markdownify==1.2.3",
+    # age encryption for the vault (atlas.secrets). Bindings to rage, the Rust implementation of the
+    # age format; prebuilt wheels for Windows, macOS and Linux. Its types live in typings/pyrage.
+    "pyrage==1.4.0",
+    # The YAML frontmatter of skills (atlas.skills), in Claude Code's format: descriptions span
+    # lines, and plugins bring lists and tables. safe_load only.
+    "pyyaml==6.0.3",
+    # English word stems for tool search (atlas.tools), so "issues" finds create_issue. Pure Python,
+    # no dependencies. Its types live in typings/snowballstemmer.
+    "snowballstemmer==3.1.1",
+    # HTTP and WebSocket server for the clients. Chosen over FastAPI because the client protocol is
+    # ours (atlas.server); FastAPI's validation and OpenAPI layers would be unused weight.
+    "starlette==1.7.0",
+    # ASGI server that runs the Starlette app.
+    "uvicorn==0.54.0",
+    # The WebSocket the clients talk over (atlas.server): uvicorn speaks it through this package,
+    # and scripts use its client. Pure Python with an optional C speedup, no dependencies.
+    "websockets==15.0.1",
+    # Documents to Markdown for read_file and web_fetch (atlas.tools.documents): PDF, Word,
+    # PowerPoint, Excel, OpenDocument, RTF, EPUB. In the core, since reading a PDF is a common
+    # first thing to ask. Rust, prebuilt for every system, no
+    # dependencies; it converts on this machine.
+    "firecrawl-anydoc==0.2.4",
+    # Cron expressions for routines (atlas.jobs): the next run of "0 9 * * 1-5", and
+    # "weekdays at 9am" compiled to one. In the core, since routines are built in. Pure Python; it brings python-dateutil and pytz. Its types live in
+    # typings/croniter.
+    "croniter==6.0.0",
+    # The time zones' database for zoneinfo on Windows, which ships none, so `[time] zone`
+    # (America/Sao_Paulo) reads there too; Windows only. Data only.
+    "tzdata==2025.3 ; sys_platform == 'win32'",
+    # The browser's engine (atlas.browser): Browser Use's browser-harness, which runs the Python
+    # browser_exec writes against Chrome over CDP and keeps a daemon holding the browser between
+    # calls. MIT. It brings cdp-use, fetch-use, pillow
+    # and httpx; Atlas runs it as a program and imports none of it.
+    "browser-harness==0.1.13",
+]
+
+# The rule (decided 09/10): the core holds only what every session uses, so the next
+# supply-chain attack has less to reach; what one feature needs is an extra. The container image
+# and the installer bring every extra; a bare install says which one to add when it is missing.
+[project.optional-dependencies]
+# web_search without a key (atlas.tools.keyless), the last rung after Tavily and Brave. Brings primp (Rust HTTP), lxml and click.
+ddgs = ["ddgs==9.16.0"]
+# The client for the user's MCP servers (atlas.mcp): the official SDK
+# (stdio, streamable HTTP and SSE; it stops a server's whole process tree), its message types, and
+# jsonschema to check a tool's schema against JSON Schema 2020-12 before a provider sees it.
+mcp = ["mcp==2.2.0", "mcp-types==2.2.0", "jsonschema==4.26.0"]
+# Anthropic's official SDK, the Messages wire (atlas.models, step 3b): its API caches only where a
+# request marks it and keeps a model's reasoning only while everything before it is unchanged,
+# which no OpenAI-compatible endpoint carries. An extra, as it serves one provider. 1.11.0 (30/09/2026) for the 14-day rule. It brings httpx2 and pydantic,
+# which the OpenAI SDK already brings, and docstring-parser and jiter.
+anthropic = ["anthropic==1.11.0"]
+# Zstandard, to read DeepSeek's harness's sessions (atlas/plugins/bundled/deepseek): its logs are
+# Zstandard frames, which Python 3.13 does not read (3.14 does, as compression.zstd). BSD, no
+# dependencies, prebuilt for every system. 0.25.0 (14/09/2025) for the 14-day rule.
+deepseek = ["zstandard==0.25.0"]
+# The server terminal on Windows (atlas.terminals, step 15): ConPTY through pywinpty; POSIX needs
+# nothing, the standard library's pty is enough. Optional, as node-pty was in the app: without it
+# the terminal says it is unavailable.
+terminal = ["pywinpty==3.1.0; sys_platform == 'win32'"]
+
+[project.scripts]
+atlas = "atlas.__main__:main"
+
+[build-system]
+requires = ["uv_build>=0.12,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "atlas"
+
+[dependency-groups]
+dev = [
+    "deptry==0.25.1",         # no undeclared or unused dependencies
+    # Starlette's TestClient runs on it
+    "import-linter==2.15",    # subject boundaries
+    "pyright==1.1.414",       # strict typing; ty replaces it once it reaches 1.0
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",      # coverage floor
+    "ruff==0.16.10",          # lint and format
+    "types-pyyaml==6.0.12.20260906",  # PyYAML's types, for pyright
+    "atlas-agent[ddgs,mcp,anthropic,terminal,deepseek]",  # the tests prove every extra
+]
+
+# ---------------------------------------------------------------------------
+# Quality gates. CI fails on any of them (docs/ARCHITECTURE.md, Quality gates).
+# ---------------------------------------------------------------------------
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",  # pycodestyle and pyflakes
+    "I",            # import order
+    "N",            # naming
+    "UP",           # modern syntax for the target version
+    "B",            # likely bugs
+    "SIM",          # simpler forms
+    "RUF",          # ruff's own rules
+    "RET",          # return consistency
+    "PTH",          # pathlib over os.path
+    "S",            # security
+    "PT",           # pytest style
+    "ERA",          # commented-out code
+    "BLE",          # no blind `except Exception` (V3 lesson)
+    "DTZ",          # no naive datetimes (V3 lesson)
+    "T20",          # no print (V3 lesson)
+    "PLC0415",      # imports at the top of the module (V3 lesson)
+    "G",            # logging calls pass arguments, never f-strings (V3 had 447 of them)
+    "LOG",          # logging misuse
+]
+
+[tool.ruff.lint.isort]
+# tests/mcp holds the tests of atlas.mcp; on Linux ruff took that folder for the MCP SDK's package.
+known-third-party = ["mcp"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "S101",  # assert is how pytest checks
+    "S105",  # tests hold fake secrets on purpose, to prove they never leak
+    "S106",
+]
+# The dangerous-command detection (docs/ARCHITECTURE.md, Trust): its 120-column lines and os.path
+# calls stay, and its pattern descriptions ("secret", "password") are not secrets.
+"src/atlas/trust/detection.py" = ["E501", "PTH", "S105"]
+# The threat-pattern table, kept one pattern per line.
+"src/atlas/trust/threats.py" = ["E501", "S105", "RUF003"]  # its examples are look-alike letters on purpose
+# The tests of the same code, kept in the same layout.
+"tests/trust/test_{approval,hardline,smart_approval,threat}_*.py" = ["E501", "PTH", "PT006", "PT011", "PT018", "RUF001", "RUF003", "S603"]
+
+[tool.ruff.format]
+# The same files keep their layout; the formatter would rewrap every line.
+exclude = [
+    "src/atlas/trust/detection.py",
+    "src/atlas/trust/threats.py",
+    "tests/trust/test_{approval,hardline,smart_approval,threat}_*.py",
+]
+
+[tool.pyright]
+pythonVersion = "3.13"
+include = ["src", "tests"]
+# The fake model server (tests/fake_model.py) is imported by the tests as a top-level module.
+extraPaths = ["src", "tests"]
+strict = ["src"]
+
+[tool.importlinter]
+root_packages = ["atlas"]
+include_external_packages = true
+# An import only for types (under TYPE_CHECKING) creates no dependency when Atlas runs.
+exclude_type_checking_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Nothing imports the server: the edge depends on the core, never the reverse"
+type = "forbidden"
+source_modules = ["atlas"]
+forbidden_modules = ["atlas.server"]
+ignore_imports = ["atlas.__main__ -> atlas.server"]
+
+[[tool.importlinter.contracts]]
+name = "The home is the base: it imports no other subject"
+type = "forbidden"
+source_modules = ["atlas.home"]
+forbidden_modules = ["atlas.*"]
+
+[[tool.importlinter.contracts]]
+name = "model.py is pure: no I/O library, no other module but its own subject's errors"
+type = "forbidden"
+source_modules = ["atlas.*.model"]
+forbidden_modules = [
+    "atlas.*",
+    "atlas.*.*",
+    "sqlite3",
+    "subprocess",
+    "socket",
+    "tomllib",
+    "uvicorn",
+    "starlette",
+    "pyrage",
+]
+# Cross-subject errors are still caught: a subject's internals are protected (below).
+ignore_imports = ["atlas.*.model -> atlas.*.errors"]
+unmatched_ignore_imports_alerting = "none"
+
+[[tool.importlinter.contracts]]
+name = "home is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.home.*"]
+allowed_importers = ["atlas.home"]
+
+[[tool.importlinter.contracts]]
+name = "secrets is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.secrets.*"]
+allowed_importers = ["atlas.secrets"]
+
+[[tool.importlinter.contracts]]
+name = "models is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.models.*"]
+allowed_importers = ["atlas.models"]
+
+[[tool.importlinter.contracts]]
+name = "The model catalog and the wires only parse and build: the store does the I/O"
+type = "forbidden"
+source_modules = [
+    "atlas.models.catalog",
+    "atlas.models.chat",
+    "atlas.models.responses",
+    "atlas.models.messages",
+]
+forbidden_modules = [
+    "atlas.home",
+    "atlas.secrets",
+    "atlas.models.store",
+    "atlas.models.service",
+    "openai",
+    "anthropic",
+    "sqlite3",
+    "subprocess",
+    "socket",
+    "starlette",
+    "uvicorn",
+    "pyrage",
+]
+
+[[tool.importlinter.contracts]]
+name = "Only the models store touches the OpenAI SDK"
+type = "forbidden"
+source_modules = ["atlas"]
+forbidden_modules = ["openai"]
+ignore_imports = ["atlas.models.store -> openai", "atlas.models.store -> openai.*"]
+unmatched_ignore_imports_alerting = "none"
+
+[[tool.importlinter.contracts]]
+name = "Only the Messages store touches the Anthropic SDK, an extra loaded on demand"
+type = "forbidden"
+source_modules = ["atlas"]
+forbidden_modules = ["anthropic"]
+ignore_imports = [
+    "atlas.models.messages_store -> anthropic",
+    "atlas.models.messages_store -> anthropic.*",
+]
+unmatched_ignore_imports_alerting = "none"
+
+[[tool.importlinter.contracts]]
+name = "instances is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.instances.*"]
+allowed_importers = ["atlas.instances"]
+
+[[tool.importlinter.contracts]]
+name = "terminals is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.terminals.*"]
+allowed_importers = ["atlas.terminals"]
+
+[[tool.importlinter.contracts]]
+name = "server is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.server.*"]
+allowed_importers = ["atlas.server"]
+
+[[tool.importlinter.contracts]]
+name = "agent is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.agent.*"]
+allowed_importers = ["atlas.agent"]
+
+[[tool.importlinter.contracts]]
+name = "tools is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.tools.*"]
+allowed_importers = ["atlas.tools"]
+
+[[tool.importlinter.contracts]]
+name = "Tool search ranking is pure: text in, names out"
+type = "forbidden"
+source_modules = ["atlas.tools.search"]
+forbidden_modules = [
+    "atlas.agent",
+    "atlas.home",
+    "atlas.models",
+    "atlas.secrets",
+    "atlas.tools.service",
+    "openai",
+    "sqlite3",
+    "subprocess",
+    "socket",
+    "starlette",
+    "uvicorn",
+    "pyrage",
+]
+
+[[tool.importlinter.contracts]]
+name = "The agent never reaches for the tools: the tools are built on the agent's interface"
+type = "forbidden"
+source_modules = [
+    "atlas.agent",
+    "atlas.models",
+    "atlas.home",
+    "atlas.secrets",
+    "atlas.skills",
+    "atlas.memory",
+    "atlas.conversations",
+]
+forbidden_modules = ["atlas.tools"]
+
+[[tool.importlinter.contracts]]
+name = "assistant is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.assistant.*"]
+allowed_importers = ["atlas.assistant"]
+
+[[tool.importlinter.contracts]]
+name = "plugins is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.plugins.*"]
+allowed_importers = ["atlas.plugins"]
+
+[[tool.importlinter.contracts]]
+name = "A plugin Atlas ships imports from Atlas only the SDK, as every plugin must"
+type = "forbidden"
+source_modules = ["atlas.plugins.bundled"]
+forbidden_modules = [
+    "atlas.agent",
+    "atlas.assistant",
+    "atlas.bots",
+    "atlas.browser",
+    "atlas.conversations",
+    "atlas.home",
+    "atlas.hooks",
+    "atlas.installation",
+    "atlas.jobs",
+    "atlas.mcp",
+    "atlas.memory",
+    "atlas.models",
+    "atlas.plugins.install",
+    "atlas.plugins.model",
+    "atlas.plugins.service",
+    "atlas.plugins.store",
+    "atlas.secrets",
+    "atlas.server",
+    "atlas.skills",
+    "atlas.tools",
+    "atlas.trust",
+]
+
+[[tool.importlinter.contracts]]
+name = "hooks is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.hooks.*"]
+allowed_importers = ["atlas.hooks"]
+
+[[tool.importlinter.contracts]]
+name = "bots is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.bots.*"]
+allowed_importers = ["atlas.bots"]
+
+[[tool.importlinter.contracts]]
+name = "skills is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.skills.*"]
+allowed_importers = ["atlas.skills"]
+
+[[tool.importlinter.contracts]]
+name = "trust is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.trust.*"]
+allowed_importers = ["atlas.trust"]
+
+[[tool.importlinter.contracts]]
+name = "installation is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.installation.*"]
+allowed_importers = ["atlas.installation"]
+
+[[tool.importlinter.contracts]]
+name = "Trust guards the others: it reaches for no subject that holds what it checks"
+type = "forbidden"
+source_modules = ["atlas.trust"]
+forbidden_modules = ["atlas.memory", "atlas.skills", "atlas.tools", "atlas.mcp", "atlas.conversations"]
+
+[[tool.importlinter.contracts]]
+name = "memory is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.memory.*"]
+allowed_importers = ["atlas.memory"]
+
+[[tool.importlinter.contracts]]
+name = "conversations is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.conversations.*"]
+allowed_importers = ["atlas.conversations"]
+
+[[tool.importlinter.contracts]]
+name = "browser is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.browser.*"]
+allowed_importers = ["atlas.browser"]
+
+[[tool.importlinter.contracts]]
+name = "mcp is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.mcp.*"]
+allowed_importers = ["atlas.mcp"]
+
+[[tool.importlinter.contracts]]
+name = "Only the mcp store touches the MCP SDK"
+type = "forbidden"
+source_modules = ["atlas"]
+forbidden_modules = ["mcp"]
+ignore_imports = ["atlas.mcp.store -> mcp", "atlas.mcp.store -> mcp.*"]
+unmatched_ignore_imports_alerting = "none"
+
+[[tool.importlinter.contracts]]
+name = "The core never imports an extra: ddgs only in atlas.tools.keyless"
+type = "forbidden"
+source_modules = ["atlas"]
+forbidden_modules = ["ddgs"]
+ignore_imports = ["atlas.tools.keyless -> ddgs", "atlas.tools.keyless -> ddgs.*"]
+unmatched_ignore_imports_alerting = "none"
+
+[[tool.importlinter.contracts]]
+name = "The core never imports an extra: atlas.mcp, and what it needs, only on its own"
+type = "forbidden"
+source_modules = [
+    "atlas.agent", "atlas.assistant", "atlas.home", "atlas.models", "atlas.secrets", "atlas.server",
+    "atlas.skills", "atlas.tools",
+]
+forbidden_modules = ["atlas.mcp", "mcp", "mcp_types", "jsonschema"]
+
+[[tool.importlinter.contracts]]
+name = "The agent's history rules are pure: the loop applies them, the store writes files"
+type = "forbidden"
+source_modules = ["atlas.agent.history"]
+# What history.py imports itself; atlas.models brings the SDK along through its package root.
+allow_indirect_imports = true
+forbidden_modules = [
+    "atlas.agent.service",
+    "atlas.agent.store",
+    "atlas.home",
+    "atlas.secrets",
+    "openai",
+    "sqlite3",
+    "subprocess",
+    "socket",
+    "starlette",
+    "uvicorn",
+    "pyrage",
+]
+
+[tool.deptry]
+known_first_party = ["atlas"]
+# pywinpty is installed on Windows only: elsewhere deptry cannot read its module from it.
+package_module_name_map = { pywinpty = "winpty" }
+
+[tool.deptry.per_rule_ignores]
+# zoneinfo reads tzdata's files on Windows, and browser-harness runs as a program
+# (atlas.browser); Atlas imports neither.
+DEP002 = ["tzdata", "browser-harness"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+# The coverage is measured by folder, not by package: a plugin Atlas ships is imported under a
+# name of its own (`atlas_plugin_<name>`), as every plugin is, and is counted all the same.
+addopts = "--import-mode=importlib --strict-markers --cov=src/atlas --cov-report=term-missing --cov-fail-under=90"
+markers = [
+    "offered_executors: the plugins Atlas ships that are off are looked at, as at a real start",
+]
+
+[tool.coverage.run]
+# The Windows adapters (ACL, DPAPI) never run on Linux and cannot be imported there, so they are
+# left out of the coverage floor, which every system must meet. They are proven by their tests on
+# Windows, where CI runs the suite too (.github/workflows/ci.yml).
+omit = ["src/atlas/*/windows.py"]

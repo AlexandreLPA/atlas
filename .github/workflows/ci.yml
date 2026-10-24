@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    # Windows too: the ACL and DPAPI adapters run only there, and pyright checks the Windows
+    # branches only when it runs on Windows.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.5"
+      - run: uv sync --frozen
+      # find_files runs on ripgrep, which ships with Atlas rather than living in its Python
+      # packages (the container installs it, the desktop app and the installer carry it).
+      - name: ripgrep (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y -qq ripgrep
+      # Straight from ripgrep's own release, its hash checked: Chocolatey's feed failed on
+      # 19/10/2026 while its step still passed, and find_files then failed on every run.
+      - name: ripgrep (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $version = "15.1.0"
+          $name = "ripgrep-$version-x86_64-pc-windows-msvc"
+          $zip = "$env:RUNNER_TEMP\$name.zip"
+          Invoke-WebRequest "https://github.com/BurntSushi/ripgrep/releases/download/$version/$name.zip" -OutFile $zip
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash
+          if ($hash -ne "124510B94B6BAA3380D051FDF4650EAA80A302C876D611E9DBA0B2E18D87493A") { throw "ripgrep's hash is $hash" }
+          Expand-Archive $zip -DestinationPath $env:RUNNER_TEMP
+          "$env:RUNNER_TEMP\$name" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+          & "$env:RUNNER_TEMP\$name\rg.exe" --version
+      - name: Lint
+        run: uv run ruff check .
+      - name: Format
+        run: uv run ruff format --check .
+      - name: Types
+        run: uv run pyright
+      - name: Boundaries
+        run: uv run lint-imports
+      - name: Dependencies
+        run: uv run deptry src
+      - name: Tests
+        run: uv run pytest
+
+  # The desktop app's gates, on both systems too: the app is used on Windows, and starting and
+  # stopping its server is what differs between them (docs/ARCHITECTURE.md, Desktop app).
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: apps/desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.5"
+      # The end-to-end tests run the real `atlas serve` and the fake model server.
+      - run: uv sync --frozen
+        working-directory: .
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - name: Electron's libraries and a virtual display (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6             xdg-utils libatspi2.0-0 libdrm2 libgbm1 libasound2t64
+      - run: npm ci
+      - name: Types
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Format
+        run: npm run format:check
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: End to end (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a --server-args="-screen 0 1280x1024x24" npx playwright test
+        env:
+          CI: "true"
+      - name: End to end (Windows)
+        if: runner.os == 'Windows'
+        run: npx playwright test
+        env:
+          CI: "true"
+      - name: Failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-e2e-${{ matrix.os }}
+          path: |
+            apps/desktop/test-results
+            apps/desktop/playwright-report
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # Principle 4's proof without a key (docs/ARCHITECTURE.md, Container): the real compose file on
+  # the built image, an empty container, a key and a conversation, with the fake model in a
+  # container beside it.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.5"
+      - run: uv sync --frozen
+      - name: Build
+        run: docker build -t atlas:ci .
+      - name: The image's tests
+        run: uv run pytest tests/docker --no-cov
+        env:
+          ATLAS_TEST_IMAGE: atlas:ci
+      # Step 15: the app's SSH tunnel against a real sshd beside Atlas, on the image just built.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - run: npm ci
+        working-directory: apps/desktop
+      - name: The SSH tunnel against sshd
+        run: bash tests/docker/ssh-tunnel.sh
+        env:
+          ATLAS_TEST_IMAGE: atlas:ci

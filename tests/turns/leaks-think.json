@@ -1,0 +1,28 @@
+{
+  "note": "Leaks <think> (a local model, say): the model's server did not split the reasoning, which comes inside the text between <think> and </think>, on every call.",
+  "prompt": "The tests have been failing since yesterday. Can you look?",
+  "chunk_size": 5,
+  "replies": [
+    {
+      "text": "<think>\nThe tests fail. I should read the log first to see which one.\n</think>\n\nI'll read the test log.",
+      "calls": [{ "name": "read_file", "arguments": "{\"path\": \"pytest.log\"}", "id": "c1" }]
+    },
+    {
+      "text": "<think>\nFloat rounding in test_total. Read price.py.\n</think>\n\n`test_total` fails on rounding. I'll read the function.",
+      "calls": [{ "name": "read_file", "arguments": "{\"path\": \"src/shop/price.py\"}", "id": "c2" }]
+    },
+    {
+      "text": "<think>\nSwitch to Decimal.\n</think>\n",
+      "calls": [
+        {
+          "name": "edit_file",
+          "arguments": "{\"path\": \"src/shop/price.py\", \"old_string\": \"return sum(item.price * item.qty for item in items)\", \"new_string\": \"return sum((Decimal(str(item.price)) * item.qty for item in items), Decimal(0))\"}",
+          "id": "c3"
+        }
+      ]
+    },
+    {
+      "text": "<think>\nDone. Answer short.\n</think>\n\nI switched `float` for `Decimal` in `src/shop/price.py`."
+    }
+  ]
+}

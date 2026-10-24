@@ -1,0 +1,245 @@
+# Glossary
+
+One word per concept, from the database to the screen. A new concept gets an entry here before it
+becomes an identifier. Portuguese is listed because the roadmap is written in Portuguese.
+
+| Term (code) | Português | Meaning |
+|---|---|---|
+| `home` | casa / `ATLAS_HOME` | The folder that holds one user's state: settings, database, memory, secrets. Never inside the repository. A machine may have several: the default one and named ones |
+| `home picture` | foto da casa | The picture the user gave the home, beside its name at the foot of the sidebar: `picture.png` in the home, a square PNG a backup carries |
+| `home menu` | menu da casa | What a click on the home at the foot of the sidebar opens: the homes to switch to, a new one, the home's details (its picture, a backup, an import). The look moved to the settings screen |
+| `named home` | casa com nome | A home in the default home's `homes/<name>/`, chosen with `--home <name>` |
+| `active home` | casa padrão | The home commands open when none is named, written by `atlas home use` in `active_home`; the app opens it until it has a last home |
+| `last home` | última casa | The home the app opens on: the last one it showed, kept in the app's own folder. The terminal still opens the active home |
+| `import` | importar | Making a new named home from a backup, from the app: the backup is checked whole first, and the home is published only once restored. Putting a backup over a home stays `restore` |
+| `backup` | backup | One zip of a home's `user` entries, with its manifest first, checked once written; never the vault. It also moves a home to another machine |
+| `restore` | restaurar | Putting a backup's entries back over a home, checked whole before anything is written |
+| `settings` | configurações | The typed values read at startup, from `ATLAS_*` variables and `config.toml`; the editable ones change from the settings screen while the server runs |
+| `settings screen` | tela de Configurações | The app's screen of every setting, a section at a time on its left: General, Model, Personalization, Safety, Workspace, Plugins and Machines. A change saves itself and applies without a restart |
+| `editable setting` | ajuste editável | A `config.toml` setting the settings screen writes (`settings.write`): the default model, the trust rules, the approval timeout, the workspace folder and the time zone. One set by an `ATLAS_*` variable is shown locked |
+| `personalization` | personalização | The settings screen's section of who Atlas is and what it knows: the soul, "About you" (`USER.md`) and the memory (`MEMORY.md`), each entry read, edited and removed there |
+| `home boundary` | fronteira da casa | The declared class of each entry of the home: `user` (travels in a backup), `machine` (stays on this machine), `diagnostic` (logs) or `homes` (the other homes, each backed up on its own) |
+| `vault` | cofre | The encrypted file of secrets in the home (`secrets/vault.json`), one age-encrypted entry per secret |
+| `secret` | segredo | One value in the vault: an API key, a token, a password |
+| `secret request` | pedido de chave | The `secrets` tool asking the user for a secret by name: a card in the app with a masked field, whose value goes straight to the vault; the model gets only `stored` or `no_answer`. A channel never answers it |
+| `vault key` | chave do cofre | The age identity that opens the vault. Bound to its machine; never in a backup |
+| `migration` | migração | One numbered, forward-only change to a subject's tables, recorded once it runs and never edited after |
+| `provider` | provedor | A service that runs models behind one address and one key: OpenAI, OpenRouter, Gemini, a local Ollama |
+| `wire` | protocolo | The request format a provider speaks: Chat Completions, or OpenAI's Responses API |
+| `model catalog` | catálogo de modelos | What each model can do and what it costs: data from models.dev shipped with Atlas, plus the user's `models.toml` |
+| `effort` | esforço | How hard a reasoning model thinks before it answers (`low`, `medium`, `high`…). The levels differ per model |
+| `default effort` | esforço padrão | The effort whatever Atlas calls runs on when nobody chose one: `medium`, or the nearest weaker level the model takes; none for a model that does not reason. The picker shows it as the level, marked "· default" in its list |
+| `model reply` | resposta do modelo | What one model call returns: text, tool calls, readable reasoning, usage and cost |
+| `provider fields` | campos do provedor | Opaque data a provider returns and wants back on the next call: Gemini's thought signature, OpenRouter's reasoning details, OpenAI's encrypted reasoning |
+| `reasoning tag` | marcação de raciocínio | A tag such as `<think>`, or Gemini's `<thought>`, that a model writes around its reasoning inside its text. The `chat` adapter's think scrubber takes it out as it streams, and what was inside becomes reasoning |
+| `usage` | consumo | The tokens one call spent, as the provider reported them |
+| `cost` | custo | Usage in dollars, with where the number came from: reported by the provider, the price list, free (local), or unknown |
+| `call ledger` | livro de chamadas | One row per model call, whatever made it: when, which model, why, tokens, cost |
+| `purpose` | finalidade | Why a model call was made (`turn`, `compaction`…); the call ledger groups by it |
+| `chosen model` | modelo escolhido | The provider and model a conversation uses: `[model]` in the settings or, when they name none, the first provider with a key in the vault, with its default model |
+| `conversation model` | modelo da conversa | The provider, model and effort a conversation picked in the app, kept with it; a conversation that picked none uses the chosen model |
+| `notice` | aviso | A message Atlas writes for the model about something that happened outside a turn, and that starts one: a background command that ended (`[IMPORTANT: ...]`), a delegation's results (`[ASYNC DELEGATION ...]`); the screen shows it as a notice, not as the user's words |
+| `model switch note` | marca de troca de modelo | The user message a switch mid-conversation adds to the history, naming the new model; only the newest stays |
+| `usage report` | relatório de consumo | `atlas usage`: the call ledger summed by day, model and purpose |
+| `installation` | instalação / cópia de uso | The checkout of the repository the user runs every day, apart from development; `atlas update` brings it to `main`, and so does the app's update button |
+| `update check` | procura de atualização | The app's look, through `python -m atlas.installation check`, at whether `main` has commits the installation lacks: fetched and counted, when it opens, every hour and when the window comes back after an hour; only an installation is offered one |
+| `update hand-off` | troca da atualização | The update the app hands off as it closes (`python -m atlas.installation handoff`): it waits for the app to be gone, updates with `atlas update`'s way back, writes how it went for the app, and opens the app again |
+| `wire` | formato do pedido | How a provider is spoken to: `chat` (Chat Completions), `responses` (OpenAI's Responses API) or `messages` (Anthropic's Messages API) |
+| `sealed reasoning` | raciocínio lacrado | Anthropic's thinking blocks, signed and valid only while everything before them in the request is unchanged; sent back to the model that wrote them |
+| `prefix fingerprint` | impressão digital do pedido | The hash of everything a request carried (`prefix`), kept with its reply, so a later request can tell whether the reply's sealed reasoning still holds |
+| `server clearing` | limpeza pelo servidor | Old tool results cleared by Anthropic's server with Atlas's rule, instead of by the loop, so the sealed reasoning holds |
+| `long cache` | cache longo | The provider's cache kept for an hour instead of five minutes, for turns a person paces (`ModelRequest.long_cache`) |
+| `key check` | conferência de chave | Asking a provider, where it costs nothing, whether the key in the vault opens it (`atlas models check`); the key screen checks a key before storing it the same way |
+| `installer` | instalador | The one-line script (`scripts/install.ps1`, `scripts/install.sh`) that makes the installation on a machine with nothing on it, and repairs and updates it when run again |
+| `toolchain` | ferramentas da instalação | The installation's own pinned tools (uv, Node, `gh`, Git on Windows) in `tools/` beside the checkout, never on the user's PATH; a development checkout has none and uses the PATH |
+| `install pins` | versões fixas do instalador | The version, address and SHA-256 of each tool the installer downloads, a block generated into both scripts by `scripts/gen_install_pins.py` |
+| `key screen` | tela de chave | What the app opens on when no provider has a key in the vault: pick a provider, paste its key, which `provider.connect` checks and stores |
+| `soul` | soul / alma | The main agent's identity, `SOUL.md` at the top of the home: who it is and how it speaks, the first thing of its instructions in place of Atlas's default. The user writes it, and the agent when the user asks; it applies from the next conversation. A bot's soul is its definition's body |
+| `profile` | perfil | The always-loaded text about the user (`memory/USER.md`): who they are and how to work with them, within a character limit. Not the state folder; that is `home` |
+| `memory` | memória | The agent's always-loaded notes (`memory/MEMORY.md`): durable facts it learned, within a character limit. With the profile, the two stores the `memory` tool writes |
+| `memory entry` | entrada de memória | One item of the profile or the memory; entries are separated by a line holding `§` |
+| `memory snapshot` | fotografia da memória | The profile and the memory as the system prompt carries them: read when a conversation starts and again after a compaction, so writes in between do not break the provider's cache |
+| `background review` | revisão em segundo plano | A copy of the agent that rereads a conversation in the background and keeps what it taught: in the memory (adding, and proposing what it would replace or remove) and in skills |
+| `memory proposal` | proposta de memória | A `memory` call of the background review that replaces or removes an entry, kept with the whole entries it selects until the user approves or discards it; approval applies it only while those entries are unchanged |
+| `memory review` | revisão da memória | The background review's memory half: due every 10 user messages without a memory write |
+| `skill review` | revisão de skills | The background review's skill half: due every 10 model calls without a skill change; it patches, extends or creates skills |
+| `conversation` | conversa | One thread of messages with the agent, stored raw in the database for good; a compaction archives its older messages, which stay searchable |
+| `stored message` | mensagem guardada | One message of a conversation in the database, with its number, which the conversation search uses to scroll; active while it is in the history the model gets |
+| `conversation search` | busca nas conversas | Finding past conversations by their words, and reading inside one, with no model in between |
+| `instant title` | título instantâneo | A conversation's first title: the first line the user wrote, cut, with no model; it never fails |
+| `title model` | modelo de título | The small model that names a conversation as its first turn starts (Claude Haiku 5.5, else GPT-6 Luna), replacing the instant title |
+| `title quarantine` | quarentena do título | A title model whose provider answered that the account has no credit, or refused its key, skipped by every title for 10 minutes, in this process only |
+| `title source` | origem do título | Who wrote a conversation's title: `derived` (the instant title), `llm` (a title model) or `user` (a name given); a title replaces only one of lower authority |
+| `document text` | texto do documento | What a PDF or Office file says, converted once and kept in the home's `documents/` so ripgrep can search it |
+| `attachment` | anexo | A file the user dropped or pasted into a message, kept in the home's `attachments/` and stored with the message apart from its text |
+| `attachment note` | nota do anexo | The text a model reads for an attachment it does not get as itself: its name, type and path, and what to do with it |
+| `executor file` | arquivo do executor | An attachment sent with a prompt to an executor's session (`ExecutorFile`, step 16i): the harness gets it its own way, Claude Code an image as itself and every file by its path in the home's `attachments/`, which it reads as one of its folders |
+| `description model` | modelo de descrição | The model that describes an attached image for a conversation whose model does not see images: the title models, as side calls |
+| `image description` | descrição da imagem | What the description model wrote about an attached image, given to a model that does not see images in the image's place |
+| `turn` | turno | One user message and everything the agent does until it answers |
+| `instructions` | instruções | The system prompt of a conversation, built by Atlas: what the agent is (its soul), how to use its memory, and the memory snapshot |
+| `agent loop` | laço do agente | The code that runs a turn: it calls the model, runs the tools the model asks for, and calls it again until it answers |
+| `tool progress` | progresso da ferramenta | What a running tool reports for the user's screen, such as a delegated executor's text; the model sees only the result |
+| `tool round` | rodada de ferramentas | The tool calls of one model reply, all run before the next call |
+| `turn event` | evento do turno | What the loop reports while a turn runs: text and reasoning as they arrive, each tool starting and finishing, a compaction, the end |
+| `part` | parte | One piece of a turn as the screen shows it, in order: reasoning, text, a tool call, or a part of a kind the app does not know, shown generically |
+| `interim text` | texto do meio | The text of a model call that ends asking for tools: shown lighter on the trail and sent to a channel as a message of its own (`message.interim`) |
+| `tool status` | estado da ferramenta | How a tool call ended: `completed`, `failed`, `denied` (refused at approval) or `cancelled` (the turn stopped first). The stored result keeps it, and the trail colors the call's dot by it |
+| `final answer` | resposta final | The text of a turn's last model call, the one that asks for no tool; `message.complete` carries it |
+| `trail` | trilha | A turn drawn as a vertical line with one dot per part, the dot colored by the part's state. The roadmap's timeline plugin is another thing |
+| `recording` | gravação | What a real provider sent to each call of one short task, byte for byte, written by `scripts/record_turn.py` with nothing Atlas sent; the tests play it back through the fake model, the real SDK and the server, and the app checks the trail it makes |
+| `kept turn` | turno guardado | What the app received in one turn and the same conversation reopened, made the same on every machine, kept in `apps/desktop/src/store/turns/` from a fake-model script or a recording; the app's tests replay it, and the server's fail when it no longer matches |
+| `history repair` | reparo do histórico | Making the copy of the history sent to the model well formed: each tool call followed by its result, and no result without its call |
+| `clearing` | limpeza | Replacing old tool results with a short note in the copy sent to the model when the context grows; the stored history keeps them |
+| `compaction` | compactação | Replacing the older part of the stored history with a summary the model writes, when the conversation nears the model's window; the user's words are kept verbatim |
+| `spill` | transbordo | A tool result too large for the context, kept whole for a day in `spill/` in the home, while the model gets its start, its end and the file's path |
+| `repeat guard` | guarda de repetição | The check that warns the model at the 3rd identical tool call in a row with the same result, and ends the turn at the 5th |
+| `skill` | skill | A procedure the agent loads by name when it needs it |
+| `skill catalog` | catálogo de skills | The skill folders Atlas reads, each with a `SKILL.md` in Claude Code's format: the home's `skills/`, and the `skills/` of each plugin that is on (step 16j) |
+| `support file` | arquivo de apoio | A file inside a skill's folder besides `SKILL.md`, under `references/`, `templates/`, `scripts/` or `assets/` |
+| `skill origin` | origem da skill | Who made a skill: `review` when the background review made it, the user's otherwise. Only a `review` skill may be archived by the curator |
+| `skill version` | versão da skill | What a skill's files held before a write changed them, kept in `skills/.versions/`, 20 per skill |
+| `skill diff` | diff da skill | What one background review changed in one skill: a unified diff of its files, from before the review's first write to after its last, at most 6 files and 80 lines. It travels with the review's summary and the app shows it in a click |
+| `curator` | curador | The pass that archives the review's skills nobody used for 30 days; it never deletes, and never touches the user's skills |
+| `archived skill` | skill arquivada | A skill moved to `skills/.archive/`, out of the listing, until it is restored |
+| `bundled skill` | skill embutida | A skill shipped in Atlas's repository and copied into the home's `skills/` when the server starts, with its hash in a manifest; it is replaced only while the home's copy is unchanged, the curator never archives it, and once the review, the agent or the user changes it, it is theirs until `atlas skills reset` |
+| `tool search` | busca de ferramenta | Finding and enabling a tool that is not always on |
+| `deferred tool` | ferramenta adiada | A tool kept out of the model's tool list until tool search finds it: MCP and plugin tools, and Atlas's own rarely used ones |
+| `loaded tool` | ferramenta carregada | A deferred tool a tool search made callable in a conversation; it stays callable while the search's result is in the history |
+| `toolset` | conjunto de ferramentas | The tools of an agent loop, always-on and deferred, which change while Atlas runs (an MCP server connects or leaves) |
+| `tool gate` | portão de ferramenta | The check every tool call passes before it runs, whatever tool it is; approvals plug in here |
+| `workspace` | pasta de trabalho | The folder the file tools start from: a relative path is read from it. The vault's folder is out of their reach |
+| `user home folder` | pasta do usuário | The system's home folder (`~`) of the user Atlas runs as, where the workspace starts by default; in the container it is `/data/home`, inside the volume |
+| `background command` | comando em segundo plano | A command run_command started without waiting for it: its output goes to a file in `commands/` in the home, and it lives while Atlas runs |
+| `MCP server` | servidor MCP | A program that offers tools over the Model Context Protocol, declared in the home's `mcp.json`; its tools are deferred |
+| `image` | imagem | A picture a tool returns for the model to see, such as one read_file opened; it travels with the tool's result |
+| `tool source` | fonte de ferramenta | Where a tool comes from: `atlas`, an MCP server (`mcp:github`) or a plugin |
+| `approval gate` | portão de aprovação | The tool gate that decides whether a call runs, is refused, or waits for the user: floors, the deny list, dangerous patterns, the guardian |
+| `floor` | piso | A command blocked always, auto mode or not, such as deleting the filesystem root or formatting a disk |
+| `dangerous command` | comando perigoso | A command that matches one of the dangerous-command patterns, so the guardian or the user must allow it |
+| `ask rule` | regra de pergunta | A command prefix that acts outside the machine (`gh pr merge`, `gws gmail send`), matched in every part of a compound command; it goes straight to the user, never the guardian, even in auto mode. Atlas ships a default list, the user's rules in `config.toml` add or remove |
+| `guardian` | guardião | A short request to the model that reads a flagged command and answers approve, deny or escalate to the user |
+| `approver` | aprovador | Whoever answers an approval the guardian escalated: the user, through the app, the phone or a channel |
+| `untrusted server` | servidor não confiável | An MCP server marked `"trust": "untrusted"`, whose calls that may write ask first |
+| `untrusted result` | resultado não confiável | A tool result that brings text from outside (web search, web fetch, MCP), wrapped so the model reads it as data |
+| `auto mode` | modo automático | The per-conversation "Auto" beside send (a ⚡ until 18/10/2026), on for a new conversation with Atlas, a bot's and a chat's since 20/10/2026: the guardian and the questions are skipped, the floors still block, and the ask rules still ask |
+| `threat pattern` | padrão de ameaça | Text that looks like prompt injection or exfiltration; refused in memory writes, and kept out of the memory snapshot |
+| `destination contract` | contrato de destino | Delivering to a recipient not on the list of known ones asks first (step 16) |
+| `assistant` | assistente | The agent put together for conversations (`atlas.assistant`): the loop on the stored conversation, the instructions, the tools, the approval gate and the background review. The server, routines and channels run turns through it |
+| `open conversation` | conversa aberta | A conversation the assistant holds while someone talks in it: its history, its tools, its approval gate, and its turn when one runs |
+| `steering` | mensagem no meio do turno | A message the user sends while a turn runs: it enters the history after the round of tools in course, or starts the next turn |
+| `client protocol` | protocolo do cliente | What a client and the server say over the WebSocket: methods, events and server requests, declared in `atlas.server.protocol` |
+| `server request` | pedido do servidor | A question the server sends a client and waits on, such as `ask_user`'s questions or an approval; withdrawn with `request.cancel` |
+| `event number` | número do evento | The place of an event in its conversation's stream (`seq`), which a client that comes back asks to resume after |
+| `server token` | senha do servidor | What a client presents to be let in: `ATLAS_SERVER_TOKEN`, given by whoever starts the server; in a container, when none is given, the one kept in the vault, which `atlas server token` shows |
+| `desktop app` | app desktop | The Electron app in `apps/desktop/`: it starts the server, or reaches a running one, and shows the conversations |
+| `ready line` | linha de pronto | `ATLAS_SERVER_READY port=<n>`, which `atlas serve` writes on standard output once it listens, so whoever started it learns the port |
+| `parent watchdog` | vigia do app | The server's check, every 2 seconds, that the process which started it (`--parent-pid`) is alive; the server stops when it is gone |
+| `card` | cartão | What the screen shows for a server request: `ask_user`'s questions or an approval, taken down on `request.cancel` |
+| `composer` | caixa de texto | Where the user writes; while a turn runs, what it sends steers the turn, and a stop puts the unsent messages back in it |
+| `message catalog` | catálogo de textos | Every text the screen shows, by key, typed: `en` whole, other languages as partial overrides |
+| `locale` | idioma | The catalog the screen shows, taken from the system: `pt-BR`, or `en` for anything else |
+| `job` | job | One background execution of a tool or command |
+| `task` | tarefa | A unit of work that can span jobs, be paused and resumed |
+| `routine` | rotina | A scheduled prompt or command the server fires on its schedule |
+| `routine run` | execução da rotina | One firing of a routine: a new conversation of source `routine`, or a command's output |
+| `script-only routine` | rotina sem modelo | A routine that runs a command and delivers its output, with no model call |
+| `catch-up run` | execução atrasada | The one run a routine gets for the runs it missed past its grace, however many |
+| `loop guard` | guarda de laço | A check on the tool calls of a turn: a cycle, a repeated result, the same failure again; it warns, and halts unattended work |
+| `subagent` | subagente | A copy of the agent with a fresh context that works on one task in the background and returns its summary; its conversation has the source `subagent` and its parent's id |
+| `delegation` | delegação / lote | One `delegate` call's tasks, spawned together, whose results return together in one notice |
+| `batch notice` | aviso do lote | The notice that brings a delegation's summaries back to the parent, when its last subagent ends (`[ASYNC DELEGATION BATCH COMPLETE …]`) |
+| `conversation role` | papel da conversa | Who a conversation's turns run for: the user (`conversation`), a routine (`routine`, nobody watching) or a parent (`subagent`, watched by its parent); it decides the tools, the approvals and the loop guards' posture |
+| `subagent dock` | doca dos subagentes | The strip above the composer that lists the conversation's running subagents, each with steer and stop |
+| `agent map` | mapa de agentes | The dialog behind the pill in the composer while the conversation's subagents or background commands run: the subagents as a tree, each with steer and stop, and the background commands below, each with its output and stop |
+| `bot` | bot | A named agent that lives in a home beside the main agent, with its own mission, tools, memory, skills folder, fixed conversation and routines (V3's domain agent) |
+| `main agent` | Atlas principal | The home's own agent: the one every conversation runs as unless it is a bot's |
+| `bot definition` | definição do bot | `bots/<name>/BOT.md`, in the format of Claude Code's agent file: a frontmatter (name, title, description, model, tools, MCP servers, skills) and a body, the bot's mission and rules |
+| `bot memory` | memória do bot | `bots/<name>/MEMORY.md`: what the bot learned of its own work, written by that bot alone. The profile, `USER.md`, is the home's and shared by all |
+| `fixed conversation` | conversa fixa | A bot's one lasting conversation, created with it, where starting anew compacts instead |
+| `roster` | lista de bots | The home's bots as the instructions name them: handle, title and description |
+| `agent message` | mensagem entre agentes | What `message_agent` sends from the main agent or a bot into another's conversation: fire and forget, the answer returning later in a notice |
+| `capability epoch` | marca das instruções | What makes a fixed conversation read its instructions again: the instructions' own text, built again at the start of a turn and stored only when it differs |
+| `skill creator` | quem criou a skill | Who made a skill: the main agent, a bot by name, or the user; kept beside its origin and shown in the listing |
+| `executor` | executor | An outside harness that receives work from the user or from Atlas (Claude Code, Codex), run as the user's own program with their login and settings; since step 16c each one is a plugin's (`register_executor`) |
+| `workbench` | bancada | The global panel on the right where the executors' instances work, the same in every conversation, collapsed while none works. Step 16f moves its cards to the executors tab and gives the panel to the side panel |
+| `executors tab` | aba Executores | The sidebar's third tab, beside conversations and bots (step 16f): one card per executor on and found, and under it its folders and, once opened, their sessions, each with its state |
+| `session folder` | pasta de sessões | A folder an executor's sessions work in, as the executors tab lists it before reading them: its name and when its newest session changed; its sessions are read only once it is opened, and kept while it is closed (`SessionFolder`, `executor.folders`) |
+| `executor session` | sessão do executor | One conversation a harness keeps for a folder, wherever it began (its terminal, an editor, Atlas), listed and read by its plugin; continuing it starts an instance on it |
+| `open elsewhere` | aberta em outro lugar | An executor session another program runs right now (Claude Code's registry of its processes says which: VS Code, a terminal); Atlas warns before continuing it, and offers to read only, to continue in a copy, or to continue here anyway (decided with the user on 15/10/2026) |
+| `session copy` | cópia da sessão | A session of its own that starts with everything another had, the original left as it was (Claude Code's `--fork-session`, `ExecutorSpec.fork`): how a session open elsewhere goes on in Atlas |
+| `executor model` | modelo do executor | A model a harness offers its account and the efforts it takes, as the harness's own picker lists it (`ModelChoice`, Claude Code's `/model`); chosen under a session's box, never one of Atlas's providers |
+| `executor connector` | servidor MCP do executor | An MCP server a harness has for its account, with its state, as the harness's own `/mcp` lists it (`Connector`): the user's own, a plugin's, or the account's hosted connectors (claude.ai's); only shown, in the side panel's executor tab, under "MCP servers" as Atlas names its own (a plugin's under its plugin, those needing a login, failed or off behind a click), never one of Atlas's MCP servers |
+| `plan usage` | uso do plano | How much of each of its plan's limits the account a harness is logged in as has used (`PlanUsage`), a window each (`UsageWindow`: Claude Code's five-hour session and its weeks, Codex's primary and secondary, the Gemini CLI's quota of each model): used 0 to 100 and when it starts again, as the harness's own `/usage` shows it. Read by its plugin with no model call and told as its instances work (`UsageChanged`); shown in the side panel's executor tab. Not Atlas's own call ledger, which counts what Atlas's models cost |
+| `slash command` | comando de barra | What the user types as `/name` in a box: an executor's, as its harness describes it (`SlashCommand`: name, description, hint, whether it is the harness's own), or, in a conversation of Atlas's or a bot's, Atlas's own (`/new`, `/stop`) and its skills. The box lists them as `/` is typed, the commands apart from the skills. Not a `command`, which Atlas runs in a shell |
+| `side panel` | painel lateral | The panel on the right since step 16f, in tabs: the terminal, the previews and, while an executor is open in the sidebar, the executor's tab with its plan usage, skills, MCP servers and plugins; hidden, a strip on the edge of every screen brings it back; only the user opens or hides it from screen to screen |
+| `status dot` | bolinha de estado | A sidebar row's state, in its three tabs, as a colored dot named on hover (asked for by the user on 20/10/2026): pulsing gray working, amber waiting for the user, blue done and not seen yet (`unread`), red stopped with an error; none, nothing new. A closed row (a folder, an account, a tab) shows the most urgent of its own. `unread` and a failure stay until the row is opened; every list puts the last used first, but the executors' folders and sessions move only for a message the user sent or an answer that came (asked for by the user on 22/10/2026), and the executors and their accounts keep the order the user drags them into, a harness among the others and an account among its own (store/order.ts) |
+| `archived folder` | pasta arquivada | An executor's folder the user took out of the sidebar's list, kept under the executor's "Archived" where it comes back; the folder and its sessions are untouched |
+| `preview` | prévia | A tab of the side panel showing a file, a local address or an artifact, its HTML in an isolated frame; it belongs to the conversation that opened it and opens on a click or when the agent asks, never by itself |
+| `artifact` | artefato | A block of HTML, mermaid or Markdown in an answer, which "Open beside" shows in a preview |
+| `user command` | comando do usuário | A command the user runs from a conversation, by the ▶ on a shell block of an answer or a message starting with `!`: it runs in the conversation's terminal, its output enters the conversation as a terminal row, and the conversation's agent answers it. A ▶ the trust gate finds dangerous asks first |
+| `terminal row` | linha de terminal | A user command and its output inside a conversation, cleaned as `run_command`'s output is |
+| `executor instance` | instância do executor | `ExecutorInstance` everywhere, apart from `instance` (decided with the user on 14/10/2026): one executor running for one account in one folder, with its session and its turns; the workbench shows one card each, and the same executor may run as several, each on its own account |
+| `executor account` | conta do executor | An account an executor's instances run on (step 16h, redone on 19/10/2026): a nickname and its `account folder`, logged in by the harness itself. Several run at once, each with its own settings and sessions, and the executors tab shows each as an executor of its own |
+| `account folder` | pasta da conta | The harness's own folder for one account (Claude Code's `CLAUDE_CONFIG_DIR`, Codex's `CODEX_HOME`, the Gemini CLI's `.gemini`, inside the home its `GEMINI_CLI_HOME` names, DeepSeek's harness's `DSH_HOME`), with its login, settings and sessions: the user's own for the `main account`, `~/.claude-<nickname>` beside it for each other one. Atlas hands its path to the harness and never reads its login, but for the Gemini CLI's token, read while it is good to ask Google for the plan's limits (decided with the user on 21/10/2026) |
+| `ACP client` | cliente ACP | The SDK's client of the Agent Client Protocol (`atlas.plugins.acp`, version 18, step 16p): a harness that speaks ACP started as a process, its JSON-RPC on stdio, its `session/update`s read into executor events and its permissions answered by their kind. The Gemini CLI's plugin is its first user, DeepSeek's the second (step 16q); Claude Code and Codex keep their own channels |
+| `session logs` | logs da sessão | What DeepSeek's harness (`dsh`) sends DeepSeek with each request by default (`session-log-deepseek`): the session's messages, tool arguments and results, paths and feedback. Off in the sessions Atlas opens, by a `--patch` of its own, unless the plugin's `session_logs` setting turns them on (decided with the user on 21/10/2026); the user's own `dsh` is left as it is |
+| `main account` | conta principal | The account in the harness's own folder (`~/.claude`, or the user's `CLAUDE_CONFIG_DIR`): the one its terminal uses, and an instance's when no other is chosen. Atlas never changes that folder |
+| `account switch` | troca de conta | Moving an idle instance's conversation to another account, when the user asks or by `account failover`: the other account opens a `session copy` of it (Claude Code's `--resume <transcript> --fork-session`), and the first account's session becomes a `replaced session`; the instance's card stays one |
+| `replaced session` | sessão substituída | The session an `account switch`'s copy took the place of, on the first account (asked for by the user on 22/10/2026): the copy has all it had, and going back copies the copy, so it is deleted there once the copy's harness lists the copy, unless an instance here or another program has it open. A fork the user asked for and a session a `handoff packet` went on from are not replaced, and stay |
+| `account failover` | troca automática de conta | An executor's accounts taking over from one another when one reaches its plan's limit (`AccountFailover`, asked for by the user on 21/10/2026): the session goes on in a `session copy` on the next account logged in, in the order the user sets, compacted there first if the user says so; on by default, turned off under the main account's row |
+| `session route` | rota da sessão | One executor session's destinations at a plan's limit, in the user's order (`SessionRoute`, asked for by the user on 21/10/2026): when the one it runs on reaches its limit, it goes on to the next `route target` installed, logged in and not at its own limit, round to the start. Kept for the session's card, by its conversation, and kept again for the session opened from the list; a task Atlas delegates has one too, given in `delegate`'s `route` and kept by the task's conversation. Unlike an `account failover`, its destinations may belong to different executors; a session with one follows it instead of its executor's order, and with none, or with it off, the `account failover` holds |
+| `route target` | destino da rota | One executor and one of its accounts in a `session route` (`RouteTarget`, the main account as `""`), named together so two executors' accounts never collide. One of the same executor goes on in a `session copy`; one of another starts a new session from a `handoff packet` |
+| `handoff packet` | pacote de transferência | What a `session route` hands a new session of another executor as its first prompt, the normal one that goes on with the work (`handoff_packet`): why the switch happened, the folder, the task and the latest instruction, the plan's steps not done and the questions not answered, the files changed and attached, and the session's steps, the newest kept first within 40,000 characters. Put together from what the source harness kept of its session, or Atlas's own record of the card, deterministically and with no model call |
+| `target name` | nome do destino | An executor and one of its accounts as `delegate` and `executor_accounts` write them: `claude-code` alone (the folder's account, else the main one; in a route, the main one), `claude-code@main`, or `claude-code@<nickname>`. Atlas reads it as a `route target` |
+| `folder account` | conta da pasta | The account a folder's new sessions start on, chosen per executor and folder; a folder with none starts on the main account |
+| `archived session` | sessão arquivada | An executor session the user took out of its account's list, kept under "Archived" where it comes back; its files are untouched |
+| `instance owner` | dono da instância | Who started an instance: the user, on its card, or Atlas, through `delegate`. Atlas steers or stops the user's only when the user asks |
+| `harness auto` | automático do harness | The executor's own mode that asks no permission (Claude Code's `auto`, its classifier's, never `bypassPermissions`), switched per instance and on only after its warning is confirmed; it passes over Atlas's guardian, runs on its own rules and the user's settings with none of Atlas's added, and what it still asks is the user's alone |
+| `delegation approval` | aprovação da delegação | `delegate`'s `approval` for an outside executor: `auto` by default since 20/10/2026, Claude Code's own automatic mode, with no question first, or `manual`, which asks; started in `auto`, it follows its own rules and the user's settings, and Atlas adds none (decided with the user on 17/10/2026) |
+| `Atlas answers` | Atlas responde | Per instance, off by default: what an instance asks goes first to Atlas (permissions to the guardian, questions to the conversation's model), and what Atlas is unsure of to the user (step 13's "Atlas decides", as a mode) |
+| `detection` | detecção | An executor plugin's look, with no effect, at whether its harness is installed, which version and which account, when Atlas starts and when the screen asks |
+| `delegation record` | registro da delegação | Atlas's own lean record of an instance (executor, account, folder, session, state) and of each of its turns (prompt, questions and answers with who answered, final text, files changed); it outlives the harness's transcript |
+| `normalized transcript` | transcrição normalizada | An instance's session read from where its harness keeps it, by the plugin, as the five kinds of entry every harness shares: text, tool, question, answer, result |
+| `delegation search` | busca nas delegações | `delegation_search`, deferred: the conversation search's four forms over the delegation records, its text search on the record only |
+| `executor presence` | presença do executor | The badge on the right of a conversation while an outside executor works for it, with what it did, who answers it, open and stop; its cards come out of it |
+| `held request` | pedido retido | A server request with no deadline that waits for an app to be attached: what an outside executor asks the user |
+| `answering for the user` | o Atlas decide | An outside executor's requests answered by Atlas: permissions by the guardian, questions by the conversation's model; the guardian's doubts still reach the user |
+| `browser` | navegador | The Chrome (or Edge, or Chromium) Atlas opens and drives through `browser_exec`, one per mode, each conversation in its own tab |
+| `browser mode` | modo do navegador | Which browser a call drives: `profile` (Atlas's own profile, with the user's logins, a window), `clean` (a temporary profile, a window) or `headless` (a temporary profile, no window) |
+| `Atlas profile` | perfil do Atlas | The Chrome profile in `ATLAS_HOME/browser/profile`, apart from the user's own, which they sign into once per site |
+| `plugin` | plugin | A folder that adds skills, tools, hooks, agents or, through `register(ctx)`, channels, screens and providers |
+| `manifest` | manifesto | A plugin's `.claude-plugin/plugin.json`, in Claude Code's format, with what only Atlas reads under `atlas` |
+| `declaration` | declaração | What a plugin's manifest says it does (its Python, channels, secrets, hosts), shown before the user turns it on |
+| `consent` | consentimento | The user's yes to a plugin's declaration, kept as its fingerprint; a declaration that changes asks again |
+| `channel` | canal | A way to talk to Atlas from elsewhere (Telegram), registered by a plugin and run as one more client of the gateway |
+| `bridge` | ponte | The gateway's side of a running channel: a connection attached to its chats' conversations |
+| `pairing` | pareamento | Letting someone talk through a channel: they get a code, the user approves it |
+| `hook` | gancho | A plugin's command or Python run at one of the loop's events (Claude Code's events and JSON), which may stop what happens there, change it or add context; it never lowers an approval |
+| `plugin command` | comando de plugin | A Markdown file in a plugin's `commands/`, read as a skill named after the plugin (`/video:review`), Claude Code's older form of a skill |
+| `plugin program` | programa de plugin | A file in a plugin's `bin/`, on the `PATH` of the commands the model runs while the plugin is on |
+| `plugin option` | opção de plugin | An entry of Claude Code's `userConfig` in a plugin's manifest: a setting, or a secret in the vault when it is sensitive |
+| `predefined subagent` | subagente pré-definido | A plugin's agent (`agents/<name>.md`): a helper for one kind of task, with its own instructions, tools and model and no memory, that `delegate` starts by name |
+| `monitor` | monitor | A plugin's command run in the background of each of the user's conversations, its lines reaching the model as notices |
+| `plugin slash command` | comando de barra de plugin | A command a plugin's Python runs when the user types `/<plugin>:<name>`; what it returns is the reply, with no model call |
+| `plugin terminal command` | comando de terminal de plugin | `atlas <name> ...`, run by a plugin's Python with the arguments as typed |
+| `plugin host` | anfitrião do plugin | What Atlas lends a plugin's Python from outside the plugins: the user's model (`ctx.llm`) and the conversations (`ctx.notify`) |
+| `plugin screen` | tela do plugin | A plugin's `desktop/plugin.js`, which the app loads and which adds a page and a panel tab, with all the app's access |
+| `contribution` | contribuição | What a plugin's screen adds to the app: a `page` of the main area or a `panel` tab |
+| `plugin dependency` | dependência de plugin | Another plugin a plugin needs running, in a version range (Claude Code's `dependencies`) |
+| `plugin stamp` | carimbo do plugin | What changes when a plugin's files are saved or it is turned on, off or set: the server loads it again when it does |
+| `install by address` | instalar por endereço | Fetch a plugin from a git URL, `owner/repo` or a folder into the home's `plugins/`, off |
+| `plugin provider` | provedor de plugin | A model provider a plugin adds, written as `models.toml` writes one, while the plugin is on |
+| `SDK` | SDK | `atlas.plugins.sdk`, the one module of Atlas a plugin's Python imports; it only grows |
+| `plugin skill` | skill de plugin | A skill in a plugin's `skills/`, named after its plugin as Claude Code names it (`video:render`): listed after the user's while the plugin is on, never written by `skill_manage`, never archived by the curator (step 16j) |
+| `plugin tool` | ferramenta de plugin | A tool a plugin's Python registers (`register_tool`, SDK version 14) and its manifest names under `atlas.tools`: behind the tool search, its source `plugin:<name>`, through the same gate as Atlas's own (step 16j) |
+| `plugin MCP server` | servidor MCP de plugin | An MCP server a plugin's `.mcp.json` declares, named `plugin_<plugin>_<server>` beside the user's (Claude Code's `plugin:<plugin>:<server>`), connected while the plugin is on; it reads only the secrets the plugin declares (step 16j) |
+| `stop` | parada | What a plugin registers with `on_unload` to end what it started (a preview, a render): run when it is turned off, loaded again, or Atlas closes (step 16j) |
+| `instance` | instância | One running Atlas on one machine: one server, serving one home |
+| `machine` | máquina | An entry of the app's machine list: a name the user gives, the `transport` that reaches it and the instance it opens (a machine with two open homes is two entries, "Shop · default" and "Shop · tests"); "This computer" is the app's own |
+| `machine list` | lista de máquinas | The machines the app knows, kept in the app's own folder, their tokens apart and encrypted by the system; never in a home or the repository |
+| `transport` | caminho | How the app reaches a machine: `tailscale` (the machine's tailnet address), `ssh` (a tunnel the app opens with the system's `ssh`); `relay` (Atlas Cloud) comes later |
+| `always on` | sempre ligado | A home whose server runs as the user's service (a Scheduled Task at logon, a `launchd` agent, a `systemd --user` unit), outliving the app and starting with the computer; the app attaches to it instead of starting its own |
+| `open to my machines` | aberto às minhas máquinas | An always-on home whose server also listens on the machine's tailnet address, letting in only tailnet peers that bring its token |
+| `connection code` | código de conexão | One string with a version, the transport, the tailnet address, the port, the home and the server token, shown by an open home (`atlas server code`) and pasted into another machine's app; a secret |
+| `server terminal` | terminal do servidor | A shell the server opens on its own machine and carries over the connection, behind the side panel's terminal everywhere |

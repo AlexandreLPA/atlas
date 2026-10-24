@@ -1,0 +1,29 @@
+{
+  "note": "Thinks aloud (DeepSeek, say): long reasoning, a few characters at a time, before each tool.",
+  "prompt": "The tests have been failing since yesterday. Can you look?",
+  "chunk_size": 4,
+  "replies": [
+    {
+      "reasoning": "Okay, the user says the tests have been failing since yesterday. I don't know which test yet. Maybe a dependency update? Or a change in the code yesterday. I should read the test log first instead of guessing.",
+      "calls": [{ "name": "read_file", "arguments": "{\"path\": \"pytest.log\"}", "id": "c1" }]
+    },
+    {
+      "reasoning": "The failure is assert 109.89999999999999 == 109.9. That's classic floating point error. The total is computed with floats somewhere. Let me read the price module.",
+      "calls": [{ "name": "read_file", "arguments": "{\"path\": \"src/shop/price.py\"}", "id": "c2" }]
+    },
+    {
+      "reasoning": "Yes, a sum of item.price * item.qty. I'll change it to Decimal, converting with Decimal(str(...)).",
+      "calls": [
+        {
+          "name": "edit_file",
+          "arguments": "{\"path\": \"src/shop/price.py\", \"old_string\": \"return sum(item.price * item.qty for item in items)\", \"new_string\": \"return sum((Decimal(str(item.price)) * item.qty for item in items), Decimal(0))\"}",
+          "id": "c3"
+        }
+      ]
+    },
+    {
+      "reasoning": "Done. Now answer, short.",
+      "text": "`total` summed `float`, and 109.9 has no exact representation. The sum is `Decimal` now in `src/shop/price.py`."
+    }
+  ]
+}

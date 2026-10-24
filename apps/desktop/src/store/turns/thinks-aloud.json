@@ -1,0 +1,1440 @@
+{
+ "note": "Thinks aloud (DeepSeek, say): long reasoning, a few characters at a time, before each tool.",
+ "events": [
+  {
+   "type": "message.start",
+   "payload": {
+    "text": "The tests have been failing since yesterday. Can you look?",
+    "kind": "message",
+    "attachments": []
+   },
+   "seq": 1
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "Okay",
+    "kind": "message"
+   },
+   "seq": 2
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": ", th",
+    "kind": "message"
+   },
+   "seq": 3
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "e us",
+    "kind": "message"
+   },
+   "seq": 4
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "er s",
+    "kind": "message"
+   },
+   "seq": 5
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ays ",
+    "kind": "message"
+   },
+   "seq": 6
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "the ",
+    "kind": "message"
+   },
+   "seq": 7
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "test",
+    "kind": "message"
+   },
+   "seq": 8
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "s ha",
+    "kind": "message"
+   },
+   "seq": 9
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ve b",
+    "kind": "message"
+   },
+   "seq": 10
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "een ",
+    "kind": "message"
+   },
+   "seq": 11
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "fail",
+    "kind": "message"
+   },
+   "seq": 12
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ing ",
+    "kind": "message"
+   },
+   "seq": 13
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "sinc",
+    "kind": "message"
+   },
+   "seq": 14
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "e ye",
+    "kind": "message"
+   },
+   "seq": 15
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ster",
+    "kind": "message"
+   },
+   "seq": 16
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "day.",
+    "kind": "message"
+   },
+   "seq": 17
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " I d",
+    "kind": "message"
+   },
+   "seq": 18
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "on't",
+    "kind": "message"
+   },
+   "seq": 19
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " kno",
+    "kind": "message"
+   },
+   "seq": 20
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "w wh",
+    "kind": "message"
+   },
+   "seq": 21
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ich ",
+    "kind": "message"
+   },
+   "seq": 22
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "test",
+    "kind": "message"
+   },
+   "seq": 23
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " yet",
+    "kind": "message"
+   },
+   "seq": 24
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": ". Ma",
+    "kind": "message"
+   },
+   "seq": 25
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ybe ",
+    "kind": "message"
+   },
+   "seq": 26
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "a de",
+    "kind": "message"
+   },
+   "seq": 27
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "pend",
+    "kind": "message"
+   },
+   "seq": 28
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ency",
+    "kind": "message"
+   },
+   "seq": 29
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " upd",
+    "kind": "message"
+   },
+   "seq": 30
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ate?",
+    "kind": "message"
+   },
+   "seq": 31
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " Or ",
+    "kind": "message"
+   },
+   "seq": 32
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "a ch",
+    "kind": "message"
+   },
+   "seq": 33
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ange",
+    "kind": "message"
+   },
+   "seq": 34
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " in ",
+    "kind": "message"
+   },
+   "seq": 35
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "the ",
+    "kind": "message"
+   },
+   "seq": 36
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "code",
+    "kind": "message"
+   },
+   "seq": 37
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " yes",
+    "kind": "message"
+   },
+   "seq": 38
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "terd",
+    "kind": "message"
+   },
+   "seq": 39
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ay. ",
+    "kind": "message"
+   },
+   "seq": 40
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "I sh",
+    "kind": "message"
+   },
+   "seq": 41
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ould",
+    "kind": "message"
+   },
+   "seq": 42
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " rea",
+    "kind": "message"
+   },
+   "seq": 43
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "d th",
+    "kind": "message"
+   },
+   "seq": 44
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "e te",
+    "kind": "message"
+   },
+   "seq": 45
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "st l",
+    "kind": "message"
+   },
+   "seq": 46
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "og f",
+    "kind": "message"
+   },
+   "seq": 47
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "irst",
+    "kind": "message"
+   },
+   "seq": 48
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " ins",
+    "kind": "message"
+   },
+   "seq": 49
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "tead",
+    "kind": "message"
+   },
+   "seq": 50
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " of ",
+    "kind": "message"
+   },
+   "seq": 51
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "gues",
+    "kind": "message"
+   },
+   "seq": 52
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "sing",
+    "kind": "message"
+   },
+   "seq": 53
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": ".",
+    "kind": "message"
+   },
+   "seq": 54
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "c1",
+    "name": "read_file",
+    "args_text": "{\"path\": \"pytest.log\"}"
+   },
+   "seq": 55
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "c1",
+    "name": "read_file",
+    "result_text": "     1\tFAILED tests/test_price.py::test_total - assert 109.89999999999999 == 109.9\n     2\t1 failed, 41 passed in 1.9s",
+    "status": "completed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 56
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "The ",
+    "kind": "message"
+   },
+   "seq": 57
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "fail",
+    "kind": "message"
+   },
+   "seq": 58
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ure ",
+    "kind": "message"
+   },
+   "seq": 59
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "is a",
+    "kind": "message"
+   },
+   "seq": 60
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "sser",
+    "kind": "message"
+   },
+   "seq": 61
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "t 10",
+    "kind": "message"
+   },
+   "seq": 62
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "9.89",
+    "kind": "message"
+   },
+   "seq": 63
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "9999",
+    "kind": "message"
+   },
+   "seq": 64
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "9999",
+    "kind": "message"
+   },
+   "seq": 65
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "9999",
+    "kind": "message"
+   },
+   "seq": 66
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " == ",
+    "kind": "message"
+   },
+   "seq": 67
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "109.",
+    "kind": "message"
+   },
+   "seq": 68
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "9. T",
+    "kind": "message"
+   },
+   "seq": 69
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "hat'",
+    "kind": "message"
+   },
+   "seq": 70
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "s cl",
+    "kind": "message"
+   },
+   "seq": 71
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "assi",
+    "kind": "message"
+   },
+   "seq": 72
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "c fl",
+    "kind": "message"
+   },
+   "seq": 73
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "oati",
+    "kind": "message"
+   },
+   "seq": 74
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ng p",
+    "kind": "message"
+   },
+   "seq": 75
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "oint",
+    "kind": "message"
+   },
+   "seq": 76
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " err",
+    "kind": "message"
+   },
+   "seq": 77
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "or. ",
+    "kind": "message"
+   },
+   "seq": 78
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "The ",
+    "kind": "message"
+   },
+   "seq": 79
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "tota",
+    "kind": "message"
+   },
+   "seq": 80
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "l is",
+    "kind": "message"
+   },
+   "seq": 81
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " com",
+    "kind": "message"
+   },
+   "seq": 82
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "pute",
+    "kind": "message"
+   },
+   "seq": 83
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "d wi",
+    "kind": "message"
+   },
+   "seq": 84
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "th f",
+    "kind": "message"
+   },
+   "seq": 85
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "loat",
+    "kind": "message"
+   },
+   "seq": 86
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "s so",
+    "kind": "message"
+   },
+   "seq": 87
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "mewh",
+    "kind": "message"
+   },
+   "seq": 88
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ere.",
+    "kind": "message"
+   },
+   "seq": 89
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " Let",
+    "kind": "message"
+   },
+   "seq": 90
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " me ",
+    "kind": "message"
+   },
+   "seq": 91
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "read",
+    "kind": "message"
+   },
+   "seq": 92
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " the",
+    "kind": "message"
+   },
+   "seq": 93
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " pri",
+    "kind": "message"
+   },
+   "seq": 94
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ce m",
+    "kind": "message"
+   },
+   "seq": 95
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "odul",
+    "kind": "message"
+   },
+   "seq": 96
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "e.",
+    "kind": "message"
+   },
+   "seq": 97
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "c2",
+    "name": "read_file",
+    "args_text": "{\"path\": \"src/shop/price.py\"}"
+   },
+   "seq": 98
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "c2",
+    "name": "read_file",
+    "result_text": "     1\tfrom shop.items import Item\n     2\t\n     3\t\n     4\tdef total(items: list[Item]) -> float:\n     5\t    return sum(item.price * item.qty for item in items)",
+    "status": "completed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 99
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "Yes,",
+    "kind": "message"
+   },
+   "seq": 100
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " a s",
+    "kind": "message"
+   },
+   "seq": 101
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "um o",
+    "kind": "message"
+   },
+   "seq": 102
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "f it",
+    "kind": "message"
+   },
+   "seq": 103
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "em.p",
+    "kind": "message"
+   },
+   "seq": 104
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "rice",
+    "kind": "message"
+   },
+   "seq": 105
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " * i",
+    "kind": "message"
+   },
+   "seq": 106
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "tem.",
+    "kind": "message"
+   },
+   "seq": 107
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "qty.",
+    "kind": "message"
+   },
+   "seq": 108
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " I'l",
+    "kind": "message"
+   },
+   "seq": 109
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "l ch",
+    "kind": "message"
+   },
+   "seq": 110
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ange",
+    "kind": "message"
+   },
+   "seq": 111
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " it ",
+    "kind": "message"
+   },
+   "seq": 112
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "to D",
+    "kind": "message"
+   },
+   "seq": 113
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ecim",
+    "kind": "message"
+   },
+   "seq": 114
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "al, ",
+    "kind": "message"
+   },
+   "seq": 115
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "conv",
+    "kind": "message"
+   },
+   "seq": 116
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "erti",
+    "kind": "message"
+   },
+   "seq": 117
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ng w",
+    "kind": "message"
+   },
+   "seq": 118
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ith ",
+    "kind": "message"
+   },
+   "seq": 119
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "Deci",
+    "kind": "message"
+   },
+   "seq": 120
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "mal(",
+    "kind": "message"
+   },
+   "seq": 121
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "str(",
+    "kind": "message"
+   },
+   "seq": 122
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "...)",
+    "kind": "message"
+   },
+   "seq": 123
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": ").",
+    "kind": "message"
+   },
+   "seq": 124
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "c3",
+    "name": "edit_file",
+    "args_text": "{\"path\": \"src/shop/price.py\", \"old_string\": \"return sum(item.price * item.qty for item in items)\", \"new_string\": \"return sum((Decimal(str(item.price)) * item.qty for item in items), Decimal(0))\"}"
+   },
+   "seq": 125
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "c3",
+    "name": "edit_file",
+    "result_text": "Edited <workspace>/src/shop/price.py: 1 replacement(s).\n@@ -3,3 +3,3 @@\n \n def total(items: list[Item]) -> float:\n-    return sum(item.price * item.qty for item in items)\n+    return sum((Decimal(str(item.price)) * item.qty for item in items), Decimal(0))",
+    "status": "completed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 126
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "Done",
+    "kind": "message"
+   },
+   "seq": 127
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": ". No",
+    "kind": "message"
+   },
+   "seq": 128
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "w an",
+    "kind": "message"
+   },
+   "seq": 129
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "swer",
+    "kind": "message"
+   },
+   "seq": 130
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": ", sh",
+    "kind": "message"
+   },
+   "seq": 131
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ort.",
+    "kind": "message"
+   },
+   "seq": 132
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "`tot",
+    "kind": "message"
+   },
+   "seq": 133
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "al` ",
+    "kind": "message"
+   },
+   "seq": 134
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "summ",
+    "kind": "message"
+   },
+   "seq": 135
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ed `",
+    "kind": "message"
+   },
+   "seq": 136
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "floa",
+    "kind": "message"
+   },
+   "seq": 137
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "t`, ",
+    "kind": "message"
+   },
+   "seq": 138
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "and ",
+    "kind": "message"
+   },
+   "seq": 139
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "109.",
+    "kind": "message"
+   },
+   "seq": 140
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "9 ha",
+    "kind": "message"
+   },
+   "seq": 141
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "s no",
+    "kind": "message"
+   },
+   "seq": 142
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " exa",
+    "kind": "message"
+   },
+   "seq": 143
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ct r",
+    "kind": "message"
+   },
+   "seq": 144
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "epre",
+    "kind": "message"
+   },
+   "seq": 145
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "sent",
+    "kind": "message"
+   },
+   "seq": 146
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "atio",
+    "kind": "message"
+   },
+   "seq": 147
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "n. T",
+    "kind": "message"
+   },
+   "seq": 148
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "he s",
+    "kind": "message"
+   },
+   "seq": 149
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "um i",
+    "kind": "message"
+   },
+   "seq": 150
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "s `D",
+    "kind": "message"
+   },
+   "seq": 151
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ecim",
+    "kind": "message"
+   },
+   "seq": 152
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "al` ",
+    "kind": "message"
+   },
+   "seq": 153
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "now ",
+    "kind": "message"
+   },
+   "seq": 154
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "in `",
+    "kind": "message"
+   },
+   "seq": 155
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "src/",
+    "kind": "message"
+   },
+   "seq": 156
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "shop",
+    "kind": "message"
+   },
+   "seq": 157
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "/pri",
+    "kind": "message"
+   },
+   "seq": 158
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ce.p",
+    "kind": "message"
+   },
+   "seq": 159
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "y`.",
+    "kind": "message"
+   },
+   "seq": 160
+  },
+  {
+   "type": "message.complete",
+   "payload": {
+    "text": "`total` summed `float`, and 109.9 has no exact representation. The sum is `Decimal` now in `src/shop/price.py`.",
+    "status": "answered",
+    "model_calls": 4,
+    "cost_usd": null,
+    "error": null,
+    "unsent": []
+   },
+   "seq": 161
+  }
+ ],
+ "messages": [
+  {
+   "number": 2,
+   "role": "user",
+   "kind": "message",
+   "text": "The tests have been failing since yesterday. Can you look?",
+   "tool_name": null,
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 3,
+   "role": "assistant",
+   "kind": "message",
+   "text": "",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "Okay, the user says the tests have been failing since yesterday. I don't know which test yet. Maybe a dependency update? Or a change in the code yesterday. I should read the test log first instead of guessing.",
+   "calls": [
+    {
+     "id": "c1",
+     "name": "read_file",
+     "args_text": "{\"path\": \"pytest.log\"}"
+    }
+   ],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 4,
+   "role": "tool",
+   "kind": "message",
+   "text": "     1\tFAILED tests/test_price.py::test_total - assert 109.89999999999999 == 109.9\n     2\t1 failed, 41 passed in 1.9s",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "c1",
+   "status": "completed",
+   "attachments": []
+  },
+  {
+   "number": 5,
+   "role": "assistant",
+   "kind": "message",
+   "text": "",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "The failure is assert 109.89999999999999 == 109.9. That's classic floating point error. The total is computed with floats somewhere. Let me read the price module.",
+   "calls": [
+    {
+     "id": "c2",
+     "name": "read_file",
+     "args_text": "{\"path\": \"src/shop/price.py\"}"
+    }
+   ],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 6,
+   "role": "tool",
+   "kind": "message",
+   "text": "     1\tfrom shop.items import Item\n     2\t\n     3\t\n     4\tdef total(items: list[Item]) -> float:\n     5\t    return sum(item.price * item.qty for item in items)",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "c2",
+   "status": "completed",
+   "attachments": []
+  },
+  {
+   "number": 7,
+   "role": "assistant",
+   "kind": "message",
+   "text": "",
+   "tool_name": "edit_file",
+   "active": true,
+   "reasoning": "Yes, a sum of item.price * item.qty. I'll change it to Decimal, converting with Decimal(str(...)).",
+   "calls": [
+    {
+     "id": "c3",
+     "name": "edit_file",
+     "args_text": "{\"path\": \"src/shop/price.py\", \"old_string\": \"return sum(item.price * item.qty for item in items)\", \"new_string\": \"return sum((Decimal(str(item.price)) * item.qty for item in items), Decimal(0))\"}"
+    }
+   ],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 8,
+   "role": "tool",
+   "kind": "message",
+   "text": "Edited <workspace>/src/shop/price.py: 1 replacement(s).\n@@ -3,3 +3,3 @@\n \n def total(items: list[Item]) -> float:\n-    return sum(item.price * item.qty for item in items)\n+    return sum((Decimal(str(item.price)) * item.qty for item in items), Decimal(0))",
+   "tool_name": "edit_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "c3",
+   "status": "completed",
+   "attachments": []
+  },
+  {
+   "number": 9,
+   "role": "assistant",
+   "kind": "message",
+   "text": "`total` summed `float`, and 109.9 has no exact representation. The sum is `Decimal` now in `src/shop/price.py`.",
+   "tool_name": null,
+   "active": true,
+   "reasoning": "Done. Now answer, short.",
+   "calls": [],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  }
+ ]
+}

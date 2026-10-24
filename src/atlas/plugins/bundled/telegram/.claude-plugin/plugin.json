@@ -1,0 +1,27 @@
+{
+  "name": "telegram",
+  "version": "0.1.0",
+  "description": "Talk to Atlas from Telegram, through a bot of your own: replies, questions and approvals in the chat.",
+  "author": { "name": "the Atlas contributors" },
+  "license": "MIT",
+  "keywords": ["channel", "telegram"],
+  "atlas": {
+    "api": 1,
+    "channels": ["telegram"],
+    "secrets": [
+      {
+        "name": "TELEGRAM_BOT_TOKEN",
+        "description": "Your bot's token. In Telegram, talk to @BotFather, send /newbot, choose a name, and paste the token it gives.",
+        "url": "https://t.me/BotFather"
+      }
+    ],
+    "settings": [
+      {
+        "name": "api_url",
+        "default": "https://api.telegram.org",
+        "description": "The Bot API's address; another one only for a local Bot API server, or for tests."
+      }
+    ],
+    "network": ["api.telegram.org"]
+  }
+}

@@ -1,0 +1,62 @@
+import path from 'node:path'
+
+import { expect, test } from '@playwright/test'
+
+import { type Desktop, launch, say, writeConfig } from './harness'
+
+let desktop: Desktop | undefined
+
+test.afterEach(async () => {
+  await desktop?.close()
+  desktop = undefined
+})
+
+test('a first run opens on the key screen: a refused key stays out, a good one starts the conversation', async () => {
+  desktop = await launch({ openRouterKey: 'sk-or-v1-good' })
+  const { model, page } = desktop
+  await expect(page.getByTestId('key-screen')).toBeVisible()
+
+  // "Choose later" leaves a band that leads back.
+  await page.getByTestId('key-later').click()
+  await expect(page.getByTestId('key-screen')).toBeHidden()
+  await page.getByTestId('key-band-connect').click()
+
+  await page.getByTestId('key-provider-openrouter').getByRole('radio').click()
+  const field = page.getByTestId('key-input')
+  await field.fill('sk-or-v1-wrong')
+  await page.getByTestId('key-connect').click()
+  await expect(page.getByTestId('key-error')).toContainText('refused the key (HTTP 401)')
+
+  await field.fill('  sk-or-v1-good  ')
+  await page.getByTestId('key-connect').click()
+  await expect(page.getByTestId('key-screen')).toBeHidden()
+  await expect(page.getByTestId('key-band')).toBeHidden()
+
+  await model.reply({ text: 'Connected and answering.' })
+  await say(page, 'Hello')
+  await expect(page.getByTestId('assistant-message')).toContainText('Connected and answering.')
+
+  const requests = await model.requests()
+  const checks = requests.filter(request => request.path === '/v1/key')
+  expect(checks.map(request => request.authorization)).toEqual(['Bearer sk-or-v1-wrong', 'Bearer sk-or-v1-good'])
+  const chat = requests.filter(request => request.path.endsWith('/chat/completions'))
+  expect(chat.map(request => (request.body as { model?: string }).model)).toEqual(['openai/gpt-6-luna'])
+  expect(chat[0]?.authorization).toBe('Bearer sk-or-v1-good')
+})
+
+test('a turn on a model whose key is not stored says how to store it', async () => {
+  // A home restored from a backup on another machine: its model is chosen, its keys stayed behind
+  // (found in use, 15/10: the screen said only "ModelKeyError").
+  desktop = await launch({
+    setup: home => {
+      writeConfig(home, { model: 'gpt-6-luna', provider: 'openai' }, path.join(path.dirname(home), 'work'))
+    }
+  })
+  const { page } = desktop
+  await say(page, 'Hello')
+
+  await expect(page.getByTestId('turn-end')).toHaveText(
+    'The turn failed: There is no key for OpenAI: the vault has no OPENAI_API_KEY. ' +
+      'Store it with `atlas secrets set OPENAI_API_KEY`.'
+  )
+})

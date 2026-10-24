@@ -1,0 +1,851 @@
+{
+ "note": "Recorded from anthropic claude-haiku-5-5 on 2026-10-15.",
+ "events": [
+  {
+   "type": "message.start",
+   "payload": {
+    "text": "The tests have been failing since yesterday. Read pytest.log, find the function behind the failure in src/shop/ and fix it. Use your tools; answer in two sentences.",
+    "kind": "message",
+    "attachments": []
+   },
+   "seq": 1
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "toolu_01FyoD8qKN7TtNTXoQ15Rg14",
+    "name": "read_file",
+    "args_text": "{\"path\": \"pytest.log\"}"
+   },
+   "seq": 2
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "toolu_01RaeH5Ccjchi6vzDreiBDbq",
+    "name": "find_files",
+    "args_text": "{\"pattern\": \"*.py\", \"path\": \"src/shop\"}"
+   },
+   "seq": 3
+  },
+  {
+   "type": "title.changed",
+   "payload": {
+    "title": "Fix the tests"
+   },
+   "seq": 4
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "toolu_01FyoD8qKN7TtNTXoQ15Rg14",
+    "name": "read_file",
+    "result_text": "     1\tFAILED tests/test_price.py::test_total - assert 109.89999999999999 == 109.9\n     2\t1 failed, 41 passed in 1.9s",
+    "status": "completed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 5
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "toolu_01RaeH5Ccjchi6vzDreiBDbq",
+    "name": "find_files",
+    "result_text": "[Atlas: ripgrep refused the search: rg: regex parse error:\n    (?:*.py)\n       ^\nerror: repetition operator missing expression]",
+    "status": "failed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 6
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "toolu_01S7FuGdtnDnWnXz3uRnbw5H",
+    "name": "find_files",
+    "args_text": "{\"pattern\": \"*.py\", \"target\": \"files\", \"path\": \"src/shop\"}"
+   },
+   "seq": 7
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "toolu_01TzzkWUD434j8RMBz7GpAKk",
+    "name": "read_file",
+    "args_text": "{\"path\": \"tests/test_price.py\"}"
+   },
+   "seq": 8
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "toolu_01S7FuGdtnDnWnXz3uRnbw5H",
+    "name": "find_files",
+    "result_text": "In <workspace>/src/shop:\nprice.py",
+    "status": "completed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 9
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "toolu_01TzzkWUD434j8RMBz7GpAKk",
+    "name": "read_file",
+    "result_text": "[Atlas: <workspace>/tests/test_price.py does not exist. Neither does its folder, <workspace>/tests.]",
+    "status": "failed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 10
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "toolu_015pgf2skXcQFn4jPtsuhQc1",
+    "name": "read_file",
+    "args_text": "{\"path\": \"src/shop/price.py\"}"
+   },
+   "seq": 11
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "toolu_015pgf2skXcQFn4jPtsuhQc1",
+    "name": "read_file",
+    "result_text": "     1\tfrom shop.items import Item\n     2\t\n     3\t\n     4\tdef total(items: list[Item]) -> float:\n     5\t    return sum(item.price * item.qty for item in items)",
+    "status": "completed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 12
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "The",
+    "kind": "message"
+   },
+   "seq": 13
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " test file it",
+    "kind": "message"
+   },
+   "seq": 14
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "self seems to be missing,",
+    "kind": "message"
+   },
+   "seq": 15
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " so I",
+    "kind": "message"
+   },
+   "seq": 16
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " should",
+    "kind": "message"
+   },
+   "seq": 17
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " flag that.",
+    "kind": "message"
+   },
+   "seq": 18
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " The act",
+    "kind": "message"
+   },
+   "seq": 19
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ual bug looks like a",
+    "kind": "message"
+   },
+   "seq": 20
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " floating-point rounding iss",
+    "kind": "message"
+   },
+   "seq": 21
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ue—the test expects 109",
+    "kind": "message"
+   },
+   "seq": 22
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": ".9,",
+    "kind": "message"
+   },
+   "seq": 23
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " so r",
+    "kind": "message"
+   },
+   "seq": 24
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ounding to two decimals might",
+    "kind": "message"
+   },
+   "seq": 25
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " fix it, though I should check",
+    "kind": "message"
+   },
+   "seq": 26
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " how price is typed in items.",
+    "kind": "message"
+   },
+   "seq": 27
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "py first before",
+    "kind": "message"
+   },
+   "seq": 28
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " deciding between",
+    "kind": "message"
+   },
+   "seq": 29
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " round() or",
+    "kind": "message"
+   },
+   "seq": 30
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " Decimal.",
+    "kind": "message"
+   },
+   "seq": 31
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "\n\n",
+    "kind": "message"
+   },
+   "seq": 32
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "toolu_01U5YvjS9t7tx77c1hrDHNRY",
+    "name": "read_file",
+    "args_text": "{\"path\": \"src/shop/items.py\"}"
+   },
+   "seq": 33
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "toolu_01U5YvjS9t7tx77c1hrDHNRY",
+    "name": "read_file",
+    "result_text": "[Atlas: <workspace>/src/shop/items.py does not exist. Did you mean: price.py?]",
+    "status": "failed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 34
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "The item isn't there",
+    "kind": "message"
+   },
+   "seq": 35
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": ", so I still",
+    "kind": "message"
+   },
+   "seq": 36
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " need to fix price.py by",
+    "kind": "message"
+   },
+   "seq": 37
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " rounding to",
+    "kind": "message"
+   },
+   "seq": 38
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " two",
+    "kind": "message"
+   },
+   "seq": 39
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " decimal places.",
+    "kind": "message"
+   },
+   "seq": 40
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " Editing that now",
+    "kind": "message"
+   },
+   "seq": 41
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": ".",
+    "kind": "message"
+   },
+   "seq": 42
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "\n\n",
+    "kind": "message"
+   },
+   "seq": 43
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "toolu_01YKViQGvQaGUYTeTfQtUEbU",
+    "name": "edit_file",
+    "args_text": "{\"path\": \"src/shop/price.py\", \"old_string\": \"    return sum(item.price * item.qty for item in items)\", \"new_string\": \"    return round(sum(item.price * item.qty for item in items), 2)\"}"
+   },
+   "seq": 44
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "toolu_01YKViQGvQaGUYTeTfQtUEbU",
+    "name": "edit_file",
+    "result_text": "Edited <workspace>/src/shop/price.py: 1 replacement(s).\n@@ -3,3 +3,3 @@\n \n def total(items: list[Item]) -> float:\n-    return sum(item.price * item.qty for item in items)\n+    return round(sum(item.price * item.qty for item in items), 2)",
+    "status": "completed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 45
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "The failure",
+    "kind": "message"
+   },
+   "seq": 46
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " is in `total",
+    "kind": "message"
+   },
+   "seq": 47
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "()` in `src/shop",
+    "kind": "message"
+   },
+   "seq": 48
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "/price.py`, which retur",
+    "kind": "message"
+   },
+   "seq": 49
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ned a float-",
+    "kind": "message"
+   },
+   "seq": 50
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "rounding art",
+    "kind": "message"
+   },
+   "seq": 51
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ifact (109.89",
+    "kind": "message"
+   },
+   "seq": 52
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "999999999999 inst",
+    "kind": "message"
+   },
+   "seq": 53
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ead of 109.9); I",
+    "kind": "message"
+   },
+   "seq": 54
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " changed it to round the",
+    "kind": "message"
+   },
+   "seq": 55
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " s",
+    "kind": "message"
+   },
+   "seq": 56
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "um to 2 decimals",
+    "kind": "message"
+   },
+   "seq": 57
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": ". I could",
+    "kind": "message"
+   },
+   "seq": 58
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " not run",
+    "kind": "message"
+   },
+   "seq": 59
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " the tests to",
+    "kind": "message"
+   },
+   "seq": 60
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " confirm the",
+    "kind": "message"
+   },
+   "seq": 61
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " fix: `tests/test",
+    "kind": "message"
+   },
+   "seq": 62
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "_price.py` and `src",
+    "kind": "message"
+   },
+   "seq": 63
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "/shop/items.py`",
+    "kind": "message"
+   },
+   "seq": 64
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " don't exist in the work",
+    "kind": "message"
+   },
+   "seq": 65
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " folder, so the fix is",
+    "kind": "message"
+   },
+   "seq": 66
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " un",
+    "kind": "message"
+   },
+   "seq": 67
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "verified and",
+    "kind": "message"
+   },
+   "seq": 68
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " the test's ex",
+    "kind": "message"
+   },
+   "seq": 69
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "act expectations are",
+    "kind": "message"
+   },
+   "seq": 70
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " unknown.",
+    "kind": "message"
+   },
+   "seq": 71
+  },
+  {
+   "type": "message.complete",
+   "payload": {
+    "text": "The failure is in `total()` in `src/shop/price.py`, which returned a float-rounding artifact (109.89999999999999 instead of 109.9); I changed it to round the sum to 2 decimals. I could not run the tests to confirm the fix: `tests/test_price.py` and `src/shop/items.py` don't exist in the work folder, so the fix is unverified and the test's exact expectations are unknown.",
+    "status": "answered",
+    "model_calls": 6,
+    "cost_usd": null,
+    "error": null,
+    "unsent": []
+   },
+   "seq": 72
+  }
+ ],
+ "messages": [
+  {
+   "number": 2,
+   "role": "user",
+   "kind": "message",
+   "text": "The tests have been failing since yesterday. Read pytest.log, find the function behind the failure in src/shop/ and fix it. Use your tools; answer in two sentences.",
+   "tool_name": null,
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 3,
+   "role": "assistant",
+   "kind": "message",
+   "text": "",
+   "tool_name": "read_file, find_files",
+   "active": true,
+   "reasoning": "",
+   "calls": [
+    {
+     "id": "toolu_01FyoD8qKN7TtNTXoQ15Rg14",
+     "name": "read_file",
+     "args_text": "{\"path\": \"pytest.log\"}"
+    },
+    {
+     "id": "toolu_01RaeH5Ccjchi6vzDreiBDbq",
+     "name": "find_files",
+     "args_text": "{\"pattern\": \"*.py\", \"path\": \"src/shop\"}"
+    }
+   ],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 4,
+   "role": "tool",
+   "kind": "message",
+   "text": "     1\tFAILED tests/test_price.py::test_total - assert 109.89999999999999 == 109.9\n     2\t1 failed, 41 passed in 1.9s",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "toolu_01FyoD8qKN7TtNTXoQ15Rg14",
+   "status": "completed",
+   "attachments": []
+  },
+  {
+   "number": 5,
+   "role": "tool",
+   "kind": "message",
+   "text": "[Atlas: ripgrep refused the search: rg: regex parse error:\n    (?:*.py)\n       ^\nerror: repetition operator missing expression]",
+   "tool_name": "find_files",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "toolu_01RaeH5Ccjchi6vzDreiBDbq",
+   "status": "failed",
+   "attachments": []
+  },
+  {
+   "number": 6,
+   "role": "assistant",
+   "kind": "message",
+   "text": "",
+   "tool_name": "find_files, read_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [
+    {
+     "id": "toolu_01S7FuGdtnDnWnXz3uRnbw5H",
+     "name": "find_files",
+     "args_text": "{\"pattern\": \"*.py\", \"target\": \"files\", \"path\": \"src/shop\"}"
+    },
+    {
+     "id": "toolu_01TzzkWUD434j8RMBz7GpAKk",
+     "name": "read_file",
+     "args_text": "{\"path\": \"tests/test_price.py\"}"
+    }
+   ],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 7,
+   "role": "tool",
+   "kind": "message",
+   "text": "In <workspace>/src/shop:\nprice.py",
+   "tool_name": "find_files",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "toolu_01S7FuGdtnDnWnXz3uRnbw5H",
+   "status": "completed",
+   "attachments": []
+  },
+  {
+   "number": 8,
+   "role": "tool",
+   "kind": "message",
+   "text": "[Atlas: <workspace>/tests/test_price.py does not exist. Neither does its folder, <workspace>/tests.]",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "toolu_01TzzkWUD434j8RMBz7GpAKk",
+   "status": "failed",
+   "attachments": []
+  },
+  {
+   "number": 9,
+   "role": "assistant",
+   "kind": "message",
+   "text": "",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [
+    {
+     "id": "toolu_015pgf2skXcQFn4jPtsuhQc1",
+     "name": "read_file",
+     "args_text": "{\"path\": \"src/shop/price.py\"}"
+    }
+   ],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 10,
+   "role": "tool",
+   "kind": "message",
+   "text": "     1\tfrom shop.items import Item\n     2\t\n     3\t\n     4\tdef total(items: list[Item]) -> float:\n     5\t    return sum(item.price * item.qty for item in items)",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "toolu_015pgf2skXcQFn4jPtsuhQc1",
+   "status": "completed",
+   "attachments": []
+  },
+  {
+   "number": 11,
+   "role": "assistant",
+   "kind": "message",
+   "text": "",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "The test file itself seems to be missing, so I should flag that. The actual bug looks like a floating-point rounding issue—the test expects 109.9, so rounding to two decimals might fix it, though I should check how price is typed in items.py first before deciding between round() or Decimal.\n\n",
+   "calls": [
+    {
+     "id": "toolu_01U5YvjS9t7tx77c1hrDHNRY",
+     "name": "read_file",
+     "args_text": "{\"path\": \"src/shop/items.py\"}"
+    }
+   ],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 12,
+   "role": "tool",
+   "kind": "message",
+   "text": "[Atlas: <workspace>/src/shop/items.py does not exist. Did you mean: price.py?]",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "toolu_01U5YvjS9t7tx77c1hrDHNRY",
+   "status": "failed",
+   "attachments": []
+  },
+  {
+   "number": 13,
+   "role": "assistant",
+   "kind": "message",
+   "text": "",
+   "tool_name": "edit_file",
+   "active": true,
+   "reasoning": "The item isn't there, so I still need to fix price.py by rounding to two decimal places. Editing that now.\n\n",
+   "calls": [
+    {
+     "id": "toolu_01YKViQGvQaGUYTeTfQtUEbU",
+     "name": "edit_file",
+     "args_text": "{\"path\": \"src/shop/price.py\", \"old_string\": \"    return sum(item.price * item.qty for item in items)\", \"new_string\": \"    return round(sum(item.price * item.qty for item in items), 2)\"}"
+    }
+   ],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 14,
+   "role": "tool",
+   "kind": "message",
+   "text": "Edited <workspace>/src/shop/price.py: 1 replacement(s).\n@@ -3,3 +3,3 @@\n \n def total(items: list[Item]) -> float:\n-    return sum(item.price * item.qty for item in items)\n+    return round(sum(item.price * item.qty for item in items), 2)",
+   "tool_name": "edit_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "toolu_01YKViQGvQaGUYTeTfQtUEbU",
+   "status": "completed",
+   "attachments": []
+  },
+  {
+   "number": 15,
+   "role": "assistant",
+   "kind": "message",
+   "text": "The failure is in `total()` in `src/shop/price.py`, which returned a float-rounding artifact (109.89999999999999 instead of 109.9); I changed it to round the sum to 2 decimals. I could not run the tests to confirm the fix: `tests/test_price.py` and `src/shop/items.py` don't exist in the work folder, so the fix is unverified and the test's exact expectations are unknown.",
+   "tool_name": null,
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  }
+ ]
+}

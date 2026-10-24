@@ -1,0 +1,37 @@
+{
+  "name": "gemini-cli",
+  "version": "0.1.0",
+  "description": "The Gemini CLI on Atlas's workbench: the Gemini CLI installed on this computer working in your folders for you or for Atlas; what it asks reaches you through Atlas. A personal Google account logs in with a Gemini API key, kept in Atlas's vault and handed to the sessions it opens. With a company's Google login it reads that account's quota from Google with the login the Gemini CLI keeps. The Gemini CLI sends usage statistics to Google unless its own settings turn them off.",
+  "author": {
+    "name": "the Atlas contributors"
+  },
+  "license": "MIT",
+  "keywords": [
+    "executor",
+    "gemini",
+    "acp"
+  ],
+  "atlas": {
+    "api": 18,
+    "executors": [
+      "gemini-cli"
+    ],
+    "settings": [
+      {
+        "name": "program",
+        "default": "",
+        "description": "The gemini program to run, as a JSON list of the program and the arguments before the Gemini CLI's own; empty, the gemini on the PATH or where npm and Homebrew put it."
+      }
+    ],
+    "secrets": [
+      {
+        "name": "GEMINI_API_KEY",
+        "description": "A Gemini API key, for a personal Google account: Google no longer lets one log in to the Gemini CLI. Create one in Google AI Studio and paste it. Your terminal's Gemini CLI is left as it is.",
+        "url": "https://aistudio.google.com/apikey"
+      }
+    ],
+    "network": [
+      "cloudcode-pa.googleapis.com"
+    ]
+  }
+}

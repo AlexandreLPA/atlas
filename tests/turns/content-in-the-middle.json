@@ -1,0 +1,21 @@
+{
+  "note": "Content in the middle: the table is in an interim text, and the answer is one sentence.",
+  "prompt": "Sum up this week's errors from the log in a table and save it in notes/errors.md.",
+  "replies": [
+    {
+      "reasoning": "I need the week's log and the errors of each day.",
+      "calls": [{ "name": "read_file", "arguments": "{\"path\": \"errors.log\"}", "id": "c1" }]
+    },
+    {
+      "text": "This week's errors:\n\n| Day | Errors | Main cause |\n|---|---|---|\n| Monday | 3 | provider timeout |\n| Tuesday | 12 | invalid key |\n| Wednesday | 1 | provider timeout |\n\nTuesday holds nearly all of them: 12 of 16, all an invalid key.\n\nI'll save the note.",
+      "calls": [
+        {
+          "name": "write_file",
+          "arguments": "{\"path\": \"notes/errors.md\", \"content\": \"# This week's errors\\n\\n| Day | Errors | Main cause |\\n|---|---|---|\\n| Monday | 3 | provider timeout |\\n| Tuesday | 12 | invalid key |\\n| Wednesday | 1 | provider timeout |\\n\"}",
+          "id": "c2"
+        }
+      ]
+    },
+    { "text": "Saved in `notes/errors.md`." }
+  ]
+}

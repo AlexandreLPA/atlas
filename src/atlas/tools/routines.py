@@ -1,0 +1,143 @@
+"""cronjob_manage: the agent makes, lists, changes, pauses, resumes, removes and runs routines.
+
+Decided on 10/10/2026: deferred behind tool search, with the fields Atlas keeps: a prompt routine
+only (a command routine is the user's, in the terminal), no delivery target (the run is a
+conversation and a notification), no pinned model (the user pins one). The prompt is scanned for
+threats before it is kept, and a routine's run is never given this tool, so a routine cannot make
+routines.
+"""
+
+from typing import Any
+
+from atlas.agent import Tool
+from atlas.jobs import Creator, JobsError, Routine, Routines
+
+_ACTIONS = ("create", "list", "update", "pause", "resume", "remove", "run")
+
+_DESCRIPTION = (
+    "Manages scheduled routines. action='create' schedules one from a prompt; 'list' shows them; "
+    "'update', 'pause', 'resume', 'remove' and 'run' act on one by job_id (list first; never guess "
+    "an id). 'run' fires it within a minute, in the background: its outcome arrives as its own "
+    "conversation and a notification, so do not wait. A routine runs in a new conversation with "
+    "none of this one's context, so its prompt must stand alone, and its final reply is what the "
+    "user sees; it cannot ask questions. A reply of [SILENT] notifies nobody. Prefer updating a "
+    "routine over making a near-duplicate."
+)
+
+_SCHEDULE = (
+    "Required for create. Forms: every 30m or every 2h (repeats); in 30m (once that far from now: "
+    "use it for 'remind me in'; never compute a time yourself); every monday 9am, weekdays at 9am, "
+    "every day at 18:30 (the user's local time); cron syntax, 0 9 * * *; or an ISO time, "
+    "2026-06-01T09:00 (once)."
+)
+
+
+def cronjob_manage(routines: Routines, *, bot: str | None = None) -> Tool:
+    """The tool over the home's routines. A `bot` makes, lists and changes only its own, which
+    run as it and report to its fixed conversation; the main agent reaches every routine."""
+
+    def mine(key: str) -> str:
+        found = routines.store.get(key)
+        if bot is not None and found.bot != bot:
+            raise JobsError(f"There is no routine {key!r} among yours. List the routines first.")
+        return found.id
+
+    async def run(arguments: dict[str, Any]) -> str:
+        action = arguments.get("action")
+        if action not in _ACTIONS:
+            return f"[Atlas: action must be one of: {', '.join(_ACTIONS)}.]"
+        key = arguments.get("job_id")
+        try:
+            if action == "list":
+                return _listing([r for r in routines.store.all() if bot is None or r.bot == bot])
+            if action == "create":
+                made = routines.create(
+                    _text(arguments.get("name")) or _text(arguments.get("prompt"))[:40],
+                    _text(arguments.get("schedule")),
+                    prompt=_text(arguments.get("prompt")),
+                    created_by=Creator.AGENT,
+                    bot=bot,
+                )
+                return f"Made routine {made.id} ({made.name}): {_line(made)}"
+            if not isinstance(key, str) or not key.strip():
+                return f"[Atlas: {action} needs job_id: list the routines first.]"
+            key = mine(key)
+            if action == "update":
+                changed = routines.update(
+                    key,
+                    name=_optional(arguments.get("name")),
+                    schedule=_optional(arguments.get("schedule")),
+                    prompt=_optional(arguments.get("prompt")),
+                )
+                return f"Updated {changed.id}: {_line(changed)}"
+            if action == "pause":
+                return f"Paused {routines.pause(key).name}."
+            if action == "resume":
+                return f"Resumed: {_line(routines.resume(key))}"
+            if action == "remove":
+                return f"Removed {routines.remove(key).name}."
+            fired = routines.trigger(key)
+            return (
+                f"{fired.name} will run within a minute, in the background. Its outcome arrives as "
+                "its own conversation and a notification: do not wait for it."
+            )
+        except JobsError as error:
+            return f"[Atlas: {error}]"
+
+    return Tool(
+        name="cronjob_manage",
+        description=_DESCRIPTION,
+        parameters={
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": list(_ACTIONS)},
+                "job_id": {
+                    "type": "string",
+                    "description": "The routine's id or name, for update, pause, resume, remove "
+                    "and run.",
+                },
+                "name": {"type": "string", "description": "A short name."},
+                "schedule": {"type": "string", "description": _SCHEDULE},
+                "prompt": {
+                    "type": "string",
+                    "description": "Required for create: the whole task, standing alone.",
+                },
+            },
+            "required": ["action"],
+            "additionalProperties": False,
+        },
+        run=run,
+        deferred=True,
+    )
+
+
+def _listing(found: list[Routine]) -> str:
+    if not found:
+        return "No routines."
+    return "\n".join(
+        f"- {routine.id} {routine.name}{_whose(routine)}: {_line(routine)}" for routine in found
+    )
+
+
+def _whose(routine: Routine) -> str:
+    return "" if routine.bot is None else f" (the bot {routine.bot}'s)"
+
+
+def _line(routine: Routine) -> str:
+    state = "on" if routine.enabled else "paused"
+    upcoming = (
+        "no next run"
+        if routine.next_run_at is None
+        else f"next run {routine.next_run_at.isoformat(timespec='minutes')}"
+    )
+    last = "" if routine.last_status is None else f", last run {routine.last_status.value}"
+    what = routine.prompt if routine.prompt is not None else f"command: {routine.command}"
+    return f"{routine.schedule.display}, {state}, {upcoming}{last}. {what}"
+
+
+def _text(value: object) -> str:
+    return value if isinstance(value, str) else ""
+
+
+def _optional(value: object) -> str | None:
+    return value if isinstance(value, str) and value.strip() else None

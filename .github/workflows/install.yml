@@ -1,0 +1,101 @@
+name: Install
+
+# The real install (docs/ARCHITECTURE.md, The installer): each installer run the way a user runs it, on a clean runner, from the commit under test; then run
+# again, which repairs and updates; then the command, the app's build, the PATH and a server that
+# answers. Only when the installer or what it installs changes, or when asked: it downloads every
+# pinned tool, and a private repository pays macOS minutes ten times over, so macOS runs only when
+# asked for.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/install.ps1"
+      - "scripts/install.sh"
+      - "scripts/install_pins.toml"
+      - "src/atlas/installation/**"
+      - "apps/desktop/electron/**"
+      - "apps/desktop/package-lock.json"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/install.yml"
+  workflow_dispatch:
+    inputs:
+      macos:
+        description: "Also on macOS (ten times the minutes)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.macos && '["ubuntu-latest", "windows-latest", "macos-latest"]' || '["ubuntu-latest", "windows-latest"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    env:
+      # The installer clones this checkout, on the branch under test, instead of GitHub's copy.
+      ATLAS_REPO_URL: ${{ github.workspace }}
+      ATLAS_BRANCH: ${{ github.ref_name }}
+      ATLAS_NO_LAUNCH: "1"
+    steps:
+      # Every commit, and the branch as a local one, as a clone from GitHub has them.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Windows: first as a user pastes it, `irm | iex` in Windows PowerShell 5.1; then again as a
+      # file under PowerShell 7, which repairs and updates.
+      - name: Install (Windows PowerShell 5.1, iex)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ([IO.File]::ReadAllText('scripts\install.ps1')); exit $LASTEXITCODE"
+      - name: Install again (PowerShell 7, a file)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/install.ps1 -NoLaunch
+
+      # Linux and macOS: `curl | bash`, the script on standard input; macOS's own bash 3.2.
+      - name: Install (curl | bash)
+        if: runner.os != 'Windows'
+        run: cat scripts/install.sh | /bin/bash
+      - name: Install again
+        if: runner.os != 'Windows'
+        run: cat scripts/install.sh | /bin/bash
+
+      - name: The installation works
+        shell: bash
+        run: |
+          set -eu
+          if [ "$RUNNER_OS" = Windows ]; then
+            root="$(cygpath -u "$LOCALAPPDATA")/atlas"
+            atlas="$root/bin/atlas.cmd"
+            # A new window's PATH: the user's, as the registry holds it.
+            powershell -NoProfile -Command "[Environment]::GetEnvironmentVariable('Path','User')" | tr ';' '\n' | grep -Fx "$(cygpath -w "$root/bin")"
+            # The installation's Git asks no window which credential helper to use.
+            test "$("$root"/tools/git-*/cmd/git.exe config --system --get-all credential.helper)" = manager
+          else
+            root="$HOME/.local/share/atlas"
+            atlas="$HOME/.local/bin/atlas"
+            # A new login shell finds the command.
+            "$SHELL" -lc 'command -v atlas'
+          fi
+          test -f "$root/tools/toolchain.json"
+          test -f "$root/atlas/apps/desktop/out/main.mjs"
+          if [ "$RUNNER_OS" = Linux ]; then
+            test "$(stat -c '%u %a' "$root/atlas/apps/desktop/node_modules/electron/dist/chrome-sandbox")" = "0 4755"
+          fi
+          "$atlas" version
+          # A server from the installation answers, on an empty home.
+          export ATLAS_HOME="$RUNNER_TEMP/home"
+          mkdir -p "$ATLAS_HOME"
+          "$atlas" serve --host 127.0.0.1 --port 18799 > "$RUNNER_TEMP/serve.log" 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:18799/health; then echo; exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/serve.log"
+          exit 1

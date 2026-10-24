@@ -1,0 +1,66 @@
+"""The installation: the checkout the user runs every day, its app built and opened, its update."""
+
+from atlas.installation.errors import InstallationBusyError, InstallationError
+from atlas.installation.model import (
+    APP_NAME,
+    BUILD_STAMP,
+    PACKAGES_STAMP,
+    TOOLCHAIN_FILE,
+    TOOLS_FOLDER,
+    UPDATE_COMMITS,
+    HandedOff,
+    UpdateStatus,
+    desktop_entry,
+    parse_toolchain,
+)
+from atlas.installation.service import (
+    BUILD_COMMAND,
+    SYNC_COMMAND,
+    Built,
+    Services,
+    Updated,
+    build_desktop,
+    check,
+    checkout_of,
+    hand_off,
+    update,
+)
+from atlas.installation.store import (
+    Checkout,
+    Runner,
+    Toolchain,
+    launch,
+    sandbox_problem,
+    write_launcher,
+)
+
+__all__ = [
+    "APP_NAME",
+    "BUILD_COMMAND",
+    "BUILD_STAMP",
+    "PACKAGES_STAMP",
+    "SYNC_COMMAND",
+    "TOOLCHAIN_FILE",
+    "TOOLS_FOLDER",
+    "UPDATE_COMMITS",
+    "Built",
+    "Checkout",
+    "HandedOff",
+    "InstallationBusyError",
+    "InstallationError",
+    "Runner",
+    "Services",
+    "Toolchain",
+    "UpdateStatus",
+    "Updated",
+    "build_desktop",
+    "check",
+    "checkout_of",
+    "desktop_entry",
+    "hand_off",
+    "launch",
+    "parse_toolchain",
+    "sandbox_problem",
+    "update",
+    "write_launcher",
+]

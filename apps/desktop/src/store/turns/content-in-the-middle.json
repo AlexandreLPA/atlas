@@ -1,0 +1,833 @@
+{
+ "note": "Content in the middle: the table is in an interim text, and the answer is one sentence.",
+ "events": [
+  {
+   "type": "message.start",
+   "payload": {
+    "text": "Sum up this week's errors from the log in a table and save it in notes/errors.md.",
+    "kind": "message",
+    "attachments": []
+   },
+   "seq": 1
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "I ne",
+    "kind": "message"
+   },
+   "seq": 2
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "ed t",
+    "kind": "message"
+   },
+   "seq": 3
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "he w",
+    "kind": "message"
+   },
+   "seq": 4
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "eek'",
+    "kind": "message"
+   },
+   "seq": 5
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "s lo",
+    "kind": "message"
+   },
+   "seq": 6
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "g an",
+    "kind": "message"
+   },
+   "seq": 7
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "d th",
+    "kind": "message"
+   },
+   "seq": 8
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "e er",
+    "kind": "message"
+   },
+   "seq": 9
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "rors",
+    "kind": "message"
+   },
+   "seq": 10
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " of ",
+    "kind": "message"
+   },
+   "seq": 11
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": "each",
+    "kind": "message"
+   },
+   "seq": 12
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": " day",
+    "kind": "message"
+   },
+   "seq": 13
+  },
+  {
+   "type": "reasoning.delta",
+   "payload": {
+    "text": ".",
+    "kind": "message"
+   },
+   "seq": 14
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "c1",
+    "name": "read_file",
+    "args_text": "{\"path\": \"errors.log\"}"
+   },
+   "seq": 15
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "c1",
+    "name": "read_file",
+    "result_text": "     1\tmon ERROR timeout\n     2\tmon ERROR timeout\n     3\tmon ERROR timeout\n     4\ttue ERROR invalid_key\n     5\ttue ERROR invalid_key\n     6\ttue ERROR invalid_key\n     7\ttue ERROR invalid_key\n     8\ttue ERROR invalid_key\n     9\ttue ERROR invalid_key\n    10\ttue ERROR invalid_key\n    11\ttue ERROR invalid_key\n    12\ttue ERROR invalid_key\n    13\ttue ERROR invalid_key\n    14\ttue ERROR invalid_key\n    15\ttue ERROR invalid_key\n    16\twed ERROR timeout",
+    "status": "completed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 16
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "This",
+    "kind": "message"
+   },
+   "seq": 17
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " wee",
+    "kind": "message"
+   },
+   "seq": 18
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "k's ",
+    "kind": "message"
+   },
+   "seq": 19
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "erro",
+    "kind": "message"
+   },
+   "seq": 20
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "rs:\n",
+    "kind": "message"
+   },
+   "seq": 21
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "\n| D",
+    "kind": "message"
+   },
+   "seq": 22
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ay |",
+    "kind": "message"
+   },
+   "seq": 23
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " Err",
+    "kind": "message"
+   },
+   "seq": 24
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ors ",
+    "kind": "message"
+   },
+   "seq": 25
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "| Ma",
+    "kind": "message"
+   },
+   "seq": 26
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "in c",
+    "kind": "message"
+   },
+   "seq": 27
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ause",
+    "kind": "message"
+   },
+   "seq": 28
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " |\n|",
+    "kind": "message"
+   },
+   "seq": 29
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "---|",
+    "kind": "message"
+   },
+   "seq": 30
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "---|",
+    "kind": "message"
+   },
+   "seq": 31
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "---|",
+    "kind": "message"
+   },
+   "seq": 32
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "\n| M",
+    "kind": "message"
+   },
+   "seq": 33
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "onda",
+    "kind": "message"
+   },
+   "seq": 34
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "y | ",
+    "kind": "message"
+   },
+   "seq": 35
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "3 | ",
+    "kind": "message"
+   },
+   "seq": 36
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "prov",
+    "kind": "message"
+   },
+   "seq": 37
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ider",
+    "kind": "message"
+   },
+   "seq": 38
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " tim",
+    "kind": "message"
+   },
+   "seq": 39
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "eout",
+    "kind": "message"
+   },
+   "seq": 40
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " |\n|",
+    "kind": "message"
+   },
+   "seq": 41
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " Tue",
+    "kind": "message"
+   },
+   "seq": 42
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "sday",
+    "kind": "message"
+   },
+   "seq": 43
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " | 1",
+    "kind": "message"
+   },
+   "seq": 44
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "2 | ",
+    "kind": "message"
+   },
+   "seq": 45
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "inva",
+    "kind": "message"
+   },
+   "seq": 46
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "lid ",
+    "kind": "message"
+   },
+   "seq": 47
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "key ",
+    "kind": "message"
+   },
+   "seq": 48
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "|\n| ",
+    "kind": "message"
+   },
+   "seq": 49
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "Wedn",
+    "kind": "message"
+   },
+   "seq": 50
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "esda",
+    "kind": "message"
+   },
+   "seq": 51
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "y | ",
+    "kind": "message"
+   },
+   "seq": 52
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "1 | ",
+    "kind": "message"
+   },
+   "seq": 53
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "prov",
+    "kind": "message"
+   },
+   "seq": 54
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ider",
+    "kind": "message"
+   },
+   "seq": 55
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " tim",
+    "kind": "message"
+   },
+   "seq": 56
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "eout",
+    "kind": "message"
+   },
+   "seq": 57
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " |\n\n",
+    "kind": "message"
+   },
+   "seq": 58
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "Tues",
+    "kind": "message"
+   },
+   "seq": 59
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "day ",
+    "kind": "message"
+   },
+   "seq": 60
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "hold",
+    "kind": "message"
+   },
+   "seq": 61
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "s ne",
+    "kind": "message"
+   },
+   "seq": 62
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "arly",
+    "kind": "message"
+   },
+   "seq": 63
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " all",
+    "kind": "message"
+   },
+   "seq": 64
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " of ",
+    "kind": "message"
+   },
+   "seq": 65
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "them",
+    "kind": "message"
+   },
+   "seq": 66
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": ": 12",
+    "kind": "message"
+   },
+   "seq": 67
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " of ",
+    "kind": "message"
+   },
+   "seq": 68
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "16, ",
+    "kind": "message"
+   },
+   "seq": 69
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "all ",
+    "kind": "message"
+   },
+   "seq": 70
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "an i",
+    "kind": "message"
+   },
+   "seq": 71
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "nval",
+    "kind": "message"
+   },
+   "seq": 72
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "id k",
+    "kind": "message"
+   },
+   "seq": 73
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ey.\n",
+    "kind": "message"
+   },
+   "seq": 74
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "\nI'l",
+    "kind": "message"
+   },
+   "seq": 75
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "l sa",
+    "kind": "message"
+   },
+   "seq": 76
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ve t",
+    "kind": "message"
+   },
+   "seq": 77
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "he n",
+    "kind": "message"
+   },
+   "seq": 78
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "ote.",
+    "kind": "message"
+   },
+   "seq": 79
+  },
+  {
+   "type": "message.interim",
+   "payload": {
+    "text": "This week's errors:\n\n| Day | Errors | Main cause |\n|---|---|---|\n| Monday | 3 | provider timeout |\n| Tuesday | 12 | invalid key |\n| Wednesday | 1 | provider timeout |\n\nTuesday holds nearly all of them: 12 of 16, all an invalid key.\n\nI'll save the note."
+   },
+   "seq": 80
+  },
+  {
+   "type": "tool.start",
+   "payload": {
+    "tool_id": "c2",
+    "name": "write_file",
+    "args_text": "{\"path\": \"notes/errors.md\", \"content\": \"# This week's errors\\n\\n| Day | Errors | Main cause |\\n|---|---|---|\\n| Monday | 3 | provider timeout |\\n| Tuesday | 12 | invalid key |\\n| Wednesday | 1 | provider timeout |\\n\"}"
+   },
+   "seq": 81
+  },
+  {
+   "type": "tool.complete",
+   "payload": {
+    "tool_id": "c2",
+    "name": "write_file",
+    "result_text": "Wrote 7 lines to <workspace>/notes/errors.md.",
+    "status": "completed",
+    "duration_s": 0.0,
+    "spill_path": null,
+    "loaded": []
+   },
+   "seq": 82
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "Save",
+    "kind": "message"
+   },
+   "seq": 83
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "d in",
+    "kind": "message"
+   },
+   "seq": 84
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": " `no",
+    "kind": "message"
+   },
+   "seq": 85
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "tes/",
+    "kind": "message"
+   },
+   "seq": 86
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "erro",
+    "kind": "message"
+   },
+   "seq": 87
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "rs.m",
+    "kind": "message"
+   },
+   "seq": 88
+  },
+  {
+   "type": "message.delta",
+   "payload": {
+    "text": "d`.",
+    "kind": "message"
+   },
+   "seq": 89
+  },
+  {
+   "type": "message.complete",
+   "payload": {
+    "text": "Saved in `notes/errors.md`.",
+    "status": "answered",
+    "model_calls": 3,
+    "cost_usd": null,
+    "error": null,
+    "unsent": []
+   },
+   "seq": 90
+  }
+ ],
+ "messages": [
+  {
+   "number": 2,
+   "role": "user",
+   "kind": "message",
+   "text": "Sum up this week's errors from the log in a table and save it in notes/errors.md.",
+   "tool_name": null,
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 3,
+   "role": "assistant",
+   "kind": "message",
+   "text": "",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "I need the week's log and the errors of each day.",
+   "calls": [
+    {
+     "id": "c1",
+     "name": "read_file",
+     "args_text": "{\"path\": \"errors.log\"}"
+    }
+   ],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 4,
+   "role": "tool",
+   "kind": "message",
+   "text": "     1\tmon ERROR timeout\n     2\tmon ERROR timeout\n     3\tmon ERROR timeout\n     4\ttue ERROR invalid_key\n     5\ttue ERROR invalid_key\n     6\ttue ERROR invalid_key\n     7\ttue ERROR invalid_key\n     8\ttue ERROR invalid_key\n     9\ttue ERROR invalid_key\n    10\ttue ERROR invalid_key\n    11\ttue ERROR invalid_key\n    12\ttue ERROR invalid_key\n    13\ttue ERROR invalid_key\n    14\ttue ERROR invalid_key\n    15\ttue ERROR invalid_key\n    16\twed ERROR timeout",
+   "tool_name": "read_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "c1",
+   "status": "completed",
+   "attachments": []
+  },
+  {
+   "number": 5,
+   "role": "assistant",
+   "kind": "message",
+   "text": "This week's errors:\n\n| Day | Errors | Main cause |\n|---|---|---|\n| Monday | 3 | provider timeout |\n| Tuesday | 12 | invalid key |\n| Wednesday | 1 | provider timeout |\n\nTuesday holds nearly all of them: 12 of 16, all an invalid key.\n\nI'll save the note.",
+   "tool_name": "write_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [
+    {
+     "id": "c2",
+     "name": "write_file",
+     "args_text": "{\"path\": \"notes/errors.md\", \"content\": \"# This week's errors\\n\\n| Day | Errors | Main cause |\\n|---|---|---|\\n| Monday | 3 | provider timeout |\\n| Tuesday | 12 | invalid key |\\n| Wednesday | 1 | provider timeout |\\n\"}"
+    }
+   ],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  },
+  {
+   "number": 6,
+   "role": "tool",
+   "kind": "message",
+   "text": "Wrote 7 lines to <workspace>/notes/errors.md.",
+   "tool_name": "write_file",
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": "c2",
+   "status": "completed",
+   "attachments": []
+  },
+  {
+   "number": 7,
+   "role": "assistant",
+   "kind": "message",
+   "text": "Saved in `notes/errors.md`.",
+   "tool_name": null,
+   "active": true,
+   "reasoning": "",
+   "calls": [],
+   "call_id": null,
+   "status": null,
+   "attachments": []
+  }
+ ]
+}

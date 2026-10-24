@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- The page reaches only the Atlas server; no script or style from anywhere else but the
+         plugins' screens, which the app loads from blobs it makes of the server's text (step 16m).
+         It frames only a preview's page (atlas-preview:, its own policy)
+         and a local site (step 16f). -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' ws: wss: http://127.0.0.1:*; font-src 'self' data:; frame-src atlas-preview: http://localhost:* http://127.0.0.1:*"
+    />
+    <title>Atlas</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

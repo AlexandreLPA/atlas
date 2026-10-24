@@ -1,0 +1,32 @@
+{
+  "name": "deepseek",
+  "version": "0.1.0",
+  "description": "DeepSeek's harness (dsh) on Atlas's workbench: the dsh installed on this computer working in your folders for you or for Atlas, on a DeepSeek API key; what it asks reaches you through Atlas. dsh sends DeepSeek its session logs (messages, tools, paths) by default: in the sessions Atlas opens they are off unless the session_logs setting turns them on. It reads your balance from DeepSeek with the key.",
+  "author": { "name": "the Atlas contributors" },
+  "license": "MIT",
+  "keywords": ["executor", "deepseek", "acp"],
+  "atlas": {
+    "api": 18,
+    "executors": ["deepseek"],
+    "secrets": [
+      {
+        "name": "DEEPSEEK_API_KEY",
+        "description": "A DeepSeek API key, which dsh bills its requests to. Create one on DeepSeek's platform and paste it; without it, dsh uses the key it keeps itself.",
+        "url": "https://platform.deepseek.com/api_keys"
+      }
+    ],
+    "settings": [
+      {
+        "name": "program",
+        "default": "",
+        "description": "The dsh program to run, as a JSON list of the program and the arguments before dsh's own; empty, the dsh on the PATH or where npm put it."
+      },
+      {
+        "name": "session_logs",
+        "default": "off",
+        "description": "Whether the sessions Atlas opens send DeepSeek their logs, as dsh does by default: on or off."
+      }
+    ],
+    "network": ["api.deepseek.com"]
+  }
+}

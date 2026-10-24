@@ -1,0 +1,28 @@
+# Atlas in a container (docs/ARCHITECTURE.md, Container). From an empty volume:
+#
+#   docker compose up -d --build
+#   docker compose exec atlas atlas secrets set OPENAI_API_KEY    # or GEMINI_API_KEY, typed hidden
+#   docker compose exec atlas atlas server token                  # the token the app needs
+#
+# A backup leaves on standard output, never with the keys; `atlas restore` puts it in any home:
+#   docker compose exec -T atlas atlas backup -o - > atlas.zip
+#
+# Then the app: ATLAS_DESKTOP_URL=ws://127.0.0.1:18790/ws and ATLAS_DESKTOP_TOKEN=<that token>.
+# The model is the first provider with a key in the vault, unless [model] provider in
+# /data/config.toml (or ATLAS_MODEL_PROVIDER here) chooses another.
+services:
+  atlas:
+    build: .
+    image: atlas:local
+    restart: unless-stopped
+    ports:
+      # The host's loopback only: reaching Atlas from a network needs more than the token (a later
+      # roadmap step). ATLAS_PORT changes the host's side.
+      - "127.0.0.1:${ATLAS_PORT:-18790}:18790"
+    volumes:
+      # A named volume, not a host folder: SQLite's WAL is not sound on a folder Docker Desktop
+      # mounts from the host.
+      - atlas-home:/data
+
+volumes:
+  atlas-home:

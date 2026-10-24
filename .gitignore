@@ -1,0 +1,40 @@
+# User state never lives in the repository
+.atlas/
+atlas-home/
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.import_linter_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Node / Electron
+node_modules/
+apps/desktop/out/
+apps/desktop/release/
+apps/desktop/test-results/
+apps/desktop/playwright-report/
+apps/desktop/.atlas-build.lock
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local-only notes for coding agents
+CLAUDE.local.md

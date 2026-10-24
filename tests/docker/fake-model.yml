@@ -1,0 +1,23 @@
+# Laid over docker-compose.yml by tests/docker and `scripts/prove_docker.py --rehearse`: the image
+# under test, and the fake model in a container beside it, a local inference server beside
+# Atlas's container. Atlas reaches it at http://fake-model:8000/v1 once models.toml points a
+# provider there; the test scripts it on the host's loopback port that compose picks.
+services:
+  atlas:
+    image: ${ATLAS_TEST_IMAGE:?name the image under test}
+
+  fake-model:
+    image: ${ATLAS_TEST_IMAGE}-fake-model
+    build:
+      # The tests folder, sent from the client: it works with any Docker the CLI talks to. Paths
+      # are relative to the first compose file's folder, the repository's root.
+      context: tests
+      dockerfile_inline: |
+        ARG ATLAS_IMAGE
+        FROM $${ATLAS_IMAGE}
+        COPY fake_model.py /app/fake_model.py
+        CMD ["python", "/app/fake_model.py", "--host", "0.0.0.0", "--port", "8000"]
+      args:
+        ATLAS_IMAGE: ${ATLAS_TEST_IMAGE}
+    ports:
+      - "127.0.0.1::8000"
