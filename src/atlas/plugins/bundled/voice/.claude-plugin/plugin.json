@@ -1,17 +1,20 @@
 {
   "name": "voice",
-  "version": "0.1.0",
-  "description": "Talk to Atlas by voice: the audio you send, in the app or on Telegram, written down before the model reads it.",
+  "version": "0.2.0",
+  "description": "Talk to Atlas by voice: audio you send is written down, the box's microphone dictates, Atlas speaks when you ask, and a live voice conversation hands the work to Atlas.",
   "author": { "name": "the Atlas contributors" },
   "license": "MIT",
-  "keywords": ["voice", "audio", "transcription"],
+  "keywords": ["voice", "audio", "transcription", "speech"],
   "atlas": {
-    "api": 21,
+    "api": 22,
     "readers": ["audio"],
+    "tools": ["voice_speak"],
+    "hooks": ["UserPromptSubmit"],
+    "calls": ["dictate", "live_status", "live_session", "live_turn"],
     "secrets": [
       {
         "name": "OPENAI_API_KEY",
-        "description": "Your OpenAI API key, the one Atlas's OpenAI provider uses: speech is written down by OpenAI's transcription model.",
+        "description": "Your OpenAI API key, the one Atlas's OpenAI provider uses: speech is written down, spoken and talked through OpenAI's models. The live conversation costs US$ 0.05 a minute, silence included.",
         "url": "https://platform.openai.com/api-keys"
       }
     ],
@@ -19,7 +22,32 @@
       {
         "name": "transcription_model",
         "default": "gpt-transcribe",
-        "description": "OpenAI's model that writes down what an audio file says."
+        "description": "OpenAI's model that writes down what you say."
+      },
+      {
+        "name": "speech_model",
+        "default": "gpt-4o-mini-tts",
+        "description": "OpenAI's model that speaks Atlas's answers when you ask to hear them."
+      },
+      {
+        "name": "live_model",
+        "default": "gpt-live-1",
+        "description": "OpenAI's full-duplex voice model of the live conversation."
+      },
+      {
+        "name": "voice",
+        "default": "marin",
+        "description": "The voice that speaks, in the live conversation and in audio answers."
+      },
+      {
+        "name": "voice_turns_model",
+        "default": "openai/gpt-6-luna",
+        "description": "The model that answers what you ask in the live conversation, as provider/model, with no reasoning; \"conversation\" for the conversation's own model."
+      },
+      {
+        "name": "quiet_close_seconds",
+        "default": "120",
+        "description": "The live conversation closes after this many seconds of silence, since silence is billed too; 0 never closes it."
       },
       {
         "name": "api_url",

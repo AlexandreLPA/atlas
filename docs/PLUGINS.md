@@ -221,6 +221,10 @@ def register(ctx: PluginContext) -> None:
 - **When the user stops the turn, the call is cancelled.** End what it started.
 - **The approval gate is Atlas's, the same as for its own tools.** A tool named as one of Atlas's
   is left out.
+- **`await host.send_file(path)` sends the user a file** (`"api": 22`): Atlas keeps a copy in the
+  home, shows it in the conversation, and sends it in the chat when the conversation is a
+  channel's. It returns where the home keeps it. A channel sends files with its own
+  `send_file(chat, path, media_type)`; one without it says the file waits in the app.
 
 ## What stops with it
 
@@ -390,7 +394,11 @@ export default {
 ```
 
 - `area: 'page'` is a page of the main area, with an entry in the sidebar; `area: 'panel'` is a tab
-  of the side panel.
+  of the side panel; `area: 'box'` is a button beside the words of the conversation's box, as the
+  voice plugin's microphone.
+- `host.insertText(text)` puts words after what the conversation's box holds, for the user to read
+  and send (a dictation); `host.send(text)` sends a message as the box does, making the
+  conversation when none is open.
 - `ctx.call(name, params)` calls the plugin's Python, which registers it with
   `ctx.register_call(name, run)` and names it under `atlas.calls` (`"api": 17`). It runs where
   Atlas runs, also when the app is on another machine.

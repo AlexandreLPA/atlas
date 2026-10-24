@@ -39,7 +39,7 @@ from typing import Any, Protocol, cast
 from atlas.assistant import Assistant
 from atlas.conversations import AttachmentError
 from atlas.models import Attachment, UserMessage
-from atlas.plugins import Channel, Inbound, LoadedChannel, Plugins, Prompt
+from atlas.plugins import Channel, FileChannel, Inbound, LoadedChannel, Plugins, Prompt
 from atlas.server.connection import Connection
 
 PAIRING_TEXT = (
@@ -53,6 +53,8 @@ STOPPED_TEXT = "Stopped."
 #: A file a channel handed over that Atlas could not keep (too heavy for its kind).
 NOT_ATTACHED_TEXT = "A file was not attached: {why}"
 IDLE_TEXT = "Nothing is running."
+#: A file a tool sent, in a channel that cannot send files: it waits in the app.
+FILE_TEXT = "Atlas sent a file, {name}: open it in the Atlas app."
 #: What the chat gets when the agent asks for a key through the secrets tool (step 16d): the
 #: channel never collects the value, which goes only through the app's masked card.
 SECRET_NOTICE = (
@@ -257,6 +259,20 @@ class Bridge(Connection):
         elif kind == "message.complete":
             await self.channel.working(chat, False)
             await self._complete(chat, payload)
+        elif kind == "message.file":
+            await self._file(chat, payload)
+
+    async def _file(self, chat: str, payload: dict[str, Any]) -> None:
+        """A file a tool sent the user (SDK version 22): sent in the chat by a channel that sends
+        files, named in a line by one that does not."""
+        path, name = Path(str(payload.get("path") or "")), str(payload.get("name") or "")
+        send_file = getattr(self.channel, "send_file", None)
+        if callable(send_file) and path.is_file():
+            await cast("FileChannel", self.channel).send_file(
+                chat, path, str(payload.get("media_type") or "")
+            )
+        else:
+            await self.channel.send(chat, FILE_TEXT.format(name=name))
 
     async def _complete(self, chat: str, payload: dict[str, Any]) -> None:
         status = payload.get("status")

@@ -7,7 +7,13 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 
 // Two projects: the window's code in jsdom, the main process's in Node.
 export default defineConfig({
-  resolve: { alias: { '@': path.join(here, 'src') } },
+  // `@atlas/plugin-sdk` as the loader gives it to a plugin's screen, so a shipped plugin's screen is
+  // tested as it runs (the voice plugin's, step 17a).
+  resolve: {
+    alias: { '@': path.join(here, 'src'), '@atlas/plugin-sdk': path.join(here, 'src', 'plugins', 'sdk.ts') },
+    // Its `react` is the app's, as the loader's shims make it, though the file sits outside the app.
+    dedupe: ['react']
+  },
   test: {
     projects: [
       {

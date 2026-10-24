@@ -2,6 +2,7 @@ import { useStore } from '@nanostores/react'
 import { useCallback, useEffect } from 'react'
 
 import { t } from '@/i18n'
+import { BoxActions } from '@/plugins/view'
 import {
   $atlasCommands,
   $autoMode,
@@ -79,6 +80,7 @@ export function Composer({ connected, running, to }: { connected: boolean; runni
 
   return (
     <MessageBox
+      actions={<BoxActions />}
       auto={{
         label: t.composer.autoModeLabel,
         on: autoMode[owner] ?? owner === DRAFT,

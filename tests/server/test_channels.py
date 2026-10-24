@@ -17,7 +17,7 @@ from atlas.home import Database, Home
 from atlas.plugins import Plugins
 from atlas.secrets import Vault
 from claude_code_support import claude_code
-from fake_model import FakeCall, FakeModelServer, FakeReply
+from fake_model import SPOKEN, FakeCall, FakeModelServer, FakeReply
 from fake_telegram import TOKEN, FakeTelegram
 from server_support import Client, Serve
 
@@ -579,3 +579,74 @@ def test_a_voice_message_from_telegram_reaches_the_model_written_down(
     assert (heard["file_name"], heard["model"]) == ("voice.ogg", "gpt-transcribe")
     voice_turn = next(b for b in fake.bodies(CHAT) if "voice.ogg" in json.dumps(b))
     assert "Book a table for two at eight." in json.dumps(voice_turn["messages"][-1])
+
+
+def test_an_answer_asked_for_in_audio_reaches_telegram_as_a_voice_message(
+    serve: Serve, fake: FakeModelServer, telegram: FakeTelegram, home: Home, vault: Vault
+) -> None:
+    """Step 17a: the voice plugin's tool speaks the answer and sends it (SDK version 22), and the
+    Telegram plugin sends it as Telegram's voice message, which plays in the chat."""
+    plugins = _turn_on(home, vault, telegram)
+    plugins.set_setting("voice", "api_url", fake.base_url)
+    plugins.set_secret("voice", "OPENAI_API_KEY", "fake-key")
+    manifest = plugins.view("voice").manifest
+    assert manifest is not None
+    speak = json.dumps({"text": "It is sunny."})
+    fake.reply(
+        FakeReply(text="Hi.", when="You are Atlas"),
+        FakeReply(
+            calls=[FakeCall("tool_search", '{"query": "speak"}', id="s1")], when="You are Atlas"
+        ),
+        FakeReply(calls=[FakeCall("voice_speak", speak, id="c1")], when="You are Atlas"),
+        FakeReply(text="Sent you an audio.", when="You are Atlas"),
+    )
+    with serve(providers=("openai",)).client() as client:
+        client.result("plugin.enable", {"name": "voice", "consent": manifest.fingerprint()})
+        _paired(client, telegram)
+        telegram.say(ANA, "hello")
+        _until(lambda: "Hi." in telegram.sent(ANA))
+        telegram.say(ANA, "Tell me the weather in audio")
+        _until(lambda: "Sent you an audio." in telegram.sent(ANA))
+
+    [voice] = telegram.called("sendVoice")
+    assert (voice["chat_id"], voice["voice_type"], voice["voice_bytes"]) == (
+        str(ANA),
+        "audio/ogg",
+        SPOKEN,
+    )
+    assert str(voice["voice_name"]).endswith(".ogg")
+
+
+def test_an_answer_asked_for_in_audio_in_the_app_comes_as_a_file_of_the_turn(
+    serve: Serve, fake: FakeModelServer, home: Home, vault: Vault
+) -> None:
+    """Step 17a: in the app, the spoken answer is an event of the turn (`message.file`), its row
+    the attachment's, kept in the home."""
+    plugins = Plugins(home, Database(home.database_file), vault)
+    plugins.set_setting("voice", "api_url", fake.base_url)
+    plugins.set_secret("voice", "OPENAI_API_KEY", "fake-key")
+    manifest = plugins.view("voice").manifest
+    assert manifest is not None
+    fake.reply(
+        FakeReply(
+            calls=[FakeCall("tool_search", '{"query": "speak"}', id="s1")], when="You are Atlas"
+        ),
+        FakeReply(
+            calls=[FakeCall("voice_speak", '{"text": "Hi."}', id="c1")], when="You are Atlas"
+        ),
+        FakeReply(text="Sent.", when="You are Atlas"),
+    )
+    with serve(providers=("openai",)).client() as client:
+        client.result("plugin.enable", {"name": "voice", "consent": manifest.fingerprint()})
+        conversation = client.result("conversation.create")["conversation_id"]
+        client.result("conversation.send", {"conversation_id": conversation, "text": "Say hi"})
+        sent = client.event("message.file")
+        client.event("message.complete")
+
+    row = sent["payload"]
+    assert (sent["conversation_id"], row["kind"], row["media_type"]) == (
+        conversation,
+        "audio",
+        "audio/ogg",
+    )
+    assert (home.attachments_folder / row["id"] / row["name"]).read_bytes() == SPOKEN

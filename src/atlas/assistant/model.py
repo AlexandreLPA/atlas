@@ -462,6 +462,14 @@ class PreviewAsked:
 
 
 @dataclass(frozen=True, slots=True)
+class FileSent:
+    """A tool sent the user a file (`ToolHost.send_file`, SDK version 22), kept in the home's
+    attachments: the app shows it in the conversation, and a channel sends it in the chat."""
+
+    attachment: "Attachment"
+
+
+@dataclass(frozen=True, slots=True)
 class Titled:
     """The conversation has a new title, a model's (atlas.assistant.titles)."""
 

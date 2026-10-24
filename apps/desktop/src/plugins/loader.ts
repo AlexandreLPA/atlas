@@ -42,7 +42,7 @@ export interface ScreenContext {
   onEvent: (type: string, listener: Parameters<typeof onPluginEvent>[1]) => () => void
   /** Anything else to undo when it is taken away. */
   onDispose: (undo: () => void) => void
-  /** Add a contribution: a panel tab or a page. */
+  /** Add a contribution: a panel tab, a page, or a button of the conversation's box. */
   register: (contribution: Contribution) => () => void
   /** Timers taken away with it. */
   setInterval: (run: () => void, ms: number) => () => void

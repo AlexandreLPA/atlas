@@ -182,6 +182,22 @@ describe('a turn as it arrives', () => {
   })
 })
 
+describe('a file a tool sent the user', () => {
+  it('is a part of the turn, its attachment as the server keeps it (step 17a)', () => {
+    const attachment = {
+      id: 'a1',
+      kind: 'audio',
+      media_type: 'audio/ogg',
+      name: 'atlas.ogg',
+      path: '/home/attachments/a1/atlas.ogg',
+      size: 42
+    }
+    const thread = play(event('message.start', { text: 'say it' }), event('message.file', attachment))
+
+    expect(thread.items.at(-1)).toMatchObject({ attachment, kind: 'file' })
+  })
+})
+
 describe('an event the app does not know', () => {
   it('becomes a generic part with its name and payload, from a newer server (ACP v2)', () => {
     const payload = { kind: 'web', url: 'https://example.org' }

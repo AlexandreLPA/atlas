@@ -314,6 +314,14 @@ function ItemView({ item }: { item: Exclude<Item, Part> }) {
     case 'status':
       return <p className="text-center text-xs text-neutral-500">{item.text}</p>
 
+    case 'file':
+      return (
+        <div className="flex flex-col items-start gap-1" data-testid="file-sent">
+          <span className="text-xs text-neutral-500">{t.thread.fileSent}</span>
+          <SentAttachment attachment={item.attachment} />
+        </div>
+      )
+
     case 'notice':
       return (
         <details

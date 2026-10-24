@@ -11,7 +11,8 @@ there is nothing), records every call, and answers like Telegram:
   entities", and a text past 4096 characters with its 400 "message is too long";
 - messages get ids, so buttons can be pressed on them and edited;
 - a file someone sent (`send_file`) is found by `getFile` and served at `/file/bot<token>/<path>`;
-  past 20 MB, `getFile` answers Telegram's 400 "file is too big".
+  past 20 MB, `getFile` answers Telegram's 400 "file is too big";
+- a file the bot sends comes as a multipart form, as Telegram takes an upload (`sendVoice`).
 
 **Driven from outside**, for the app's end-to-end tests: `python tests/fake_telegram.py` serves
 until stopped and writes `FAKE_TELEGRAM_READY port=<n>`; `POST /_fake/say` and `/_fake/press`
@@ -224,8 +225,20 @@ class FakeTelegram:
 
     async def _method(self, request: Request) -> Response:
         method = request.path_params["method"]
-        raw = await request.body()
-        params = cast("dict[str, Any]", json.loads(raw) if raw else {})
+        if request.headers.get("content-type", "").startswith("multipart/form-data"):
+            # A file the bot sends (`sendVoice`, `sendDocument`): its fields, and the file as
+            # `<part>_name`, `<part>_type` and `<part>_bytes`.
+            params: dict[str, Any] = {}
+            for name, value in (await request.form()).multi_items():
+                if isinstance(value, str):
+                    params[name] = value
+                else:
+                    params[f"{name}_name"] = value.filename
+                    params[f"{name}_type"] = value.content_type
+                    params[f"{name}_bytes"] = await value.read()
+        else:
+            raw = await request.body()
+            params = cast("dict[str, Any]", json.loads(raw) if raw else {})
         if request.path_params["token"] != self.token:
             return _error(401, "Unauthorized")
         self.calls.append(Call(method, params))
@@ -283,8 +296,17 @@ class FakeTelegram:
         return _ok(True)
 
     async def _fake_calls(self, request: Request) -> Response:
+        def shown(value: Any) -> Any:
+            # A file's bytes go as their size: JSON carries no bytes.
+            return f"<{len(value)} bytes>" if isinstance(value, bytes) else value
+
         return JSONResponse(
-            {"calls": [{"method": c.method, "params": c.params} for c in self.calls]}
+            {
+                "calls": [
+                    {"method": c.method, "params": {k: shown(v) for k, v in c.params.items()}}
+                    for c in self.calls
+                ]
+            }
         )
 
     def _push(self, update: dict[str, Any]) -> None:

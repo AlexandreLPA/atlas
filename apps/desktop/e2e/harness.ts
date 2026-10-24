@@ -91,6 +91,16 @@ export class FakeModel {
     expect(response.ok).toBe(true)
   }
 
+  /** What the next transcriptions answer (OpenAI's, which the voice plugin calls). */
+  async transcribe(...texts: string[]): Promise<void> {
+    const response = await fetch(`http://127.0.0.1:${this.port}/_fake/transcribe`, {
+      body: JSON.stringify(texts),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST'
+    })
+    expect(response.ok).toBe(true)
+  }
+
   async requests(): Promise<ModelRequest[]> {
     const response = await fetch(`http://127.0.0.1:${this.port}/_fake/requests`)
     const body = (await response.json()) as { requests: ModelRequest[] }
@@ -140,7 +150,9 @@ export async function launch(
      * fake model, which takes only this key. The app opens on the key screen. */
     openRouterKey?: string
     /** What the user did in a terminal before opening the app, such as turning a plugin on. */
-    setup?: (home: string) => void
+    setup?: (home: string, model: FakeModel) => void
+    /** More of Chromium's switches, such as a fake microphone. */
+    chromium?: string[]
   } = {}
 ): Promise<Desktop> {
   const root = mkdtempSync(path.join(tmpdir(), 'atlas-e2e-'))
@@ -170,7 +182,7 @@ ${options.config}
     )
   }
 
-  options.setup?.(home)
+  options.setup?.(home, model)
 
   for (const name of options.homes ?? []) {
     atlas(home, 'home', 'create', name, '--clone')
@@ -189,7 +201,7 @@ ${options.config}
     GEMINI_CLI_HOME: gemini,
     ...options.environment
   }
-  const { app, page } = await openApp(root, home, environment, options.lang)
+  const { app, page } = await openApp(root, home, environment, options.lang, options.chromium)
 
   return {
     app,
@@ -370,7 +382,8 @@ export async function openApp(
   root: string,
   home: string,
   extra: Record<string, string> = {},
-  lang = 'en-US'
+  lang = 'en-US',
+  chromium: string[] = []
 ): Promise<{ app: ElectronApplication; page: Page }> {
   const app = await _electron.launch({
     // On Linux CI Chromium's own sandbox needs privileges the runner lacks, so --no-sandbox is
@@ -380,6 +393,7 @@ export async function openApp(
       '--atlas-e2e',
       `--lang=${lang}`,
       `--user-data-dir=${path.join(root, 'profile')}`,
+      ...chromium,
       ...(process.platform === 'linux' ? ['--no-sandbox'] : [])
     ],
     cwd: DESKTOP,

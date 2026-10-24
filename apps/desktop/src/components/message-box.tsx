@@ -2,6 +2,7 @@ import { useStore } from '@nanostores/react'
 import { type DragEvent, type KeyboardEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { t } from '@/i18n'
+import { $boxInsert } from '@/plugins/registry'
 import type { AttachmentRow, SlashCommandRow } from '@/protocol/protocol.generated'
 import { $pending, attach, detach, type Pending, putBack, takeReady } from '@/store/attachments'
 import { offered, slashQuery } from '@/store/slash'
@@ -52,6 +53,9 @@ export interface MessageBoxProps {
   restore?: () => string
   /** The textarea's test id, for the end-to-end tests. */
   testId?: string
+  /** Buttons beside the words: what the plugins' screens add to the conversation's box (step 17a);
+   *  a box with them also takes the words a screen puts into it (a dictation). */
+  actions?: ReactNode
 }
 
 /**
@@ -95,6 +99,7 @@ export function MessageBox(props: MessageBoxProps) {
   const rows = groups.flatMap(group => group.rows)
   const chosen = rows[Math.min(active, rows.length - 1)]
   const restore = props.restore
+  const actions = props.actions
   // While a turn runs, the send button stops it, unless there are words or files to steer it with.
   const stopping = onStop !== undefined && !text.trim() && !ready
 
@@ -124,6 +129,22 @@ export function MessageBox(props: MessageBoxProps) {
       setText(current => (current ? `${back}\n\n${current}` : back))
     }
   }, [restore])
+
+  // Words a plugin's screen puts in from now on (a dictation): after what the box holds.
+  const takesWords = actions !== undefined
+
+  useEffect(() => {
+    if (!takesWords) {
+      return undefined
+    }
+
+    return $boxInsert.listen(inserted => {
+      if (inserted) {
+        setText(current => (current.trim() ? `${current.trimEnd()} ${inserted.text}` : inserted.text))
+        box.current?.focus()
+      }
+    })
+  }, [takesWords])
 
   const submit = () => {
     const message = text.trim()
@@ -321,6 +342,7 @@ export function MessageBox(props: MessageBoxProps) {
             </Tip>
           </>
         )}
+        {actions}
         <textarea
           aria-label={label}
           className="max-h-[40vh] min-h-11 flex-1 resize-none overflow-y-auto rounded-lg border border-neutral-300 bg-white px-3 py-2.5 dark:border-neutral-700 dark:bg-neutral-900"

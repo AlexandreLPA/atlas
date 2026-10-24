@@ -40,6 +40,8 @@ export type Item =
       /** What the server said of it: for a failed turn, why, and often what to do. */
       text: string
     }
+  /** A file a tool sent the user (`message.file`, the voice plugin's spoken answer). */
+  | { attachment: AttachmentRow; key: string; kind: 'file' }
   | { key: string; kind: 'notice'; text: string }
   | { key: string; kind: 'other'; payload: unknown; type: string }
   | {
@@ -192,6 +194,7 @@ export const DRAWN: Record<ConversationEvent, 'store' | 'thread'> = {
   'command.update': 'store',
   'message.complete': 'thread',
   'message.delta': 'thread',
+  'message.file': 'thread',
   'message.interim': 'thread',
   'message.start': 'thread',
   'message.steered': 'thread',
@@ -374,6 +377,9 @@ export function applyEvent(thread: Thread, event: EventParams, now = Date.now())
 
       return { ...thread, items: [...thread.items, { key, kind: 'status', text: status.text }] }
     }
+
+    case 'message.file':
+      return { ...thread, items: [...thread.items, { attachment: event.payload as AttachmentRow, key, kind: 'file' }] }
 
     case 'review.summary': {
       const review = event.payload as ReviewSummary

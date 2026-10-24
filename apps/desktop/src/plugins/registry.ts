@@ -1,13 +1,14 @@
 /**
- * What the plugins' screens added to the app (step 16m): a tab of the side panel (`panel`), or a
- * page of the main area with its entry in the sidebar (`page`). The app keeps its own surfaces and
- * adds these beside them. Pure stores.
+ * What the plugins' screens added to the app (step 16m): a tab of the side panel (`panel`), a
+ * page of the main area with its entry in the sidebar (`page`), or, since screen version 2 (step
+ * 17a), a button beside the words of the conversation's box (`box`). The app keeps its own surfaces
+ * and adds these beside them. Pure stores.
  */
 import { atom } from 'nanostores'
 import type { ReactNode } from 'react'
 
 /** Where a contribution goes. */
-export type Area = 'page' | 'panel'
+export type Area = 'box' | 'page' | 'panel'
 
 /** A contribution as a plugin writes it: the host names it after the plugin. */
 export interface Contribution {
@@ -31,10 +32,23 @@ export interface Registered extends Contribution {
 export const $contributions = atom<Registered[]>([])
 /** The plugin page on screen, by its key, while the main area shows a plugin's page. */
 export const $pluginPage = atom<null | string>(null)
+/** Words a screen puts into the conversation's box (a dictation, screen version 2), each once:
+ *  `seq` tells a second same text from the first. */
+export const $boxInsert = atom<null | { seq: number; text: string }>(null)
+
+/** Put `text` into the conversation's box, after what it holds, for the user to send. */
+export function insertIntoBox(text: string): void {
+  const words = text.trim()
+
+  if (words) {
+    $boxInsert.set({ seq: ($boxInsert.get()?.seq ?? 0) + 1, text: words })
+  }
+}
+
 /** Why a plugin's screen did not load, by plugin, for the Plugins screen. */
 export const $screenErrors = atom<Record<string, string>>({})
 
-const AREAS: readonly Area[] = ['page', 'panel']
+const AREAS: readonly Area[] = ['box', 'page', 'panel']
 
 /** Add a contribution; returns what takes it away. The same key again replaces it. */
 export function contribute(plugin: string, contribution: Contribution): () => void {

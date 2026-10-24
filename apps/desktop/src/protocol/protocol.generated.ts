@@ -1742,6 +1742,8 @@ export interface EventMap {
   'message.complete': MessageComplete
   /** A piece of the reply's text. */
   'message.delta': Said
+  /** A plugin's tool sent the user a file (SDK version 22, the voice plugin's spoken answer), kept in the home's attachments: shown in the turn, and sent in a channel's chat. */
+  'message.file': AttachmentRow
   /** The text streamed since the last model call was interim: the call asked for tools. Said before its first tool.start. */
   'message.interim': Interim
   /** A turn began with what the user said. */
@@ -1798,6 +1800,7 @@ export const EVENT_NAMES = [
   'executor.usage',
   'message.complete',
   'message.delta',
+  'message.file',
   'message.interim',
   'message.start',
   'message.steered',
@@ -1827,6 +1830,7 @@ export const CONVERSATION_EVENT_NAMES = [
   'command.update',
   'message.complete',
   'message.delta',
+  'message.file',
   'message.interim',
   'message.start',
   'message.steered',

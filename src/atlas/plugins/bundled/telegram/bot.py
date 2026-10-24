@@ -75,19 +75,31 @@ class Bot:
                 await asyncio.sleep(wait * self._sleep)
                 wait = min(wait * 2, MOST_NETWORK_WAIT)
                 continue
+            return _result(method, response)
+
+    async def upload(
+        self, method: str, part: str, name: str, data: bytes, media_type: str, **params: Any
+    ) -> Any:
+        """A call that sends a file, as a multipart form, its file in `part` (`voice`,
+        `document`): one try, with `send`'s flood wait; Telegram's refusals raise."""
+        for attempt in range(3):
             try:
-                body = cast("dict[str, Any]", response.json())
-            except ValueError:
-                body = {}
-            if response.status_code == 200 and body.get("ok"):
-                return body.get("result")
-            parameters = cast("dict[str, Any]", body.get("parameters") or {})
-            raise TelegramError(
-                method,
-                response.status_code,
-                str(body.get("description") or response.reason_phrase),
-                float(parameters.get("retry_after") or 0),
-            )
+                response = await self._client.post(
+                    f"{self._base}/{method}",
+                    data={key: str(value) for key, value in params.items()},
+                    files={part: (name, data, media_type or "application/octet-stream")},
+                )
+            except httpx2.HTTPError as error:
+                raise TelegramError(method, 0, str(error)) from error
+            try:
+                return _result(method, response)
+            except TelegramError as error:
+                if error.status == 401:
+                    raise Fatal(_REFUSED) from error
+                if error.status != 429 or error.retry_after > MOST_FLOOD_WAIT or attempt == 2:
+                    raise
+                await asyncio.sleep(error.retry_after * self._sleep)
+        raise AssertionError  # pragma: no cover - the loop returns or raises
 
     async def download(self, file_id: str) -> bytes:
         """A file someone sent, by its id: `getFile` gives its path, then its bytes. Raises
@@ -147,6 +159,23 @@ class Bot:
                     ) from error
                 await asyncio.sleep(wait * self._sleep)
         raise AssertionError  # pragma: no cover - the loop returns or raises
+
+
+def _result(method: str, response: httpx2.Response) -> Any:
+    """A call's result; Telegram's refusal raises, with its flood wait."""
+    try:
+        body = cast("dict[str, Any]", response.json())
+    except ValueError:
+        body = {}
+    if response.status_code == 200 and body.get("ok"):
+        return body.get("result")
+    parameters = cast("dict[str, Any]", body.get("parameters") or {})
+    raise TelegramError(
+        method,
+        response.status_code,
+        str(body.get("description") or response.reason_phrase),
+        float(parameters.get("retry_after") or 0),
+    )
 
 
 _REFUSED = (

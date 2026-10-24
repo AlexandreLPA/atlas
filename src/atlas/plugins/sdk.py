@@ -52,7 +52,9 @@ Claude's extra usage, Codex's credits), so a limit that bills rather than stops 
 (`Transcript.context`), so a switch of account says what its first message reads again
 (22/10/2026). Version 21 lets a plugin read one kind of attachment into text before the turn
 (`PluginContext.register_reader`, step 17a): the voice plugin writes down what an audio file says,
-from the app and from every channel alike.
+from the app and from every channel alike. Version 22 lets a tool send the user a file
+(`ToolHost.send_file`): Atlas keeps it in the home, shows it in the app, and hands it to a channel
+that sends files (`FileChannel.send_file`); the voice plugin's spoken answers go so.
 
 **What costs credit is declared and shown:** `llm` and `notify` call the user's model on the
 plugin's own initiative, so the manifest says `"llm": true` or `"notify": true` and the consent
@@ -94,8 +96,9 @@ from typing import Any, Literal, Protocol
 #: folders; 13, the files attached to its prompts; 14, tools, and what stops when it is turned off;
 #: 15, hooks; 16, commands, terminal commands, the user's model, and messages to a conversation;
 #: 17, the calls its screen makes; 18, the ACP client (`atlas.plugins.acp`); 19, whether the plan
-#: pays on past its limits; 20, a session's tokens of context; 21, attachment readers.
-API_VERSION = 21
+#: pays on past its limits; 20, a session's tokens of context; 21, attachment readers; 22, files
+#: a tool sends the user, and a channel that sends them.
+API_VERSION = 22
 
 
 @dataclass(frozen=True, slots=True)
@@ -180,6 +183,16 @@ class Channel(Protocol):
     async def settle(self, chat: str, prompt: str, said: str) -> None:
         """`prompt` no longer waits (answered, here or in the app, or expired): replace its
         buttons with `said`."""
+        ...
+
+
+class FileChannel(Channel, Protocol):
+    """A channel that sends files too (version 22): a channel without `send_file` gets a line
+    naming the file instead, so a channel written before keeps working unchanged."""
+
+    async def send_file(self, chat: str, path: Path, media_type: str) -> None:
+        """Send the file at `path` in `chat`: an audio file as the platform's voice message when
+        it is one Telegram plays as such (`audio/ogg`), anything else as a document."""
         ...
 
 
@@ -766,6 +779,13 @@ class ToolHost(Protocol):
     def conversation(self) -> str:
         """The conversation the call runs in (version 16), for `PluginContext.notify` later (a
         render that ends after the turn): Atlas's id for it, the hooks' `session_id`."""
+        ...
+
+    async def send_file(self, path: Path) -> str:
+        """Send the user the file at `path` (version 22): Atlas copies it into the home, shows it
+        in the conversation in the app, and sends it in the chat when the conversation is a
+        channel's. Returns where the home keeps it. Raises `ValueError` for a file it cannot keep
+        (missing, or past the limit of its kind)."""
         ...
 
 

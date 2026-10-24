@@ -1,6 +1,8 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { $contributions, contribute, insertIntoBox } from '@/plugins/registry'
+import { BoxActions } from '@/plugins/view'
 import type { SlashCommandRow } from '@/protocol/protocol.generated'
 
 import { MessageBox } from './message-box'
@@ -96,5 +98,51 @@ describe("the box's / list", () => {
     fireEvent.keyDown(text, { key: 'Enter' })
     expect(onSlash).toHaveBeenLastCalledWith('review', '42')
     expect(onSend).toHaveBeenCalledWith('/review 42', [])
+  })
+})
+
+describe("the box's plugin buttons (screen version 2)", () => {
+  it('show beside the words, and what a screen dictates lands after what the box holds', () => {
+    contribute('voice', {
+      area: 'box',
+      id: 'dictate',
+      render: () => <button type="button">🎤</button>,
+      title: 'Dictate'
+    })
+    render(
+      <MessageBox
+        actions={<BoxActions />}
+        connected
+        label="Message"
+        onSend={vi.fn(() => Promise.resolve(true))}
+        placeholder="Message"
+        testId="box"
+        toolbar={null}
+      />
+    )
+    const text = screen.getByTestId<HTMLTextAreaElement>('box')
+
+    expect(screen.getByTestId('box-actions').textContent).toBe('🎤')
+
+    fireEvent.change(text, { target: { value: 'Remind me' } })
+    act(() => {
+      insertIntoBox(' to call the dentist ')
+    })
+    expect(text.value).toBe('Remind me to call the dentist')
+
+    act(() => {
+      insertIntoBox('on Thursday')
+    })
+    expect(text.value).toBe('Remind me to call the dentist on Thursday')
+    $contributions.set([])
+  })
+
+  it('leave a box that takes no buttons, an executor session’s, as it is', () => {
+    const text = box()
+    act(() => {
+      insertIntoBox('dictated elsewhere')
+    })
+
+    expect(text.value).toBe('')
   })
 })

@@ -358,6 +358,9 @@ def test_an_enabled_plugin_s_tools_load_run_and_stop_with_it(plugins: Plugins, h
         def conversation(self) -> str:
             return "c-1"
 
+        async def send_file(self, path: Path) -> str:  # pragma: no cover - this tool sends none
+            return str(path)
+
     async def scenario() -> tuple[str, list[str], str]:
         [tool] = await plugins.tools()
         assert (tool.plugin, tool.name, tool.read_only) == ("echo", "echo_upper", True)

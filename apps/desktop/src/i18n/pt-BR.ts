@@ -678,6 +678,7 @@ export const ptBR: Override<Messages> = {
     halted: 'O turno parou: o agente repetiu a mesma chamada.',
     interrupted: 'Parado.',
     limited: 'O turno parou num limite.',
+    fileSent: 'O Atlas mandou um arquivo',
     notice: 'O Atlas foi avisado',
     other: 'desconhecido nesta versão do app',
     skill: 'skill carregada',

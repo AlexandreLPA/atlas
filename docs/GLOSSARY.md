@@ -78,6 +78,11 @@ becomes an identifier. Portuguese is listed because the roadmap is written in Po
 | `image description` | descrição da imagem | What the description model wrote about an attached image, given to a model that does not see images in the image's place |
 | `reader` | leitor | A plugin's code that turns one kind of attachment into text before the turn (`register_reader`, SDK version 21): the voice plugin's, for audio |
 | `audio transcript` | transcrição do áudio | What a reader wrote down of an audio attachment, kept with it as its `description` and given to the model in the note's place |
+| `file sent` | arquivo mandado | A file a plugin's tool sends the user (`ToolHost.send_file`, `FileSent`, the `message.file` event, SDK version 22): kept in the home's attachments, shown in the turn, sent in a channel's chat |
+| `box button` | botão da caixa | A button a plugin's screen adds beside the words of the conversation's box (the `box` area, screen version 2): the voice plugin's microphone and its live conversation |
+| `dictation` | ditado | Speech recorded by the box's microphone and written down into the box, to be read before it is sent; never sent by itself |
+| `live conversation` | conversa por voz | The voice plugin's spoken conversation: OpenAI's full-duplex voice model talks with the user and hands each real request to Atlas |
+| `spoken turn` | turno falado | A turn the live conversation handed over: the user's last words as the message, and a note of Atlas's saying it is speech and will be spoken |
 | `turn` | turno | One user message and everything the agent does until it answers |
 | `instructions` | instruções | The system prompt of a conversation, built by Atlas: what the agent is (its soul), how to use its memory, and the memory snapshot |
 | `agent loop` | laço do agente | The code that runs a turn: it calls the model, runs the tools the model asks for, and calls it again until it answers |

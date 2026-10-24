@@ -672,6 +672,7 @@ export const en = {
     halted: 'The turn stopped: the agent repeated the same call.',
     interrupted: 'Stopped.',
     limited: 'The turn stopped at a limit.',
+    fileSent: 'Atlas sent a file',
     notice: 'Atlas was notified',
     /** A part for an event this app does not know: a newer server's. */
     other: 'not known to this version of the app',

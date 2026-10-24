@@ -8,13 +8,15 @@
 import { useStore } from '@nanostores/react'
 
 import type { RpcMethod, RpcMethods } from '@/protocol/protocol.generated'
-import { $connection, $home, $selected, current } from '@/store/app'
+import { $connection, $home, $selected, current, send } from '@/store/app'
 import { togglePanel } from '@/store/terminals'
 
-import { $pluginPage } from './registry'
+import { $pluginPage, insertIntoBox } from './registry'
 
-/** What this app offers screens: 1, panels and pages, the app's state, the server's methods. */
-export const SCREEN_API = 1
+/** What this app offers screens: 1, panels and pages, the app's state, the server's methods; 2,
+ *  buttons in the conversation's box, words put into it, and a message sent as the box sends
+ *  one (step 17a). */
+export const SCREEN_API = 2
 
 /** Read a store and follow it, in a component: `useValue(host.state.conversation)`. */
 export const useValue = useStore
@@ -37,6 +39,16 @@ export const host = {
   openPage(key: string): void {
     current().$view.set('plugin')
     $pluginPage.set(key)
+  },
+  /** Send a message in the conversation on screen as the box sends one (version 2): it starts a
+   *  turn, steers the one running, or makes the conversation when none is open. */
+  send(text: string): Promise<void> {
+    return send(text)
+  },
+  /** Put words into the conversation's box, after what it holds, for the user to read and send
+   *  (version 2: a dictation). */
+  insertText(text: string): void {
+    insertIntoBox(text)
   },
   /** Show or hide the side panel. */
   togglePanel(open?: boolean): void {

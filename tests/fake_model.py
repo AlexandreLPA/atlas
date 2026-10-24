@@ -21,10 +21,12 @@ every request it gets, and can behave like a particular provider:
   byte, past the checks that only the fake's own replies could pass (its thought signatures).
 - **OpenAI's transcription** (`/v1/audio/transcriptions`, step 17a): the multipart form OpenAI
   takes, its fields and its file recorded (`heard`), answered from a script of its own
-  (`transcribe`), or a 500 when it runs out.
+  (`transcribe`), or a 500 when it runs out; its speech (`/v1/audio/speech`), an Ogg file; and its
+  live voice sessions (`/v1/live/sessions`), a WebRTC answer to the offer.
 - **Driven from outside**, for the desktop app's end-to-end tests: `python tests/fake_model.py`
   serves until stopped and writes `FAKE_MODEL_READY port=<n>`; `POST /_fake/reply` queues replies
-  given as JSON (`reply_from_json`), and `GET /_fake/requests` returns the bodies the model got.
+  given as JSON (`reply_from_json`), `POST /_fake/transcribe` the transcriptions' texts, and
+  `GET /_fake/requests` returns the bodies the model got.
   `--host 0.0.0.0 --port 8000` serves it from a container beside Atlas's (tests/docker).
 """
 
@@ -50,6 +52,10 @@ from starlette.routing import Route
 #: The fields a strict Chat Completions schema takes on a message and on a tool call.
 STRICT_MESSAGE_FIELDS = frozenset({"role", "content", "tool_calls", "tool_call_id", "name"})
 STRICT_CALL_FIELDS = frozenset({"id", "type", "function"})
+#: What the fake speech endpoint answers: an Ogg file's first bytes.
+SPOKEN = b"OggS\x00\x02" + b"\x00" * 40 + b"OpusHead"
+#: What the fake live session answers the WebRTC offer with.
+LIVE_ANSWER = "v=0\r\no=- 1 1 IN IP4 127.0.0.1\r\ns=fake\r\n"
 
 
 @dataclass
@@ -235,7 +241,10 @@ class FakeModelServer:
                 Route("/v1/models", self._check, methods=["GET"]),
                 Route("/v1/key", self._check, methods=["GET"]),
                 Route("/v1/audio/transcriptions", self._transcription, methods=["POST"]),
+                Route("/v1/audio/speech", self._speech, methods=["POST"]),
+                Route("/v1/live/sessions", self._live_session, methods=["POST"]),
                 Route("/_fake/reply", self._queue, methods=["POST"]),
+                Route("/_fake/transcribe", self._queue_transcripts, methods=["POST"]),
                 Route("/_fake/requests", self._recorded, methods=["GET"]),
             ]
         )
@@ -345,6 +354,35 @@ class FakeModelServer:
         if isinstance(item, FakeError):
             return _error(item)
         return JSONResponse({"text": item})
+
+    async def _speech(self, request: Request) -> Response:
+        """OpenAI's `audio/speech`: the JSON body recorded, and an Ogg file that says nothing."""
+        body = await self._record(request) or {}
+        refused = self._refused_key(request)
+        if refused is not None:
+            return refused
+        if not body.get("input") or not body.get("model") or not body.get("voice"):
+            return _error(FakeError(400, "Speech takes a model, a voice and an input."))
+        return Response(SPOKEN, media_type="audio/ogg")
+
+    async def _live_session(self, request: Request) -> Response:
+        """OpenAI's `live/sessions`: the session and the WebRTC offer recorded, and an answer."""
+        body = await self._record(request) or {}
+        refused = self._refused_key(request)
+        if refused is not None:
+            return refused
+        transport = cast("dict[str, Any]", body.get("transport") or {})
+        if not str(transport.get("sdp") or "").startswith("v="):
+            return _error(FakeError(400, "A live session takes a WebRTC offer."))
+        return JSONResponse(
+            {"session": {"id": "live_fake"}, "transport": {"type": "webrtc", "sdp": LIVE_ANSWER}}
+        )
+
+    async def _queue_transcripts(self, request: Request) -> Response:
+        """Queue what the next transcriptions answer, for a test outside this process."""
+        texts = cast("list[str]", await request.json())
+        self.transcribe(*texts)
+        return JSONResponse({"queued": len(texts)})
 
     async def _queue(self, request: Request) -> Response:
         """Queue the replies a test outside this process gives as JSON."""

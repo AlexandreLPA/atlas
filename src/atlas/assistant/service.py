@@ -56,7 +56,7 @@ import logging
 import platform
 import re
 import secrets
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from contextlib import aclosing
 from dataclasses import dataclass, field, replace
 from datetime import datetime
@@ -96,6 +96,7 @@ from atlas.assistant.model import (
     ATLAS_COMMANDS,
     IDENTITY,
     ConversationRole,
+    FileSent,
     PreviewAsked,
     Reviewed,
     Sent,
@@ -115,7 +116,14 @@ from atlas.assistant.titles import TITLE_TURNS, TitleQuarantine, write_title
 from atlas.assistant.workbench import Workbench, answer_for_user
 from atlas.bots import MAIN_AGENT, Bot, BotError, Bots, roster_section
 from atlas.browser import ENGINE, Browser, find_chrome
-from atlas.conversations import BOT, Attachments, Conversation, ConversationStore, TitleSource
+from atlas.conversations import (
+    BOT,
+    AttachmentError,
+    Attachments,
+    Conversation,
+    ConversationStore,
+    TitleSource,
+)
 from atlas.home import Database, Home, Settings, TrustSettings, time_zone, utc_now
 from atlas.hooks import ConversationHooks, ConversationMonitors, Hooks, PluginMonitor
 from atlas.jobs import (
@@ -213,6 +221,7 @@ type ConversationEvent = (
     | SubagentChanged
     | BackgroundCommand
     | PreviewAsked
+    | FileSent
 )
 #: Where the conversations' events go: the conversation's id, and the event.
 type Listener = Callable[[str, ConversationEvent], None]
@@ -679,6 +688,31 @@ class Assistant:
         """Tell the listener something about a conversation outside its turns."""
         self._shared.listener(conversation_id, event)
 
+    async def _send_file(self, conversation_id: str, path: Path) -> str:
+        """A plugin's tool sends the user a file (SDK version 22): kept in the home's attachments,
+        told to the conversation's listeners (the app, a channel), and where it is kept returned.
+        Raises `ValueError` for a file that cannot be kept."""
+        attachments = self._shared.attachments
+
+        def keep() -> tuple[Attachment, str]:
+            try:
+                data = path.read_bytes()
+            except OSError as error:
+                raise ValueError(f"{path} cannot be read: {error}") from error
+            try:
+                added = attachments.add("", path.name, len(data), 0, data)
+            except AttachmentError as error:
+                raise ValueError(str(error)) from error
+            kept = added.attachment
+            if kept is None:  # pragma: no cover - one part of the whole size completes it
+                raise ValueError(f"{path.name} could not be kept.")
+            return kept, str(attachments.path(kept.id))
+
+        attachment, where = await asyncio.to_thread(keep)
+        if conversation_id:
+            self._shared.listener(conversation_id, FileSent(attachment))
+        return where
+
     def executors(self) -> list[str]:
         """The outside executors installed on this computer, by name."""
         return sorted(self._executors)
@@ -747,7 +781,7 @@ class Assistant:
         by_source: dict[str, list[Tool]] = {}
         for loaded in tools:
             by_source.setdefault(f"{_PLUGIN_SOURCE}{loaded.plugin}", []).append(
-                _plugin_tool(loaded)
+                _plugin_tool(loaded, self._send_file)
             )
         held = {
             tool.source
@@ -1917,8 +1951,11 @@ class _CommandHost:
 
 
 class _ToolHost:
-    """Atlas as a plugin's running tool sees it: its progress goes under the call, and the
-    conversation it runs in."""
+    """Atlas as a plugin's running tool sees it: its progress goes under the call, the
+    conversation it runs in, and the files it sends the user."""
+
+    def __init__(self, send: Callable[[str, Path], Awaitable[str]]) -> None:
+        self._send = send
 
     def progress(self, text: str) -> None:
         report_progress(text)
@@ -1927,13 +1964,16 @@ class _ToolHost:
     def conversation(self) -> str:
         return _CONVERSATION.get("")
 
+    async def send_file(self, path: Path) -> str:
+        return await self._send(self.conversation, Path(path))
 
-def _plugin_tool(loaded: LoadedTool) -> Tool:
+
+def _plugin_tool(loaded: LoadedTool, send: Callable[[str, Path], Awaitable[str]]) -> Tool:
     """A plugin's tool as the loop offers it: behind the tool search, as an MCP server's, its
     source the plugin, through the same gate as every tool."""
 
     async def run(arguments: dict[str, Any]) -> str:
-        return await loaded.run(arguments, _ToolHost())
+        return await loaded.run(arguments, _ToolHost(send))
 
     return Tool(
         name=loaded.name,

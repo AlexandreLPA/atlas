@@ -2443,14 +2443,69 @@ the user: the voice conversation is to be the best there is, paid).
   file sent as it is (Telegram's OGG voice notes, MP3, M4A, WAV and WebM up to 25 MB, past
   Atlas's 20 MB for audio). The model and the address are settings.
 - **Atlas speaks only when asked** (decided by the user): receiving audio never makes Atlas
-  answer in audio. Speaking is a tool the model calls when the user asks for it; it comes with the
-  rest of step 17a, with the box's microphone, which dictates into the box, and the live voice
-  conversation.
-- **Proved** against the fake model server, which takes OpenAI's multipart transcription too: the
-  manifest and its refusals, a reader not declared, one reader a kind; an audio file written down
-  once, kept with it and read again at the next call; no key and a refusal leaving the note while
-  the turn goes on; a voice note sent while a turn runs reaching the model written down; and a
-  Telegram voice message through a real server and the Telegram plugin.
+  answer in audio. Speaking is the plugin's tool, `voice_speak`, which the model calls when the
+  user asks to hear the answer: OpenAI's `audio/speech` with `gpt-4o-mini-tts` and the voice
+  setting, as Opus in an Ogg file, a text past 4,096 characters cut at a sentence.
+- **Files a tool sends the user** (SDK version 22, `ToolHost.send_file`): Atlas copies the file
+  into the home's attachments (a backup carries it), tells the conversation's listeners
+  (`FileSent`), and returns where it is kept. The server sends it as `message.file`, an
+  `AttachmentRow`: the app shows it as a part of the turn, a chip that opens beside; a channel's
+  bridge hands it to a channel that sends files (`FileChannel.send_file`, a method of its own, so
+  a channel written before keeps working), and gives one that does not a line naming it. Telegram
+  sends an Ogg voice note as its voice message (`sendVoice`, which plays in the chat), other audio
+  as audio and anything else as a document, as a multipart upload. **Left out:** a file sent is a
+  live event, not stored in the history, so a conversation reopened shows the tool's result naming
+  where it is kept, not the chip.
+- **The plugins' screens, version 2** (`SCREEN_API`): a third area, `box`, a button beside the
+  words of the conversation's box (Atlas's and a bot's, not an executor session's), each in its
+  own error boundary; `host.insertText`, words put after what the box holds, for the user to read
+  and send; and `host.send`, a message sent as the box sends one, which makes the conversation
+  when none is open.
+- **Dictation** (decided by the user: the box's microphone dictates, it does not send the audio):
+  the screen records with the browser's recorder, its Python has OpenAI write it down (the
+  `dictate` call, base64, 10 MB at most), and the words land in the box.
+- **The live conversation**: OpenAI's `gpt-live-1` talks with the user over WebRTC from the
+  app, listens while it speaks, takes being interrupted, and has no tools. Its persona, Atlas's own
+  words, tells it to hand over everything that needs work, facts or memory, and to say it is
+  checking meanwhile, never a result it does not have.
+  - **The key stays on the server:** the screen makes the WebRTC offer, and the plugin's Python
+    exchanges it for OpenAI's answer (`POST /live/sessions`, the `live_session` call), with the
+    conversation's last 24 text messages as the voice's history. Only the answer reaches the app.
+  - **Each request handed over (a delegation) is a turn of the conversation** on screen, sent as
+    the box sends one: the user's last words are the message; the spoken exchange goes to the
+    plugin's Python first (`live_turn`), whose `UserPromptSubmit` hook adds Atlas's note after the
+    words: it is speech, it will be spoken, answer briefly with no Markdown, never claim what is
+    not done. The note is the hooks' `additionalContext`, so no core change carries it, and a
+    typed message gets none. A tool starting is told to the voice as quiet context
+    (`session.thinking.append`); the answer, stripped of Markdown, code and addresses, is given
+    to it to say (`session.commentary.append`), in parts the voice model takes.
+  - **Which model answers** (decided by the user): the plugin's `voice_turns_model`, GPT-6 Luna
+    with no reasoning by default, or `conversation` for the conversation's own. The screen picks
+    it for the conversation as the voice starts (`conversation.model`) and puts the conversation's
+    back as it ends, also at the next start when the window closed meanwhile. **Atlas's own,
+    marked:** the conversation's model is switched rather than one turn's, since the protocol picks
+    a model per conversation; the model picker shows it while the voice runs.
+  - **It ends** on its button, on a stop phrase said alone ("stop", "pare", "tchau"), or after
+    the plugin's `quiet_close_seconds` of silence (120 by default; 0 never), since OpenAI bills
+    the session's time, silence included, at US$ 0.05 a minute. **Atlas's own, marked:** a
+    session forgotten open would bill on. A request Atlas still works on is never cut for silence.
+  - **Left out:** the conversation chained from transcription, a turn and speech, which only a
+    home without OpenAI's key would need; a request handed over while a turn runs steers it, as a
+    typed one does, rather than stopping it.
+- **Proved** against the fake model server, which takes OpenAI's multipart transcription, its
+  speech and its live sessions: the manifest and its refusals, a reader not declared, one reader a
+  kind; an audio file written down once, kept with it and read again at the next call; no key and a
+  refusal leaving the note while the turn goes on; a voice note sent while a turn runs reaching the
+  model written down; a Telegram voice message through a real server and the Telegram plugin; the
+  spoken answer reaching the app as `message.file` and Telegram as `sendVoice`; the dictation; the
+  live session opened with the key and the history, refused without an offer; and a spoken turn
+  carrying its note once. The screen's engine in Vitest, with a fake link and a fake conversation:
+  what is handed over and with which note, the tools and the answer told to the voice, a failed
+  turn, the silence that closes and the one that does not, the stop phrase. End to end in the real
+  app, with Chromium's fake microphone: the two buttons in the box, a dictation landing in it unsent,
+  and the live conversation's session reaching OpenAI's endpoint with the app's offer and the key
+  from the server; the fake answers no real WebRTC, so the voice itself, spoken and heard, waits for
+  the user's proof with OpenAI.
 
 ## The executors tab and the side panel — decided 2026-10-15
 

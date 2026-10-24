@@ -7,7 +7,7 @@ import { Component, type ErrorInfo, type ReactNode } from 'react'
 
 import { t } from '@/i18n'
 
-import { $contributions, $pluginPage, type Registered } from './registry'
+import { $contributions, $pluginPage, inArea, type Registered } from './registry'
 
 interface BoundaryState {
   error: Error | null
@@ -63,6 +63,24 @@ export function PluginPage() {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto" data-testid="plugin-page">
       <ContributionView item={item} />
+    </div>
+  )
+}
+
+/** The buttons the plugins' screens add to the conversation's box (screen version 2): each in its
+ *  own boundary, beside the words. */
+export function BoxActions() {
+  const items = inArea(useStore($contributions), 'box')
+
+  if (items.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="flex shrink-0 items-end gap-2" data-testid="box-actions">
+      {items.map(item => (
+        <ContributionView item={item} key={item.key} />
+      ))}
     </div>
   )
 }

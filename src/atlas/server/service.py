@@ -60,6 +60,7 @@ from atlas.assistant import (
     ConversationEvent,
     Decides,
     ExecutorUsage,
+    FileSent,
     InstanceActivity,
     InstanceChanged,
     PreviewAsked,
@@ -2533,6 +2534,8 @@ def _wire(event: ConversationEvent, attached: Path) -> tuple[str, object]:
             return "command.update", _command_row(event)
         case PreviewAsked(action, target, label):
             return f"preview.{action}", PreviewPayload(target, label)
+        case FileSent(attachment):
+            return "message.file", _attachment(attachment, attached)
 
 
 def _said_kind(text: str) -> Literal["message", "notice", "terminal", "skill"]:

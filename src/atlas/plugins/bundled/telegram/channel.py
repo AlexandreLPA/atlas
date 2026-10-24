@@ -5,7 +5,8 @@ conversations are Atlas's. Only private chats with people are read; groups and o
 for later. A photo, a document, a video, an audio file or a voice message is downloaded (`getFile`,
 20 MB at most for a bot) and handed over with its caption (SDK version 7): what the model reads of
 it is Atlas's, as for a file dropped in the app. A sticker, a location or a poll is told it is not
-read.
+read. A file Atlas sends (SDK version 22) goes as a voice message when it is an Ogg voice note,
+as audio or as a document otherwise.
 
 **Buttons** carry `p:<prompt>:<choice>` (Telegram allows 64 bytes).
 Atlas decides whether the person who pressed may answer and whether the question still waits; a
@@ -20,6 +21,7 @@ import asyncio
 import contextlib
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, cast
 
 from atlas.plugins.sdk import ChannelHost, Inbound, InboundFile, Prompt
@@ -27,6 +29,8 @@ from atlas.plugins.sdk import ChannelHost, Inbound, InboundFile, Prompt
 from .bot import DOWNLOAD_BYTES, Bot, Fatal, TelegramError
 from .text import pieces, to_html
 
+#: What Telegram plays as a voice message: Opus in an Ogg file.
+VOICE_TYPES = frozenset({"audio/ogg", "audio/opus"})
 #: Telegram's typing notice lasts 5 seconds; it is sent again before it ends.
 TYPING_SECONDS = 4.5
 #: A message with nothing Atlas reads: a sticker, a location, a contact, a poll.
@@ -184,6 +188,20 @@ class TelegramChannel:
             for piece in pieces(text):
                 if piece:
                     await self._say(bot, chat, piece)
+
+    async def send_file(self, chat: str, path: Path, media_type: str) -> None:
+        """A file Atlas sends (SDK version 22): an Ogg voice note as Telegram's voice message,
+        which plays in the chat, other audio as audio, anything else as a document."""
+        bot = await self._ready_bot()
+        data = await asyncio.to_thread(path.read_bytes)
+        if media_type in VOICE_TYPES:
+            method, part = "sendVoice", "voice"
+        elif media_type.startswith("audio/"):
+            method, part = "sendAudio", "audio"
+        else:
+            method, part = "sendDocument", "document"
+        async with self._locks.setdefault(chat, asyncio.Lock()):
+            await bot.upload(method, part, path.name, data, media_type, chat_id=chat)
 
     async def _say(self, bot: Bot, chat: str, piece: str, **extra: Any) -> dict[str, Any]:
         try:

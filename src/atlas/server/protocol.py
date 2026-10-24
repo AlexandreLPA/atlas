@@ -2548,6 +2548,13 @@ EVENTS: Mapping[str, Event] = {
             "The agent closes a preview tab of the conversation, or all of them.",
         ),
         Event(
+            "message.file",
+            AttachmentRow,
+            "A plugin's tool sent the user a file (SDK version 22, the voice plugin's spoken "
+            "answer), kept in the home's attachments: shown in the turn, and sent in a channel's "
+            "chat.",
+        ),
+        Event(
             "request.cancel",
             RequestCancel,
             "An open server request was withdrawn; take its card down.",
