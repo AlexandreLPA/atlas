@@ -3293,6 +3293,106 @@ e o canal só manda texto de volta.
     uns 5 minutos de conversa por voz (cerca de US$ 0,25 mais os turnos no GPT-6 Luna). O áudio de
     verdade, falado e ouvido, só o usuário prova.
 
+### Loja (decidida em 24/10, revista em 25/10, passo 16s)
+
+Pedido do usuário em 24/10: um lugar no app para achar e instalar o que outras pessoas fizeram para
+o Atlas, separado em skills, MCPs, plugins e executores, com os itens da equipe do Atlas marcados e
+uma página para cada item. Hoje só se instala por endereço (16n), sabendo o endereço.
+
+- **Sem servidor nosso por enquanto** (decidido pelo usuário em 24/10): a loja é um repositório
+  público no GitHub, sem contagem de downloads e sem estrelas. Os dois vêm depois, com um serviço
+  pequeno no servidor de casa do usuário; a tela nasce sem espaço vazio esperando por eles.
+- **Quem entra, o usuário decide** (decidido pelo usuário em 24/10): cada item entra por um PR que
+  ele revisa e aceita. Mais revisores e mais automação vêm depois.
+- **Quatro tipos, separados** (decidido pelo usuário em 24/10: quem quer uma skill baixa só a
+  skill, não um plugin que traz skills; revisto com ele em 25/10 para a skill que precisa de uma
+  biblioteca ou de um MCP):
+  - **Skill:** uma pasta com `SKILL.md` e os arquivos dela. Vai para a biblioteca de skills da
+    casa, como as do usuário. Um autor com várias skills tem um item para cada uma. No próprio
+    `SKILL.md` (`metadata.requires`, a forma que as skills do Gmail e da Agenda que o Atlas traz já
+    usam) ela diz do que precisa:
+    - **programas** na máquina (`bins`: `ffmpeg`, `gh`): a loja confere e mostra o que falta; a
+      skill instala mesmo assim e continua à vista do modelo, que pode pedir para instalar o
+      programa;
+    - **MCPs da loja** (`mcp`): instalados junto, cada um como o item que é, com os segredos dele;
+    - **sistemas** (`os`: `windows`, `macos`, `linux`): fora deles, a loja não instala.
+  - **A biblioteca de um script vai no próprio script, não na máquina:** o Python declara as
+    dependências no cabeçalho do arquivo (o bloco `# /// script`, padrão do Python) e roda com
+    `uv run`, que monta um ambiente isolado na primeira vez; o Node usa `npx` com a versão exata.
+    Nada é instalado no sistema do usuário.
+  - **Skill não traz segredo.** Os comandos que o modelo roda nunca veem o cofre (Segredos, na
+    arquitetura), então o que precisa de uma chave passa por um MCP, que a recebe, ou vira plugin.
+  - **MCP:** um servidor MCP. Vai para o `mcp.json` da casa, com os segredos que ele pede guardados
+    no cofre.
+  - **Executor:** um plugin que registra um executor. A página diz que programa precisa estar
+    instalado na máquina.
+  - **Plugin:** o pacote: o que junta mais de um tipo no mesmo item (skills com o seu próprio MCP,
+    um gancho, uma tela) ou traz Python. Chega desligado, com o consentimento de sempre ao ligar.
+  - O CI da loja confere que o tipo declarado é o que o item traz de fato: uma "skill" com um gancho
+    ou com um `.mcp.json` é recusada.
+- **O repositório da loja,** `marqueskaio/atlas-marketplace`: um arquivo por item em `items/`, com
+  nome, tipo, título, uma frase, autor (o usuário do GitHub, nunca nome real), licença, o
+  repositório no GitHub e a pasta, e o **commit fixo**, os 40 caracteres. Um MCP traz a entrada do
+  `mcp.json` e os segredos que ela lê; de pacote, com a versão exata (`pacote@1.2.3`), que o
+  registro de pacotes não deixa trocar; remoto, com o endereço. Imagem e capturas, só do próprio
+  repositório, no mesmo commit. Um arquivo por item, e não uma lista única, para dois PRs abertos ao
+  mesmo tempo não brigarem pela mesma linha.
+- **O Atlas lê a loja inteira de uma vez,** o repositório num arquivo compactado só, por HTTPS, e
+  guarda a última que leu bem. Os itens vêm do GitHub do mesmo jeito, no commit fixado: sem precisar
+  de git, e assim também no container. Os endereços ficam em `[marketplace]` no `config.toml`, para
+  um espelho (o servidor de casa, depois) e para os testes.
+- **O que a revisão garante:**
+  - o que o revisor leu é o que instala: o Atlas baixa exatamente o commit fixado. Versão nova é um
+    PR novo trocando o commit, e o revisor lê a diferença entre os dois;
+  - um item não se atualiza sozinho (baixar código novo por fora da loja) nem traz binário
+    compilado, que ninguém consegue ler;
+  - segredos só pelo cofre do Atlas; o que ele faz na rede, em segundo plano ou fora da pasta dele
+    está escrito no README;
+  - **a lista de retirados:** um item tirado por segurança vai para uma lista no repositório, com o
+    motivo, e não instala mais. Quem já instalou é avisado, e o item para: o plugin desliga e não
+    liga mais, a skill vai para o arquivo das skills, o MCP sai do `mcp.json`.
+- **Oficial:** o selo diz que é da equipe do Atlas, e só o usuário o dá. O que já vem com o Atlas
+  aparece na loja com o selo: os quatro executores, o Telegram e a voz (com Ligar no lugar de
+  Instalar), e as skills do GitHub, do Gmail e da Agenda. Assim a loja já abre com o que mostrar.
+- **No app:** uma entrada "Loja" na barra lateral, junto de Rotinas, que abre na área principal:
+  - a busca e as abas Plugins · Skills · MCPs · Executores; em cada aba, primeiro os oficiais,
+    depois os da comunidade;
+  - o cartão: título, autor, selo, a frase, e o botão no estado certo (Instalar, Ligar, Atualizar,
+    Instalado, Retirado);
+  - a página do item: o README no commit fixado (a skill mostra o próprio `SKILL.md`, que é o que o
+    modelo lê), sem HTML solto, com links e imagens resolvidos no mesmo commit; as capturas, a
+    licença, a versão, o repositório, e o que ele pede (programas, MCPs, segredos) antes de
+    instalar. Ligar um plugin leva ao consentimento de sempre, na tela de Plugins.
+- **Quem busca e instala é o servidor, não o app:** a casa pode estar em outra máquina (passo 15), e
+  o item vai para a casa. Sem loja lida nenhuma vez e sem rede, a tela diz que não conseguiu abrir.
+  Tudo também pelo terminal (`atlas marketplace`).
+- **Atualizar é um botão, nunca sozinho:** aparece quando a loja tem outro commit do que está
+  instalado.
+  - Plugin e executor: pedem consentimento de novo se o que declaram cresceu.
+  - Skill: troca só se a cópia da casa está como veio. Se o usuário ou a revisão mudou a skill, a
+    loja avisa e oferece atualizar mesmo assim, com a versão da casa guardada (a biblioteca já
+    guarda as versões). A revisão melhora uma skill da loja como melhora as do usuário, e o curador
+    nunca a arquiva.
+  - MCP: a entrada do `mcp.json` é trocada; uma que o usuário mudou pede a mesma confirmação.
+- **Compatibilidade:** um plugin feito para um SDK mais novo (`api`) é recusado ao instalar, com o
+  aviso de atualizar o Atlas.
+- **No código, `marketplace`** (`atlas.marketplace`): `store` já é o estado dos plugins no servidor
+  e o estado das telas no app.
+- **Fica de fora:** downloads e estrelas (depois, no servidor de casa); MCP que entra com OAuth (o
+  cliente MCP do Atlas ainda não faz OAuth); repositório fora do GitHub; lojas de outras pessoas;
+  atualização automática; e o isolamento da tela de plugin num quadro próprio (16m), estudado de
+  novo se a revisão humana não bastar.
+- **A prova:**
+  - testes com uma loja servida por um GitHub falso em HTTP de verdade, os itens tirados de
+    repositórios git feitos no teste: a loja lida e guardada, cada tipo instalado no seu lugar, o
+    commit fixo conferido, a skill trazendo o MCP de que precisa, um commit novo virando Atualizar,
+    a skill mudada na casa sem ser sobrescrita, o item retirado parando, e a rede caída usando a
+    cópia guardada;
+  - o `atlas marketplace check` do CI da loja recusando um tipo que não bate, um item sem commit
+    fixo e um MCP de versão solta;
+  - de ponta a ponta no app: abrir a Loja, achar um item em cada aba, abrir a página, instalar,
+    ligar e ver funcionar.
+
 ## Assuntos de desenho ainda abertos
 
 A arquitetura do código foi decidida em 07/10 e está em `docs/ARCHITECTURE.md`: laço próprio sem
@@ -3393,6 +3493,7 @@ cumpriu.
 | 16p | O Gemini CLI como executor, com o cliente ACP do núcleo (`atlas.plugins.acp`), estudado antes do código | 16o | ✅ 21/10: a prova real (`scripts/prove_gemini.py --vault`) passou nos 7 passos com a chave de API do cofre; o Google não aceita mais login de conta pessoal no Gemini CLI, e a chave virou o segredo do plugin |
 | 16q | O DeepSeek (`dsh`) como executor, pelo cliente ACP do 16p, com os logs que ele manda à DeepSeek mostrados ou desligados | 16p | ✅ 21/10 no código e nas leituras reais sem prompt (o handshake, as opções, o `--patch` dos logs e o modo de permissão); a prova real com o modelo (`scripts/prove_deepseek.py --vault`) fica para quando houver uma chave da DeepSeek com saldo no cofre |
 | 16r | A prova do SDK com os dois plugins do usuário (decidida em 21/10: A prova do SDK com os plugins do usuário, acima): o do ERP contra o MCP dele, depois o de vídeo com o Remotion; o que faltar no SDK entra só quando um deles precisar (a tela mostrar arquivos, o Python avisar a tela, os pacotes do Node) | 16n | |
+| 16s | A loja (decidida em 24/10 e revista em 25/10: Loja, acima): o repositório público `atlas-marketplace` no GitHub, onde cada item entra por PR revisado pelo usuário, fixado num commit; quatro tipos separados, a skill dizendo os programas e os MCPs de que precisa; no app, a entrada Loja com as abas Plugins, Skills, MCPs e Executores, os oficiais marcados, uma página por item, instalar e atualizar pelo servidor da casa; sem downloads nem estrelas por enquanto. Pedido do usuário em 24/10 | 16n | |
 | 17 | Plugins oficiais, um de cada vez, cada um com a sua tela | 16 | |
 | 17a | O plugin `voice` (decidido em 24/10: Voz, acima): o áudio do Telegram e do app transcrito pela OpenAI, o 🎤 da caixa que dita, a fala só quando o usuário pede, e a conversa por voz de microfone aberto com o `gpt-live-1` passando o trabalho ao Atlas, no modelo da conversa ou num fixo só para voz (GPT-6 Luna por padrão); o núcleo só ganha três aberturas no SDK. Pedido do usuário em 24/10 | 16g, 16m | **Parte 1, código pronto em 24/10 (docs/ARCHITECTURE.md, Voice):** o leitor de anexo no SDK (versão 21, `register_reader`, declarado em `atlas.readers` e mostrado no consentimento) e o plugin `voice` com o `gpt-transcribe` da OpenAI (US$ 0,0045 por minuto). O áudio é transcrito uma vez e guardado com o anexo, no mesmo ponto da descrição de imagem; sem chave, ou com a OpenAI recusando, fica a nota de hoje e o turno segue. **Escolha própria, marcada:** um áudio mandado no meio de um turno é transcrito antes de entrar (a imagem nesse caso não é descrita), porque mandar áudio no meio é comum no celular. Provado contra o servidor falso, que agora também faz a transcrição da OpenAI, e pelo Telegram num servidor de verdade. **Parte 2, código pronto em 24/10:** o resto do 17a. A fala pedida é a ferramenta `voice_speak` (o `gpt-4o-mini-tts`, em Ogg Opus); o SDK vai para a versão 22 com `ToolHost.send_file`: o arquivo fica nos anexos da casa, aparece no turno do app (`message.file`) e vai ao Telegram como balão de voz (`sendVoice`), por um `send_file` do canal. As telas de plugin vão para a versão 2: botões na caixa (`box`), `host.insertText` e `host.send`. O 🎤 dita na caixa, sem mandar. A conversa por voz é o `gpt-live-1` em WebRTC no app; o Python do plugin abre a sessão com a chave, que nunca vai ao app; cada pedido vira um turno da conversa com a nota de fala (um gancho `UserPromptSubmit`, sem mudar o núcleo), no GPT-6 Luna sem raciocínio, a não ser que a configuração diga `conversation`. Fecha no botão, numa frase de parar dita sozinha ou depois de 120 s de silêncio. **Escolhas próprias, marcadas:** o modelo de voz é trocado na conversa enquanto a voz roda (o protocolo escolhe modelo por conversa) e devolvido no fim; um pedido feito com um turno rodando corrige o turno em vez de pará-lo; o arquivo mandado não fica no histórico, e a conversa reaberta mostra o resultado da ferramenta no lugar da ficha. Provado contra a OpenAI falsa (transcrição, fala e sessão ao vivo), pelo Telegram num servidor de verdade, no Vitest (o motor da conversa com uma ligação falsa) e de ponta a ponta no app com o microfone falso do Chromium: os dois botões, o ditado chegando à caixa sem ser mandado, e a sessão ao vivo chegando à OpenAI com a oferta do app e a chave do servidor. A voz falada e ouvida de verdade fica para a prova do usuário com a OpenAI (perguntar antes: cerca de US$ 0,25 por 5 minutos) |
 | 18 | Instalador de uma linha, e a chave pedida pela tela na primeira abertura (decidido em 13/10: Instalador, acima). Decidido pelo usuário em 13/10: vem antes do 15, para mandar o Atlas a testadores convidados no repositório privado; os scripts num gist público; a chave conferida sem custo e barrada só quando recusada; sem o login OAuth da OpenRouter. Desenho fechado em 13/10 | 10 | ✅. Os dois testadores convidados instalaram com a linha do gist e usaram sem problema: um num MacBook e outro no Windows, além do Windows do usuário e do CI no Windows e no Ubuntu. Achado do testador no Windows: com a chave gratuita do Gemini, o Gemini 3.6 Flash respondeu HTTP 503 ("high demand", o Google recusando quem não paga quando está cheio); com outra chave funcionou. Não é defeito do instalador nem da tela de chave |
