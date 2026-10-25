@@ -1,4 +1,5 @@
 import http from 'node:http'
+import net from 'node:net'
 
 import { expect, test } from '@playwright/test'
 
@@ -57,7 +58,11 @@ test('the Browser tab opens a page, goes back, forward and reload, and refuses w
   await page.getByTestId('panel-show').click()
   await page.getByTestId('browser-tab').click()
   await expect(page.getByTestId('browser-view')).toBeVisible()
-  await expect(page.getByTestId('browser-page')).toHaveCount(0)
+  // A tab is always there, empty, with its page; no view yet.
+  await expect(page.getByTestId('browser-page')).toHaveCount(1)
+  await expect(page.getByTestId('browser-page')).toHaveText('New tab')
+  await expect(page.getByTestId('browser-empty')).toBeVisible()
+  expect(await views(app)).toHaveLength(0)
 
   const address = page.getByTestId('browser-address')
   // A bare host and port is this machine's, so it gets http.
@@ -147,8 +152,88 @@ test('a pop-up becomes a page of the browser; the view follows the panel and goe
   await expect.poll(async () => (await shown(app)).length).toBe(1)
 
   // Closing the pages leaves no view behind.
-  await page.getByTestId('browser-page').last().getByLabel('Close this page').click()
-  await page.getByTestId('browser-page').last().getByLabel('Close this page').click()
-  await expect(page.getByTestId('browser-page')).toHaveCount(0)
+  await page.getByTestId('browser-page').last().getByLabel('Close this tab').click()
+  await page.getByTestId('browser-page').last().getByLabel('Close this tab').click()
+  await expect(page.getByTestId('browser-page')).toHaveCount(1)
+  await expect(page.getByTestId('browser-empty')).toBeVisible()
   expect(await views(app)).toHaveLength(0)
+})
+
+/** The first of the ports a look finds that nothing holds on this machine, with a site on it. */
+async function serveOnACommonPort(): Promise<number> {
+  for (const port of [3001, 4200, 5000, 8000, 8080, 5173, 3000]) {
+    const probe = net.createServer()
+    const free = await new Promise<boolean>(resolve => {
+      probe.once('error', () => {
+        resolve(false)
+      })
+      probe.listen(port, '127.0.0.1', () => {
+        probe.close(() => {
+          resolve(true)
+        })
+      })
+    })
+
+    if (free) {
+      site = http.createServer((_request, response) => {
+        response.setHeader('content-type', 'text/html')
+        response.end('<title>Dev server</title><p>up</p>')
+      })
+      await new Promise<void>(resolve => site?.listen(port, '127.0.0.1', resolve))
+
+      return port
+    }
+  }
+
+  throw new Error('Every common port is taken on this machine.')
+}
+
+test('the globe and its shortcut open the browser, its empty page finds a local server, and it expands over the conversation', async () => {
+  const port = await serveOnACommonPort()
+  desktop = await launch()
+  const { app, page } = desktop
+  await page.setViewportSize({ height: 820, width: 1200 })
+
+  // The panel hidden, the globe on its strip opens it on the browser.
+  await expect(page.getByTestId('side-panel')).toBeHidden()
+  await page.getByTestId('browser-show').click()
+  await expect(page.getByTestId('browser-view')).toBeVisible()
+  await expect(page.getByTestId('browser-empty')).toBeVisible()
+  await expect(page.getByTestId('browser-address')).toBeVisible()
+  // The shortcut hides it and brings it back.
+  await page.keyboard.press('Control+Shift+B')
+  await expect(page.getByTestId('side-panel')).toBeHidden()
+  await page.keyboard.press('Control+Shift+B')
+  await expect(page.getByTestId('browser-view')).toBeVisible()
+
+  // The look is asked for, and what answers opens with a click.
+  await page.getByTestId('browser-detect').click()
+  const found = page.getByTestId('browser-server').filter({ hasText: `localhost:${String(port)}` })
+  await expect(found).toBeVisible()
+  await found.click()
+  await expect(page.getByTestId('browser-page')).toHaveText(/Dev server/)
+  await expect(page.getByTestId('browser-address')).toHaveValue(`http://localhost:${String(port)}/`)
+  await expect.poll(async () => (await shown(app)).length).toBe(1)
+
+  // Expanded, it takes the conversation's place, the sidebar stays, and the view follows the box.
+  const narrow = (await shown(app))[0]?.bounds.width ?? 0
+  await page.getByTestId('browser-expand').click()
+  await expect(page.locator('.main-pane')).toBeHidden()
+  await expect(page.getByRole('navigation', { name: 'Conversations' })).toBeVisible()
+  await expect.poll(async () => (await shown(app))[0]?.bounds.width ?? 0).toBeGreaterThan(narrow + 200)
+  const box = await page.getByTestId('browser-box').boundingBox()
+  const [view] = await shown(app)
+  expect(Math.abs((view?.bounds.x ?? 0) - (box?.x ?? 0))).toBeLessThanOrEqual(1)
+  expect(Math.abs((view?.bounds.width ?? 0) - (box?.width ?? 0))).toBeLessThanOrEqual(1)
+
+  await page.getByTestId('browser-expand').click()
+  await expect(page.locator('.main-pane')).toBeVisible()
+  await expect.poll(async () => (await shown(app))[0]?.bounds.width ?? 0).toBeLessThan(narrow + 5)
+
+  // Expanded again, then closed: the panel goes, and the conversation is back.
+  await page.getByTestId('browser-expand').click()
+  await page.getByTestId('browser-close').click()
+  await expect(page.getByTestId('side-panel')).toBeHidden()
+  await expect(page.locator('.main-pane')).toBeVisible()
+  await expect.poll(async () => (await shown(app)).length).toBe(0)
 })

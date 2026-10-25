@@ -80,6 +80,8 @@ type BrowserCommand =
 interface BrowserBridge {
   command: (command: BrowserCommand) => Promise<BrowserAnswer>
   onChange: (listener: (state: BrowserState) => void) => () => void
+  /** The ports where a web server answers on this machine: the common ones and `extra`. */
+  servers: (extra: number[]) => Promise<number[]>
   state: () => Promise<BrowserState>
 }
 

@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('atlas', {
         ipcRenderer.removeListener('atlas:browser:changed', handler)
       }
     },
+    /** The ports, of the common ones and these, where a web server answers on this machine. */
+    servers: (extra: number[]): Promise<unknown> => ipcRenderer.invoke('atlas:browser:servers', extra),
     state: (): Promise<unknown> => ipcRenderer.invoke('atlas:browser:state')
   },
   /** Where a home's backup goes, from the system's save dialog; `null` when the user cancelled.

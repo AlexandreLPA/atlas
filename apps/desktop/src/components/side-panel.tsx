@@ -19,7 +19,7 @@ import {
   currentFolder,
   currentOwner
 } from '@/store/app'
-import { BROWSER_TAB, browserHost } from '@/store/browser'
+import { $browserExpanded, BROWSER_TAB, browserHost, toggleBrowser } from '@/store/browser'
 import { $previews, closePreview, type PreviewTab } from '@/store/previews'
 import {
   $panelOpen,
@@ -85,6 +85,7 @@ export function SidePanel() {
   const panel = showsExecutor || showsChanges ? undefined : panels.find(item => `${PLUGIN_TAB}${item.key}` === panelTab)
   const preview = showsExecutor || showsChanges || panel ? undefined : previews.find(tab => tab.id === panelTab)
   // The app's browser (electron/app-browser.ts): a tab of its own, which none of the others shows with.
+  const expanded = useStore($browserExpanded)
   const showsBrowser = !showsExecutor && !showsChanges && panelTab === BROWSER_TAB && browserHost() !== undefined
   const selected =
     showsExecutor || showsChanges || showsBrowser || preview || panel
@@ -103,7 +104,7 @@ export function SidePanel() {
       className="side-panel-open flex shrink-0 flex-col border-l border-border bg-subtle"
       data-testid="side-panel"
     >
-      <RailEdge rail="panel" />
+      {!expanded && <RailEdge rail="panel" />}
       <div
         className="title-bar title-bar-end flex h-9 shrink-0 items-center gap-1 border-b border-border px-2 text-xs"
         role="tablist"
@@ -293,16 +294,20 @@ export function usePanelState(): 'hidden' | 'offered' | 'open' {
 /** The hidden panel's switch, at the tab strip's end, which brings it back. */
 export function PanelShow() {
   return (
-    <IconButton
-      className="mx-1.5 my-auto"
-      icon={LayoutSidebarRight}
-      label={t.layout.showPanel}
-      onClick={() => {
-        togglePanel(true)
-      }}
-      side="bottom"
-      testId="panel-show"
-    />
+    <div className="mx-1.5 my-auto flex items-center gap-1">
+      {browserHost() && (
+        <IconButton icon={Web} label={t.browser.show} onClick={toggleBrowser} side="bottom" testId="browser-show" />
+      )}
+      <IconButton
+        icon={LayoutSidebarRight}
+        label={t.layout.showPanel}
+        onClick={() => {
+          togglePanel(true)
+        }}
+        side="bottom"
+        testId="panel-show"
+      />
+    </div>
   )
 }
 

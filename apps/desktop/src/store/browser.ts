@@ -7,7 +7,9 @@
  * Today the tabs are one list for the whole app. A later step ties them to conversations, as the
  * previews' are (store/previews.ts), by filtering this list by owner.
  */
-import { atom } from 'nanostores'
+import { atom, computed } from 'nanostores'
+
+import { $panelOpen, $panelTab } from './terminals'
 
 /** The panel's tab with the browser, in `$panelTab` (store/terminals.ts). */
 export const BROWSER_TAB = 'browser'
@@ -46,4 +48,38 @@ export function followBrowser(): () => void {
 /** Ask the browser for something; `null` where there is none. */
 export async function browserCommand(command: BrowserCommand): Promise<BrowserAnswer | null> {
   return (await browserHost()?.command(command)) ?? null
+}
+
+/** The browser asked to take the conversation's place (its header's expand button). */
+export const $browserWanted = atom(false)
+
+/** Whether it does: asked for, the panel open and on the browser. The panel keeps its place beside
+ * the conversation on any other tab, and goes back to it when the browser is left. */
+export const $browserExpanded = computed(
+  [$browserWanted, $panelOpen, $panelTab],
+  (wanted, open, tab) => wanted && open && tab === BROWSER_TAB
+)
+
+export function toggleBrowserExpanded(): void {
+  $browserWanted.set(!$browserWanted.get())
+}
+
+/** Show the panel on the browser, from the globe or its shortcut. */
+export function openBrowser(): void {
+  $panelOpen.set(true)
+  $panelTab.set(BROWSER_TAB)
+}
+
+/** The globe's switch: the browser when it is not on screen, else the panel hides. */
+export function toggleBrowser(): void {
+  if ($panelOpen.get() && $panelTab.get() === BROWSER_TAB) {
+    $panelOpen.set(false)
+  } else {
+    openBrowser()
+  }
+}
+
+/** The ports where a web server answers on this machine, the common ones and `extra`. */
+export async function lookForServers(extra: number[]): Promise<number[]> {
+  return (await browserHost()?.servers(extra)) ?? []
 }

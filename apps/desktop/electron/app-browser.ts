@@ -30,6 +30,7 @@ import {
   permissionGranted,
   type Rect
 } from './app-browser-rules'
+import { lookForServers, parsePorts, portsToLook } from './local-servers'
 
 /** A browser tab as the window shows it. */
 export interface BrowserTabState {
@@ -397,7 +398,7 @@ export class AppBrowser {
   }
 }
 
-/** The window's three channels to the browser; each answers the window's own page alone. */
+/** The window's channels to the browser (a command, its state, a look for local servers); each answers the window's own page alone. */
 export function registerAppBrowser(ipc: IpcMain, current: () => AppBrowser | null): void {
   ipc.handle('atlas:browser:command', (event, value: unknown): BrowserAnswer => {
     const browser = current()
@@ -414,5 +415,12 @@ export function registerAppBrowser(ipc: IpcMain, current: () => AppBrowser | nul
     const browser = current()
 
     return browser && event.sender === browser.owner ? browser.snapshot() : { selected: null, tabs: [] }
+  })
+  // The ports among the common ones, and the window's own, that answer as web servers here.
+  ipc.handle('atlas:browser:servers', async (event, extra: unknown): Promise<number[]> => {
+    const browser = current()
+    const ports = parsePorts(extra)
+
+    return browser && event.sender === browser.owner && ports ? lookForServers(portsToLook(ports)) : []
   })
 }

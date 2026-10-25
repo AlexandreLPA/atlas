@@ -20,8 +20,10 @@ browser is for what needs one: a page drawn by JavaScript, a login, a form, a sc
 
 ## The Browser tab
 
-The side panel has a **Browser** tab: a browser you use by hand, beside the conversation, with an
-address bar, back, forward and reload. A page that opens a window opens a tab instead.
+The side panel has a **Browser** tab: a browser you use by hand, beside the conversation. Open it
+from the globe at the panel's edge or with **Ctrl+Shift+B**. Its tabs are on top, with an address
+bar, back, forward and reload, and a button that expands it over the conversation. A new tab can
+look for the local servers running on this computer, such as a site you are building.
 
 It opens only web pages (`http` and `https`), refuses downloads, and says no to a site that asks
 for the camera, the microphone, your location or notifications. Atlas itself does not use it yet: it

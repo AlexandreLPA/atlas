@@ -27,6 +27,7 @@ import {
   DRAFT,
   keyScreenShown
 } from '@/store/app'
+import { $browserExpanded, browserHost, toggleBrowser } from '@/store/browser'
 import { $panelWidth, $sidebarWidth, toggleSidebar } from '@/store/layout'
 import { $firstRun, firstRunOf } from '@/store/setup'
 import { $terminals, openTerminal, refreshTerminalAvailable, terminalAvailable, togglePanel } from '@/store/terminals'
@@ -122,6 +123,8 @@ export function App() {
   // The rails' widths, which styles.css gives the sidebar and the side panel.
   const panelWidth = useStore($panelWidth)
   const sidebarWidth = useStore($sidebarWidth)
+  // The browser asked to take the conversation's place (store/browser.ts).
+  const expanded = useStore($browserExpanded)
   const widths = {
     '--panel-width': `${String(panelWidth)}px`,
     '--sidebar-width': `${String(sidebarWidth)}px`
@@ -146,6 +149,11 @@ export function App() {
       ) {
         event.preventDefault()
         toggleSidebar()
+      }
+
+      if (event.ctrlKey && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'b' && browserHost()) {
+        event.preventDefault()
+        toggleBrowser()
       }
 
       if (event.ctrlKey && event.key === '`') {
@@ -175,7 +183,12 @@ export function App() {
   }
 
   return (
-    <div className="relative flex h-full bg-background text-foreground" data-connection={state} style={widths}>
+    <div
+      className="relative flex h-full bg-background text-foreground"
+      data-connection={state}
+      data-panel-expanded={expanded ? '' : undefined}
+      style={widths}
+    >
       <Sidebar />
       <main className="main-pane flex min-w-0 flex-1 flex-col">
         <TabStrip />
