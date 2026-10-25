@@ -1,0 +1,10 @@
+---
+// Starlight's head, plus each page's Markdown twin for agents.
+import Default from '@astrojs/starlight/components/Head.astro'
+
+const { id } = Astro.locals.starlightRoute
+---
+
+<Default />
+{id && <link rel="alternate" type="text/markdown" href={`/${id}.md`} />}
+<meta name="theme-color" content="#05070f" />

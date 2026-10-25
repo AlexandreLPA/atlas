@@ -117,6 +117,28 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+  # The website (ROADMAP, step 19): its types, lint, format and tests, then a build that checks
+  # every page and file agents read. The whole history, because the changelog page is main's log.
+  site:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+      - name: Checks
+        run: npm run check
+      - name: Build
+        run: npm run build
+
   # Principle 4's proof without a key (docs/ARCHITECTURE.md, Container): the real compose file on
   # the built image, an empty container, a key and a conversation, with the fake model in a
   # container beside it.

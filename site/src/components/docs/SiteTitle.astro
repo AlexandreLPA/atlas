@@ -1,0 +1,52 @@
+---
+// The mark leads home; "Docs" leads to the documentation's start.
+import Mark from '../../assets/atlas-mark.svg'
+---
+
+<span class="site-title">
+  <a class="home" href="/">
+    <Mark class="mark" aria-hidden="true" />
+    <span>Atlas</span>
+  </a>
+  <a class="section" href="/docs/">
+    Docs
+  </a>
+</span>
+
+<style>
+  .site-title {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+  }
+
+  .home {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--sl-color-white);
+    font-size: 1.1rem;
+    font-weight: 640;
+    font-stretch: 116%;
+    text-decoration: none;
+  }
+
+  .mark {
+    width: 1.55rem;
+    height: 1.55rem;
+  }
+
+  .section {
+    padding-left: 0.85rem;
+    border-left: 1px solid var(--sl-color-hairline-light);
+    color: var(--sl-color-gray-3);
+    font-size: 0.95rem;
+    font-weight: 520;
+    text-decoration: none;
+  }
+
+  .section:hover {
+    color: var(--sl-color-white);
+  }
+</style>

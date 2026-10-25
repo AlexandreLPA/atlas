@@ -52,4 +52,13 @@ npm run test:e2e           # build, then the real app, atlas serve and the fake 
 npm run dev                # run the app from source
 ```
 
+The website, in `site/` (Node 24):
+
+```bash
+npm ci                     # install
+npm run check              # astro check, the Worker's types, eslint, prettier, vitest
+npm run build              # build, then check every page and file agents read
+npm run dev                # run the site from source on 127.0.0.1:4321
+```
+
 All of them must pass before a commit.

@@ -1,0 +1,39 @@
+/* The site's tokens, shared by the home, the news, the changelog and the documentation.
+   Night is the observatory, Brass is Atlas and the routes between its executors, Signal is only
+   for other machines. Mona Sans carries every role through its width axis: wide for statements,
+   normal for reading, narrow for the small labels on the orrery. */
+:root {
+  --night: #05070f;
+  --night-lift: #0b1124;
+  --ink: #0d1322;
+  --ink-raised: #121a2e;
+  --rule: rgb(232 236 244 / 0.12);
+  --rule-strong: rgb(232 236 244 / 0.22);
+  --starlight: #e8ecf4;
+  --haze: #8d96ab;
+  --brass: #e7b36a;
+  --brass-soft: rgb(231 179 106 / 0.16);
+  --signal: #86b6ff;
+
+  --font-sans: 'Mona Sans Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  --font-mono: 'Martian Mono Variable', ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  --wide: 116%;
+  --normal: 100%;
+  --narrow: 84%;
+
+  /* A major third from 17 px; the large steps follow the window. */
+  --step--2: 0.75rem;
+  --step--1: 0.875rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.3125rem;
+  --step-2: 1.625rem;
+  --step-3: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem);
+  --step-4: clamp(2.125rem, 1.4rem + 2.8vw, 3.5rem);
+  --step-5: clamp(2.5rem, 1.2rem + 4.4vw, 5rem);
+
+  --measure: 34rem;
+  --gutter: clamp(1.25rem, 5vw, 4.5rem);
+  --radius: 10px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}

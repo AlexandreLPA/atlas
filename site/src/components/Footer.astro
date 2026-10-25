@@ -1,0 +1,95 @@
+---
+import { REPOSITORY } from '../../site.config.mjs'
+import Mark from '../assets/atlas-mark.svg'
+---
+
+<footer class="footer">
+  <div class="page footer-grid">
+    <div class="footer-brand">
+      <Mark class="footer-mark" aria-hidden="true" />
+      <p>Atlas is free and open source, under the MIT license.</p>
+    </div>
+    <nav class="footer-links" aria-label="Footer">
+      <ul>
+        <li>
+          <a href="/docs/">Docs</a>
+        </li>
+        <li>
+          <a href="/news/">News</a>
+        </li>
+        <li>
+          <a href="/changelog/">Changelog</a>
+        </li>
+      </ul>
+      <ul>
+        <li>
+          <a href={REPOSITORY}>GitHub</a>
+        </li>
+        <li>
+          <a href={`${REPOSITORY}/blob/main/LICENSE`}>License</a>
+        </li>
+        <li>
+          <a href="/llms.txt">llms.txt, for agents</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+  <p class="page footer-fonts">Set in Mona Sans and Martian Mono, under the SIL Open Font License.</p>
+</footer>
+
+<style>
+  .footer {
+    position: relative;
+    padding: 5rem 0 2.5rem;
+    border-top: 1px solid var(--rule);
+    background: var(--night);
+    color: var(--haze);
+    font-size: var(--step--1);
+  }
+
+  .footer-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 3rem;
+  }
+
+  .footer-brand {
+    display: grid;
+    gap: 1.25rem;
+    max-width: 22rem;
+  }
+
+  .footer-mark {
+    width: 2.75rem;
+    height: 2.75rem;
+    color: var(--starlight);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: clamp(2.5rem, 8vw, 6rem);
+  }
+
+  .footer-links ul {
+    display: grid;
+    gap: 0.6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .footer-links a {
+    color: var(--starlight);
+    text-decoration: none;
+  }
+
+  .footer-links a:hover {
+    text-decoration: underline;
+  }
+
+  .footer-fonts {
+    margin-top: 4rem;
+    font-size: var(--step--2);
+  }
+</style>

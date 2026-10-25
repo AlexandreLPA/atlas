@@ -1,0 +1,136 @@
+---
+import { REPOSITORY } from '../../../site.config.mjs'
+import Site from '../../layouts/Site.astro'
+import { byDay, changes, formatDay } from '../../lib/changelog'
+
+const days = byDay(changes())
+const description =
+  'Every change that reaches the Update button in Atlas, newest first. Press Update in the app, or run atlas update, to get them.'
+---
+
+<Site title="Changelog: Atlas" description={description} markdown="/changelog.md" current="changelog">
+  <div class="page listing">
+    <header class="listing-head">
+      <h1>Changelog</h1>
+      <p>{description}</p>
+      <p class="feed">
+        <a href="/changelog/rss.xml">Follow the feed</a>
+      </p>
+    </header>
+    {days.length === 0 ? (
+      <p class="empty">
+        This build had no history to read. The full list is on <a href={`${REPOSITORY}/commits/main`}>GitHub</a>.
+      </p>
+    ) : (
+      days.map(day => (
+        <section class="day" aria-label={formatDay(day.date)}>
+          <h2>
+            <time datetime={day.date}>{formatDay(day.date)}</time>
+          </h2>
+          <ol>
+            {day.changes.map(change => (
+              <li>
+                <p>{change.subject}</p>
+                <a class="sha" href={`${REPOSITORY}/commit/${change.sha}`}>
+                  {change.sha.slice(0, 7)}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    )}
+  </div>
+</Site>
+
+<style>
+  .listing {
+    padding: 9rem 0 7rem;
+  }
+
+  .listing-head {
+    display: grid;
+    gap: 1.1rem;
+    max-width: 40rem;
+    margin-bottom: 4.5rem;
+  }
+
+  h1 {
+    font-size: var(--step-5);
+  }
+
+  .listing-head p {
+    color: rgb(232 236 244 / 0.82);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  .listing-head .feed {
+    font-size: var(--step--1);
+  }
+
+  .empty {
+    color: var(--haze);
+  }
+
+  .day {
+    display: grid;
+    grid-template-columns: 12rem minmax(0, 1fr);
+    gap: 2rem;
+    padding: 1.6rem 0 2.4rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .day h2 {
+    position: sticky;
+    top: 5.5rem;
+    align-self: start;
+    color: var(--haze);
+    font-size: var(--step-0);
+    font-weight: 600;
+  }
+
+  ol {
+    display: grid;
+    gap: 1.1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.5rem;
+    max-width: 52rem;
+  }
+
+  li p {
+    color: rgb(232 236 244 / 0.88);
+  }
+
+  .sha {
+    color: var(--haze);
+    font-family: var(--font-mono);
+    font-size: var(--step--2);
+    font-stretch: 88%;
+    line-height: 2.1;
+    text-decoration: none;
+  }
+
+  .sha:hover {
+    color: var(--starlight);
+    text-decoration: underline;
+  }
+
+  @media (max-width: 760px) {
+    .day {
+      grid-template-columns: 1fr;
+      gap: 0.9rem;
+    }
+
+    .day h2 {
+      position: static;
+    }
+  }
+</style>

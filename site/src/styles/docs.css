@@ -1,0 +1,108 @@
+/* The documentation in the site's colours and type. Dark follows the home; light is there for
+   reading in daylight, with Brass deepened enough to read on white. */
+@import './tokens.css';
+
+:root {
+  --sl-font: var(--font-sans);
+  --sl-font-mono: var(--font-mono);
+
+  --sl-color-white: #ffffff;
+  --sl-color-gray-1: #e8ecf4;
+  --sl-color-gray-2: #c4cbdb;
+  --sl-color-gray-3: #8d96ab;
+  --sl-color-gray-4: #5a6379;
+  --sl-color-gray-5: #283047;
+  --sl-color-gray-6: #10172a;
+  --sl-color-black: #05070f;
+
+  --sl-color-accent-low: #33250f;
+  --sl-color-accent: #e7b36a;
+  --sl-color-accent-high: #f3d7ad;
+
+  --sl-color-bg-nav: rgb(5 7 15 / 0.86);
+  --sl-color-bg-sidebar: #05070f;
+  --sl-color-hairline: rgb(232 236 244 / 0.1);
+  --sl-color-hairline-light: rgb(232 236 244 / 0.16);
+
+  --sl-text-h1: clamp(2.1rem, 1.6rem + 1.8vw, 2.9rem);
+  --sl-text-h2: 1.75rem;
+  --sl-text-h3: 1.3rem;
+  --sl-line-height: 1.7;
+  --sl-content-width: 46rem;
+  --sl-nav-height: 4rem;
+}
+
+:root[data-theme='light'] {
+  --sl-color-white: #05070f;
+  --sl-color-gray-1: #10172a;
+  --sl-color-gray-2: #283047;
+  --sl-color-gray-3: #4f586e;
+  --sl-color-gray-4: #8d96ab;
+  --sl-color-gray-5: #c4cbdb;
+  --sl-color-gray-6: #eceff5;
+  --sl-color-gray-7: #f5f7fa;
+  --sl-color-black: #ffffff;
+
+  --sl-color-accent-low: #f7e7cf;
+  --sl-color-accent: #8f5d16;
+  --sl-color-accent-high: #4d3209;
+
+  --sl-color-bg-nav: rgb(255 255 255 / 0.9);
+  --sl-color-bg-sidebar: #ffffff;
+  --sl-color-hairline: rgb(5 7 15 / 0.08);
+  --sl-color-hairline-light: rgb(5 7 15 / 0.14);
+}
+
+body {
+  font-stretch: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+header.header {
+  backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom-color: var(--sl-color-hairline);
+}
+
+.sl-markdown-content :is(h1, h2, h3, h4) {
+  font-stretch: 112%;
+  letter-spacing: -0.015em;
+}
+
+h1#_top {
+  font-stretch: 116%;
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+}
+
+.sl-markdown-content code:not(:where(.not-content *)) {
+  font-stretch: 88%;
+}
+
+.sidebar-content {
+  --sl-color-hairline-light: transparent;
+}
+
+.sidebar-content .top-level > li > details > summary .group-label > span {
+  font-stretch: 112%;
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+
+.sidebar-content a[aria-current='page'] {
+  font-weight: 600;
+}
+
+:root:not([data-theme='light']) .sidebar-content a[aria-current='page'] {
+  background: var(--brass-soft);
+  color: var(--brass);
+}
+
+.expressive-code .frame {
+  --ec-brdRad: 10px;
+}
+
+:root[data-theme='light'] .sidebar-content a[aria-current='page'] {
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-accent-high);
+}

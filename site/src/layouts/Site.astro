@@ -1,0 +1,63 @@
+---
+// The frame of every page outside the documentation: the head with what agents and feeds read,
+// the navigation, and the footer.
+import '@fontsource-variable/mona-sans/wdth.css'
+import '@fontsource-variable/martian-mono/wdth.css'
+import '../styles/site.css'
+import monaLatin from '@fontsource-variable/mona-sans/files/mona-sans-latin-wdth-normal.woff2?url'
+
+import Footer from '../components/Footer.astro'
+import Nav from '../components/Nav.astro'
+
+interface Props {
+  title: string
+  description: string
+  /** This page's Markdown twin, for agents, when it has one. */
+  markdown?: string
+  current?: 'home' | 'news' | 'changelog'
+  /** The share image, from `public/`. */
+  image?: string
+}
+
+const { title, description, markdown, current, image = '/og.jpg' } = Astro.props
+const canonical = new URL(Astro.url.pathname, Astro.site)
+const imageUrl = new URL(image, Astro.site)
+---
+
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#05070f" />
+    <link rel="preload" href={monaLatin} as="font" type="font/woff2" crossorigin />
+    {markdown && <link rel="alternate" type="text/markdown" href={markdown} />}
+    <link rel="alternate" type="application/rss+xml" title="Atlas news" href="/news/rss.xml" />
+    <link rel="alternate" type="application/rss+xml" title="Atlas changelog" href="/changelog/rss.xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Atlas" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={imageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <Nav current={current} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

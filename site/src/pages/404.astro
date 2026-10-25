@@ -1,0 +1,50 @@
+---
+import Site from '../layouts/Site.astro'
+---
+
+<Site title="Not found: Atlas" description="This page is not on the Atlas site.">
+  <div class="page missing">
+    <h1>This page is not here</h1>
+    <p>It may have moved when the documentation was reorganised. These are the places to look:</p>
+    <ul>
+      <li>
+        <a href="/">The home page</a>
+      </li>
+      <li>
+        <a href="/docs/">The documentation</a>
+      </li>
+      <li>
+        <a href="/changelog/">The changelog</a>
+      </li>
+    </ul>
+  </div>
+</Site>
+
+<style>
+  .missing {
+    display: grid;
+    gap: 1.25rem;
+    align-content: center;
+    min-height: 80svh;
+    padding: 8rem 0 4rem;
+  }
+
+  h1 {
+    font-size: var(--step-5);
+  }
+
+  p {
+    max-width: 34rem;
+    color: rgb(232 236 244 / 0.82);
+    font-size: var(--step-1);
+  }
+
+  ul {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--step-1);
+  }
+</style>

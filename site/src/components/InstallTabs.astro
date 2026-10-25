@@ -1,0 +1,238 @@
+---
+// Commands to install Atlas, one tab per system, the visitor's own system chosen first.
+import type { InstallWay } from '../lib/install'
+
+interface Props {
+  ways: InstallWay[]
+  /** A short id, unique on the page, for the tabs' ids. */
+  id: string
+  compact?: boolean
+}
+
+const { ways, id, compact = false } = Astro.props
+---
+
+<div class:list={['install-tabs', { compact }]} data-install-tabs>
+  <div class="tablist" role="tablist" aria-label="Your system">
+    {ways.map((way, k) => (
+      <button
+        type="button"
+        role="tab"
+        id={`${id}-tab-${way.id}`}
+        aria-controls={`${id}-panel-${way.id}`}
+        aria-selected={k === 0 ? 'true' : 'false'}
+        tabindex={k === 0 ? 0 : -1}
+        data-system={way.id}
+      >
+        {way.label}
+      </button>
+    ))}
+  </div>
+  {ways.map((way, k) => (
+    <div
+      class="panel"
+      role="tabpanel"
+      id={`${id}-panel-${way.id}`}
+      aria-labelledby={`${id}-tab-${way.id}`}
+      data-system={way.id}
+      hidden={k !== 0}
+    >
+      <div class="command">
+        <pre tabindex="0"><code>{way.lines.join('\n')}</code></pre>
+        <button type="button" class="copy" data-copy={way.lines.join('\n')}>
+          Copy
+        </button>
+      </div>
+      <p class="where">{way.where}</p>
+      {way.after && <p class="after">{way.after}</p>}
+    </div>
+  ))}
+  <span class="visually-hidden" aria-live="polite" data-copy-status></span>
+</div>
+
+<script>
+  // Opens the tab for the visitor's system, switches tabs by click and arrow keys, and copies.
+  function systemOf(): string {
+    const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
+    const platform = (nav.userAgentData?.platform ?? navigator.platform ?? navigator.userAgent).toLowerCase()
+    if (platform.includes('win')) {
+      return 'windows'
+    }
+    if (platform.includes('mac') || platform.includes('iphone') || platform.includes('ipad')) {
+      return 'macos'
+    }
+    if (platform.includes('linux') || platform.includes('x11')) {
+      return 'linux'
+    }
+    return ''
+  }
+
+  for (const root of document.querySelectorAll<HTMLElement>('[data-install-tabs]')) {
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[role="tab"]'))
+    const panels = Array.from(root.querySelectorAll<HTMLElement>('[role="tabpanel"]'))
+    const status = root.querySelector<HTMLElement>('[data-copy-status]')
+    const select = (tab: HTMLButtonElement, focus: boolean) => {
+      for (const other of tabs) {
+        const on = other === tab
+        other.setAttribute('aria-selected', String(on))
+        other.tabIndex = on ? 0 : -1
+      }
+      for (const panel of panels) {
+        panel.hidden = panel.dataset['system'] !== tab.dataset['system']
+      }
+      if (focus) {
+        tab.focus()
+      }
+    }
+    const mine = tabs.find(tab => tab.dataset['system'] === systemOf())
+    if (mine) {
+      select(mine, false)
+    }
+    for (const tab of tabs) {
+      tab.addEventListener('click', () => {
+        select(tab, false)
+      })
+      tab.addEventListener('keydown', event => {
+        const k = tabs.indexOf(tab)
+        const next =
+          event.key === 'ArrowRight'
+            ? tabs[(k + 1) % tabs.length]
+            : event.key === 'ArrowLeft'
+              ? tabs[(k - 1 + tabs.length) % tabs.length]
+              : undefined
+        if (next) {
+          event.preventDefault()
+          select(next, true)
+        }
+      })
+    }
+    for (const button of root.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
+      button.addEventListener('click', () => {
+        void navigator.clipboard.writeText(button.dataset['copy'] ?? '').then(() => {
+          button.textContent = 'Copied'
+          button.dataset['done'] = ''
+          if (status) {
+            status.textContent = 'Copied to the clipboard.'
+          }
+          window.setTimeout(() => {
+            button.textContent = 'Copy'
+            delete button.dataset['done']
+          }, 1800)
+        })
+      })
+    }
+  }
+</script>
+
+<style>
+  .install-tabs {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.6rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .tablist {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  [role='tab'] {
+    min-height: 2.25rem;
+    padding: 0 0.85rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--haze);
+    font: inherit;
+    font-size: var(--step--1);
+    font-weight: 520;
+    cursor: pointer;
+    transition:
+      color 0.2s,
+      border-color 0.2s,
+      background 0.2s;
+  }
+
+  [role='tab']:hover {
+    color: var(--starlight);
+  }
+
+  [role='tab'][aria-selected='true'] {
+    border-color: var(--rule-strong);
+    background: rgb(232 236 244 / 0.05);
+    color: var(--starlight);
+  }
+
+  .command {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--radius);
+    background: rgb(13 19 34 / 0.82);
+    backdrop-filter: blur(8px);
+  }
+
+  pre {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0.95rem 1.1rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    color: var(--starlight);
+    font-size: 0.8rem;
+    line-height: 1.75;
+    mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent);
+  }
+
+  pre::-webkit-scrollbar {
+    display: none;
+  }
+
+  .copy {
+    flex: none;
+    margin: 0.4rem;
+    padding: 0 0.9rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: calc(var(--radius) - 4px);
+    background: transparent;
+    color: var(--starlight);
+    font: inherit;
+    font-size: var(--step--2);
+    font-weight: 560;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      color 0.2s,
+      border-color 0.2s;
+  }
+
+  .copy:hover {
+    border-color: var(--starlight);
+  }
+
+  .copy[data-done] {
+    border-color: var(--brass);
+    background: var(--brass);
+    color: var(--night);
+  }
+
+  .where {
+    color: var(--haze);
+    font-size: var(--step--2);
+  }
+
+  .after {
+    max-width: 34rem;
+    color: var(--haze);
+    font-size: var(--step--1);
+    line-height: 1.55;
+  }
+
+  .compact .where {
+    display: none;
+  }
+</style>

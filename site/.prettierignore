@@ -1,0 +1,8 @@
+dist/
+.astro/
+node_modules/
+package-lock.json
+# Traced from docs/assets/logo.png; one long path.
+src/assets/atlas-mark.svg
+public/favicon.svg
+.wrangler/

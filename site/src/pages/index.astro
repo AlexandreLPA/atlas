@@ -1,0 +1,896 @@
+---
+import { getCollection } from 'astro:content'
+
+import InstallTabs from '../components/InstallTabs.astro'
+import SphereDrawing from '../components/SphereDrawing.astro'
+import Site from '../layouts/Site.astro'
+import { changes, formatDay } from '../lib/changelog'
+import { catalogue, chapters, gate, hero, install, memory, route } from '../lib/home'
+import { installWays, quickWays } from '../lib/install'
+
+const chapter = (id: string) => {
+  const found = chapters.find(c => c.id === id)
+  if (!found) {
+    throw new Error(`The home has no chapter "${id}".`)
+  }
+  return found
+}
+const accounts = chapter('accounts')
+const routeChapter = chapter('route')
+const machines = chapter('machines')
+const memoryChapter = chapter('memory')
+const close = chapter('close')
+const latest = changes(4)
+const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3)
+---
+
+<Site title="Atlas: one app for every coding agent you use" description={hero.lede} markdown="/index.md" current="home">
+  <div class="orrery" data-orrery>
+    <div class="track" aria-hidden="true">
+      <div class="stage" data-orrery-stage>
+        <div class="glow"></div>
+        <div class="scene" data-orrery-scene>
+          <div class="drawing">
+            <SphereDrawing />
+          </div>
+          <canvas data-orrery-canvas></canvas>
+          <div class="labels" data-orrery-labels></div>
+        </div>
+        <div class="scrim"></div>
+      </div>
+    </div>
+
+    <section class="chapter chapter--hero" data-chapter="hero" aria-labelledby="hero-title">
+      <div class="chapter-body" data-text-column>
+        <h1 id="hero-title">{hero.title}</h1>
+        <p class="lede">{hero.lede}</p>
+        <InstallTabs ways={quickWays} id="quick" compact />
+        <p class="note">
+          {hero.note} <a href="/docs/">Read the docs</a>
+        </p>
+      </div>
+    </section>
+
+    <section class="chapter" data-chapter="accounts" aria-labelledby="accounts-title">
+      <div class="chapter-body">
+        <h2 id="accounts-title">{accounts.title}</h2>
+        {accounts.body.map(text => (
+          <p>{text}</p>
+        ))}
+      </div>
+    </section>
+
+    <section class="chapter" data-chapter="route" aria-labelledby="route-title">
+      <div class="chapter-body">
+        <h2 id="route-title">{routeChapter.title}</h2>
+        {routeChapter.body.map(text => (
+          <p>{text}</p>
+        ))}
+        <figure class="meters">
+          <figcaption>{route.caption}</figcaption>
+          <ol>
+            {route.stops.map((stop, k) => (
+              <li class="meter" data-meter={k} data-state="idle">
+                <span class="meter-name">
+                  {stop.name} <span class="meter-account">{stop.account}</span>
+                </span>
+                <span class="meter-bar" aria-hidden="true">
+                  <span />
+                </span>
+                <span class="meter-state" aria-hidden="true">
+                  <span data-when="running">running</span>
+                  <span data-when="limit">limit reached</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+          <p class="handoff">{route.handoff}</p>
+        </figure>
+      </div>
+    </section>
+
+    <section class="chapter" data-chapter="machines" aria-labelledby="machines-title">
+      <div class="chapter-body">
+        <h2 id="machines-title">{machines.title}</h2>
+        {machines.body.map(text => (
+          <p>{text}</p>
+        ))}
+      </div>
+    </section>
+
+    <section class="chapter" data-chapter="memory" aria-labelledby="memory-title">
+      <div class="chapter-body">
+        <h2 id="memory-title">{memoryChapter.title}</h2>
+        {memoryChapter.body.map(text => (
+          <p>{text}</p>
+        ))}
+        <figure class="memory">
+          <ul>
+            {memory.entries.map(entry => (
+              <li data-kind={entry.kind}>
+                <span class="memory-kind">{entry.kind}</span>
+                <span class="memory-text">
+                  <span class="memory-mark" aria-hidden="true">
+                    {entry.mark}
+                  </span>
+                  {entry.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <figcaption>{memory.caption}</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="chapter chapter--close" data-chapter="close" aria-labelledby="close-title">
+      <div class="chapter-body">
+        <h2 id="close-title">{close.title}</h2>
+        {close.body.map(text => (
+          <p>{text}</p>
+        ))}
+        <div class="actions">
+          <a class="button button--solid" href="#install">
+            Install Atlas
+          </a>
+          <a class="button" href="/docs/">
+            Read the docs
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="section gate" aria-labelledby="gate-title">
+    <div class="page section-grid">
+      <div class="section-intro">
+        <h2 id="gate-title">{gate.title}</h2>
+        <p>{gate.body}</p>
+      </div>
+      <ol class="verdicts">
+        {gate.commands.map(item => (
+          <li data-verdict={item.verdict.toLowerCase().replace(' ', '-')}>
+            <code>{item.command}</code>
+            <span class="verdict">{item.verdict}</span>
+            <span class="verdict-detail">{item.detail}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="section catalogue" aria-labelledby="catalogue-title">
+    <div class="page">
+      <h2 id="catalogue-title">{catalogue.title}</h2>
+      <dl>
+        {catalogue.items.map(item => (
+          <div>
+            <dt>{item.name}</dt>
+            <dd>{item.text}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="section install" id="install" aria-labelledby="install-title">
+    <div class="page section-grid">
+      <div class="section-intro">
+        <h2 id="install-title">{install.title}</h2>
+        <ol class="steps">
+          {install.steps.map(step => (
+            <li>{step}</li>
+          ))}
+        </ol>
+        <p class="aside">{install.update}</p>
+      </div>
+      <div class="install-box">
+        <InstallTabs ways={installWays} id="full" />
+      </div>
+    </div>
+  </section>
+
+  <section class="section read-on" aria-label="Keep reading">
+    <div class="page read-on-grid">
+      <div>
+        <h2>
+          <a href="/docs/">Documentation</a>
+        </h2>
+        <ul>
+          <li>
+            <a href="/docs/">What Atlas is</a>
+          </li>
+          <li>
+            <a href="/docs/install/">Install</a>
+          </li>
+          <li>
+            <a href="/docs/guides/coding-agents/">Coding agents and accounts</a>
+          </li>
+          <li>
+            <a href="/docs/guides/machines/">Several machines</a>
+          </li>
+          <li>
+            <a href="/docs/guides/approval-gate/">The approval gate</a>
+          </li>
+          <li>
+            <a href="/docs/reference/commands/">Every command</a>
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h2>
+          <a href="/news/">News</a>
+        </h2>
+        {news.length > 0 ? (
+          <ul>
+            {news.map(item => (
+              <li>
+                <a href={item.data.url}>{item.data.title}</a>
+                <span class="meta">{item.data.source}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="quiet">
+            Short summaries of what changes in the models and tools Atlas works with, each linking to the full story.
+            The first ones are on the way: <a href="/news/rss.xml">follow the feed</a>.
+          </p>
+        )}
+      </div>
+      <div>
+        <h2>
+          <a href="/changelog/">Changelog</a>
+        </h2>
+        <ul>
+          {latest.map(change => (
+            <li>
+              <span class="change">{change.subject}</span>
+              <span class="meta">{formatDay(change.date)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+</Site>
+
+<script>
+  import { startOrrery } from '../scripts/orrery'
+
+  const root = document.querySelector<HTMLElement>('[data-orrery]')
+  if (root) {
+    startOrrery(root)
+  }
+</script>
+
+<style>
+  /* The story: a stage that stays while the chapters scroll over it. */
+  .orrery {
+    position: relative;
+  }
+
+  /* The track spans the story; the stage sticks inside it and leaves with the last chapter. */
+  .track {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .stage {
+    position: sticky;
+    top: 0;
+    height: 100lvh;
+    overflow: hidden;
+    pointer-events: none;
+    --text-column: min(var(--measure), 42vw);
+  }
+
+  .scene {
+    position: absolute;
+    inset: 0;
+  }
+
+  .glow {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(42% 52% at 66% 50%, rgb(28 40 82 / 0.42), transparent 70%),
+      radial-gradient(28% 34% at 66% 50%, rgb(231 179 106 / 0.05), transparent 70%);
+  }
+
+  .drawing {
+    position: absolute;
+    inset: 0 0 0 calc(var(--gutter) + var(--text-column));
+    display: grid;
+    place-items: center;
+    transition: opacity 0.6s;
+  }
+
+  .drawing :global(svg) {
+    width: min(64lvh, 92%);
+    height: auto;
+  }
+
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.6s;
+  }
+
+  .orrery[data-orrery-live] canvas {
+    opacity: 1;
+  }
+
+  .orrery[data-orrery-live] .drawing {
+    opacity: 0;
+  }
+
+  .labels {
+    position: absolute;
+    inset: 0;
+  }
+
+  .labels :global(.orrery-label) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    justify-items: center;
+    padding: 0.15rem 0.35rem;
+    visibility: hidden;
+    color: var(--starlight);
+    font-size: 0.75rem;
+    font-weight: 540;
+    font-stretch: var(--narrow);
+    letter-spacing: 0.01em;
+    line-height: 1.25;
+    white-space: nowrap;
+    pointer-events: auto;
+    translate: -50% calc(-100% - 0.9rem);
+    text-shadow:
+      0 0 6px var(--night),
+      0 0 14px var(--night);
+    will-change: transform, opacity;
+  }
+
+  .labels :global(.orrery-label--moon) {
+    color: var(--haze);
+    font-size: 0.6875rem;
+    translate: -50% -50%;
+  }
+
+  .labels :global(.orrery-label--core) {
+    color: #fff0d8;
+    font-weight: 620;
+    translate: -50% calc(-100% - 1.6rem);
+  }
+
+  .labels :global(.orrery-label--system) {
+    color: var(--signal);
+    translate: -50% calc(-100% - 1.4rem);
+  }
+
+  .labels :global(.orrery-label-status:empty) {
+    display: none;
+  }
+
+  .labels :global(.orrery-label-status) {
+    color: var(--haze);
+    font-size: 0.6875rem;
+  }
+
+  .labels :global(.orrery-label[data-state='running'] .orrery-label-status) {
+    color: var(--brass);
+  }
+
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--night) 0%, rgb(5 7 15 / 0.82) 24%, rgb(5 7 15 / 0) 46%);
+  }
+
+  .chapter {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    min-height: 100svh;
+    padding: 6.5rem var(--gutter) 5rem;
+    pointer-events: none;
+  }
+
+  .chapter-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.15rem;
+    width: min(100%, var(--measure), 42vw);
+    pointer-events: auto;
+  }
+
+  .chapter-body > p {
+    color: rgb(232 236 244 / 0.82);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  .chapter h2 {
+    font-size: var(--step-4);
+    margin-bottom: 0.35rem;
+  }
+
+  /* The hero: the headline unfolds once, with the sphere. */
+  .chapter--hero h1 {
+    font-size: clamp(2.6rem, 1.3rem + 3.7vw, 4.6rem);
+    font-weight: 600;
+    letter-spacing: -0.032em;
+    line-height: 0.98;
+    margin-bottom: 0.4rem;
+    animation: unfold 1.6s var(--ease-out) both;
+  }
+
+  @keyframes unfold {
+    from {
+      font-stretch: 82%;
+      opacity: 0;
+    }
+    to {
+      font-stretch: var(--wide);
+      opacity: 1;
+    }
+  }
+
+  .chapter-body > .lede {
+    max-width: 31rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .chapter-body > .note {
+    color: var(--haze);
+    font-size: var(--step--1);
+  }
+
+  .note a {
+    margin-left: 0.4em;
+    color: var(--starlight);
+  }
+
+  /* The route's meters, filled by the orrery's clock. */
+  .meters {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0.9rem 0 0;
+    padding: 1.15rem 1.25rem 1.25rem;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    background: rgb(13 19 34 / 0.7);
+    backdrop-filter: blur(10px);
+  }
+
+  .meters figcaption {
+    color: var(--haze);
+    font-size: var(--step--2);
+    font-stretch: var(--narrow);
+    font-weight: 540;
+  }
+
+  .meters ol {
+    display: grid;
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .meter {
+    display: grid;
+    grid-template-columns: 11.5rem 1fr 6.5rem;
+    align-items: center;
+    gap: 0.9rem;
+    font-size: var(--step--1);
+    --fill: 0;
+  }
+
+  .meter-account {
+    color: var(--haze);
+  }
+
+  .meter-bar {
+    position: relative;
+    height: 4px;
+    border-radius: 2px;
+    background: rgb(232 236 244 / 0.1);
+    overflow: hidden;
+  }
+
+  .meter-bar span {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--starlight);
+    transform: scaleX(var(--fill));
+    transform-origin: left;
+  }
+
+  .meter[data-state='limit'] .meter-bar span {
+    background: var(--haze);
+  }
+
+  .meter[data-state='running'] .meter-bar span {
+    background: var(--brass);
+  }
+
+  .meter-state {
+    color: var(--haze);
+    font-size: var(--step--2);
+    text-align: right;
+  }
+
+  .meter-state span {
+    display: none;
+  }
+
+  .meter[data-state='running'] [data-when='running'] {
+    display: inline;
+    color: var(--brass);
+  }
+
+  .meter[data-state='limit'] [data-when='limit'] {
+    display: inline;
+  }
+
+  .handoff {
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--rule);
+    color: var(--haze);
+    font-size: var(--step--1);
+  }
+
+  /* What the review kept. */
+  .memory {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0.9rem 0 0;
+  }
+
+  .memory ul {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule);
+    list-style: none;
+  }
+
+  .memory li {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 1rem;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: var(--step--1);
+  }
+
+  .memory-kind {
+    color: var(--haze);
+    font-stretch: var(--narrow);
+    font-weight: 540;
+  }
+
+  .memory-mark {
+    display: inline-block;
+    width: 1.1em;
+    color: var(--haze);
+    font-family: var(--font-mono);
+  }
+
+  .memory li[data-kind='proposal'] .memory-text,
+  .memory li[data-kind='proposal'] .memory-mark {
+    color: var(--brass);
+  }
+
+  .memory figcaption {
+    color: var(--haze);
+    font-size: var(--step--1);
+  }
+
+  /* The close: the orrery folds back into the sphere above, and the text settles under it. */
+  .chapter--close {
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 12svh;
+    text-align: center;
+  }
+
+  .chapter--close .chapter-body {
+    width: min(100%, 38rem);
+    justify-items: center;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.6rem;
+  }
+
+  /* After the story. */
+  .section {
+    position: relative;
+    padding: clamp(5rem, 12vw, 9rem) 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .section h2 {
+    font-size: var(--step-4);
+  }
+
+  .section-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(2.5rem, 7vw, 7rem);
+    align-items: start;
+  }
+
+  .section-intro {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .section-intro > p {
+    color: rgb(232 236 244 / 0.82);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  .verdicts {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--rule);
+    list-style: none;
+  }
+
+  .verdicts li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.35rem 1.5rem;
+    padding: 1.35rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .verdicts code {
+    color: var(--starlight);
+    font-size: 0.95rem;
+  }
+
+  .verdict {
+    justify-self: end;
+    font-size: var(--step--1);
+    font-weight: 600;
+    font-stretch: var(--wide);
+  }
+
+  .verdict-detail {
+    grid-column: 1 / -1;
+    color: var(--haze);
+    font-size: var(--step--1);
+  }
+
+  [data-verdict='asks-you'] .verdict {
+    color: var(--brass);
+  }
+
+  [data-verdict='never-runs'] .verdict {
+    color: var(--haze);
+    text-decoration: line-through;
+    text-decoration-color: rgb(141 150 171 / 0.6);
+  }
+
+  [data-verdict='never-runs'] code {
+    color: var(--haze);
+  }
+
+  .catalogue dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 clamp(1.5rem, 4vw, 3.5rem);
+    margin: 3rem 0 0;
+  }
+
+  .catalogue dl > div {
+    padding: 1.4rem 0 1.6rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .catalogue dt {
+    margin-bottom: 0.45rem;
+    font-size: var(--step-0);
+    font-weight: 600;
+    font-stretch: var(--wide);
+  }
+
+  .catalogue dd {
+    margin: 0;
+    color: var(--haze);
+    font-size: var(--step--1);
+    line-height: 1.55;
+  }
+
+  .steps {
+    display: grid;
+    gap: 1.1rem;
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+  }
+
+  .steps li {
+    position: relative;
+    padding-left: 2.6rem;
+    color: rgb(232 236 244 / 0.86);
+    counter-increment: step;
+  }
+
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: -0.05rem;
+    color: var(--brass);
+    font-size: var(--step-1);
+    font-weight: 600;
+    font-stretch: var(--wide);
+    line-height: 1.2;
+  }
+
+  .section-intro > .aside,
+  .install-box > .aside {
+    color: var(--haze);
+    font-size: var(--step--1);
+  }
+
+  .install-box {
+    display: grid;
+    gap: 1.25rem;
+    padding-top: 0.4rem;
+  }
+
+  .read-on-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(2rem, 5vw, 4rem);
+  }
+
+  .read-on h2 {
+    font-size: var(--step-2);
+    margin-bottom: 1.25rem;
+  }
+
+  .read-on h2 a {
+    text-decoration: none;
+  }
+
+  .read-on h2 a:hover {
+    text-decoration: underline;
+  }
+
+  .read-on ul {
+    display: grid;
+    gap: 0.85rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .read-on li {
+    display: grid;
+    gap: 0.2rem;
+    font-size: var(--step--1);
+  }
+
+  .change {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .meta,
+  .quiet {
+    color: var(--haze);
+    font-size: var(--step--2);
+  }
+
+  .quiet {
+    font-size: var(--step--1);
+  }
+
+  /* Narrow windows: the scene is a panel over the top of the screen, and the text scrolls up
+     under it, fading out at the panel's edge instead of running over the drawing. */
+  @media (max-width: 860px) {
+    .track {
+      z-index: 2;
+    }
+
+    .stage {
+      height: 54svh;
+      background: var(--night);
+      mask-image: linear-gradient(180deg, #000 80%, transparent);
+    }
+
+    .scene {
+      top: 4.25rem;
+    }
+
+    .glow {
+      background: radial-gradient(60% 55% at 50% 58%, rgb(28 40 82 / 0.5), transparent 75%);
+    }
+
+    .drawing {
+      inset: 0;
+    }
+
+    .drawing :global(svg) {
+      width: min(62vw, 34svh);
+    }
+
+    .scrim {
+      display: none;
+    }
+
+    .labels :global(.orrery-label) {
+      font-size: 0.6875rem;
+    }
+
+    .chapter,
+    .chapter--hero,
+    .chapter--close {
+      align-items: flex-start;
+      padding-top: 57svh;
+      padding-bottom: 14svh;
+    }
+
+    .chapter-body {
+      width: 100%;
+    }
+
+    .meter {
+      grid-template-columns: 1fr 5.5rem;
+    }
+
+    .meter-bar {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .section-grid,
+    .read-on-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .catalogue dl {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (min-width: 861px) and (max-width: 1180px) {
+    .catalogue dl {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chapter--hero h1 {
+      animation: none;
+    }
+
+    canvas,
+    .drawing {
+      transition: none;
+    }
+  }
+</style>

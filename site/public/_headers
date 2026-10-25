@@ -1,0 +1,6 @@
+# Built assets carry their hash in their name, so they never change under the same name.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/pagefind/*
+  Cache-Control: public, max-age=3600

@@ -1,0 +1,62 @@
+---
+// The sphere of the first frame, drawn at build time from the same formula as the orrery's
+// shader: it shows before the scene starts, and stays where WebGL is not available.
+import { SPHERE_RINGS, STRANDS } from '../scripts/orrery/model'
+
+const MID = (STRANDS - 1) / 2
+const strands = Array.from({ length: STRANDS }, (_, i) => {
+  const fr = (i + 0.5) / STRANDS
+  const y0 = (2 * fr - 1) * 0.9
+  const hw = Math.sqrt(Math.max(1 - y0 * y0, 0)) * 0.95
+  const points: string[] = []
+  for (let s = 0; s <= 80; s++) {
+    const u = s / 80
+    let x = -hw + 2 * hw * u
+    let y = y0 + Math.sin(u * 2 * Math.PI + i * 0.62) * 0.13 * Math.sin(u * Math.PI)
+    const r2 = x * x + y * y
+    if (r2 > 0.998) {
+      const k = Math.sqrt(0.998 / r2)
+      x *= k
+      y *= k
+    }
+    points.push(`${(x * 100).toFixed(2)} ${(-y * 100).toFixed(2)}`)
+  }
+  return {
+    d: `M${points.join(' L')}`,
+    accent: i === MID,
+    opacity: (0.24 + 0.5 * Math.sin(fr * Math.PI)).toFixed(2)
+  }
+})
+---
+
+<svg class="sphere-drawing" viewBox="-120 -120 240 240" aria-hidden="true" data-orrery-fallback>
+  {SPHERE_RINGS.map(r => (
+    <circle r={r * 100} />
+  ))}
+  {strands.map(strand => (
+    <path d={strand.d} class:list={{ accent: strand.accent }} opacity={strand.opacity} />
+  ))}
+</svg>
+
+<style>
+  .sphere-drawing {
+    fill: none;
+    stroke: var(--starlight);
+    stroke-width: 1.15px;
+    vector-effect: non-scaling-stroke;
+    overflow: visible;
+  }
+
+  .sphere-drawing * {
+    vector-effect: non-scaling-stroke;
+  }
+
+  .sphere-drawing circle {
+    opacity: 0.62;
+  }
+
+  .sphere-drawing .accent {
+    stroke: var(--brass);
+    stroke-width: 1.75px;
+  }
+</style>

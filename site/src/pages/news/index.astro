@@ -1,0 +1,187 @@
+---
+import { getCollection, render } from 'astro:content'
+
+import Site from '../../layouts/Site.astro'
+
+const items = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+const rendered = await Promise.all(items.map(async item => ({ item, Content: (await render(item)).Content })))
+const months = new Map<string, typeof rendered>()
+for (const entry of rendered) {
+  const key = entry.item.data.date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' })
+  months.set(key, [...(months.get(key) ?? []), entry])
+}
+const description =
+  'Short summaries, in our words, of what changes in the models and tools Atlas works with. Each one links to the full story where it was published.'
+---
+
+<Site title="News: Atlas" description={description} markdown="/news.md" current="news">
+  <div class="page listing">
+    <header class="listing-head">
+      <h1>News</h1>
+      <p>{description}</p>
+      <p class="feed">
+        <a href="/news/rss.xml">Follow the feed</a>
+      </p>
+    </header>
+    {items.length === 0 ? (
+      <section class="empty">
+        <h2>The first summaries are on the way</h2>
+        <p>
+          Until they arrive, the <a href="/changelog/">changelog</a> lists every change to Atlas itself, and the{' '}
+          <a href="/news/rss.xml">feed</a> brings the first summaries to your reader as soon as they are out.
+        </p>
+      </section>
+    ) : (
+      Array.from(months, ([month, entries]) => (
+        <section class="month" aria-label={month}>
+          <h2 class="month-title">{month}</h2>
+          <ol>
+            {entries.map(({ item, Content }) => (
+              <li>
+                <article>
+                  <p class="meta">
+                    <span>{item.data.source}</span>
+                    <time datetime={item.data.date.toISOString().slice(0, 10)}>
+                      {item.data.date.toLocaleDateString('en-GB', {
+                        day: 'numeric',
+                        month: 'long',
+                        timeZone: 'UTC'
+                      })}
+                    </time>
+                  </p>
+                  <h3>
+                    <a href={item.data.url}>{item.data.title}</a>
+                  </h3>
+                  <div class="summary">
+                    <Content />
+                  </div>
+                  {item.data.atlas && <p class="for-atlas">{item.data.atlas}</p>}
+                  <p class="source">
+                    <a href={item.data.url}>Read it on {item.data.source}</a>
+                  </p>
+                </article>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    )}
+  </div>
+</Site>
+
+<style>
+  .listing {
+    padding: 9rem 0 7rem;
+  }
+
+  .listing-head {
+    display: grid;
+    gap: 1.1rem;
+    max-width: 40rem;
+    margin-bottom: 4.5rem;
+  }
+
+  h1 {
+    font-size: var(--step-5);
+  }
+
+  .listing-head p {
+    color: rgb(232 236 244 / 0.82);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  .listing-head .feed {
+    font-size: var(--step--1);
+  }
+
+  .empty {
+    display: grid;
+    gap: 1rem;
+    max-width: 40rem;
+    padding: 2.25rem 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .empty h2 {
+    font-size: var(--step-2);
+  }
+
+  .empty p {
+    color: var(--haze);
+  }
+
+  .month {
+    display: grid;
+    grid-template-columns: 12rem minmax(0, 1fr);
+    gap: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .month-title {
+    font-size: var(--step-0);
+    font-weight: 600;
+    color: var(--haze);
+  }
+
+  .month ol {
+    display: grid;
+    gap: 3rem;
+    margin: 0 0 4rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  article {
+    display: grid;
+    gap: 0.75rem;
+    max-width: 44rem;
+  }
+
+  .meta {
+    display: flex;
+    gap: 1rem;
+    color: var(--haze);
+    font-size: var(--step--2);
+    font-stretch: var(--narrow);
+  }
+
+  h3 {
+    font-size: var(--step-2);
+  }
+
+  h3 a {
+    text-decoration: none;
+  }
+
+  h3 a:hover {
+    text-decoration: underline;
+  }
+
+  .summary {
+    color: rgb(232 236 244 / 0.82);
+  }
+
+  .summary :global(p + p) {
+    margin-top: 0.8rem;
+  }
+
+  .for-atlas {
+    padding-left: 1rem;
+    border-left: 2px solid var(--brass);
+    color: var(--starlight);
+    font-size: var(--step--1);
+  }
+
+  .source {
+    font-size: var(--step--1);
+  }
+
+  @media (max-width: 760px) {
+    .month {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+</style>

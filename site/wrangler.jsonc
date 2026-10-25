@@ -1,0 +1,14 @@
+// The site on Cloudflare Workers: the built files in dist, and worker/index.ts in front of the pages
+// for agents (Markdown on request, Link headers). Built files that are not pages skip the Worker.
+{
+  "name": "atlas-site",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-25",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/*", "!/_astro/*", "!/pagefind/*", "!/favicon.svg", "!/og.jpg"]
+  }
+}

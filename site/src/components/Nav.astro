@@ -1,0 +1,209 @@
+---
+import { REPOSITORY } from '../../site.config.mjs'
+import Mark from '../assets/atlas-mark.svg'
+
+interface Props {
+  current?: 'home' | 'news' | 'changelog' | undefined
+}
+
+const { current } = Astro.props
+const links = [
+  { href: '/docs/', label: 'Docs' },
+  { href: '/news/', label: 'News', key: 'news' },
+  { href: '/changelog/', label: 'Changelog', key: 'changelog' },
+  { href: REPOSITORY, label: 'GitHub' }
+]
+---
+
+<header class="nav" data-nav>
+  <a class="brand" href="/" aria-label="Atlas, home">
+    <Mark class="brand-mark" aria-hidden="true" />
+    <span class="brand-name">Atlas</span>
+  </a>
+  <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" data-menu-toggle>
+    <span class="visually-hidden">Menu</span>
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M3 7h14M3 13h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+    </svg>
+  </button>
+  <nav class="menu" id="site-menu" aria-label="Main" data-menu>
+    <ul>
+      {links.map(link => (
+        <li>
+          <a href={link.href} aria-current={link.key !== undefined && link.key === current ? 'page' : undefined}>
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+    <a class="button button--solid install" href="/#install">
+      Install
+    </a>
+  </nav>
+</header>
+
+<script>
+  // The bar gains a backdrop once the page has scrolled, and the menu opens on small screens.
+  const nav = document.querySelector<HTMLElement>('[data-nav]')
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]')
+  if (nav && toggle) {
+    const onScroll = () => {
+      nav.toggleAttribute('data-scrolled', window.scrollY > 8)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    onScroll()
+    toggle.addEventListener('click', () => {
+      const open = toggle.getAttribute('aria-expanded') !== 'true'
+      toggle.setAttribute('aria-expanded', String(open))
+      nav.toggleAttribute('data-open', open)
+    })
+    nav.addEventListener('click', event => {
+      if (event.target instanceof HTMLAnchorElement) {
+        toggle.setAttribute('aria-expanded', 'false')
+        nav.removeAttribute('data-open')
+      }
+    })
+  }
+</script>
+
+<style>
+  .nav {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    height: 4.25rem;
+    padding: 0 var(--gutter);
+    border-bottom: 1px solid transparent;
+    transition:
+      background 0.3s,
+      border-color 0.3s,
+      backdrop-filter 0.3s;
+  }
+
+  .nav[data-scrolled] {
+    border-bottom-color: var(--rule);
+    background: rgb(5 7 15 / 0.72);
+    backdrop-filter: blur(14px) saturate(1.2);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-right: auto;
+    color: var(--starlight);
+    text-decoration: none;
+  }
+
+  .brand-mark {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+
+  .brand-name {
+    font-size: 1.125rem;
+    font-weight: 640;
+    font-stretch: var(--wide);
+    letter-spacing: -0.01em;
+  }
+
+  .menu {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .menu ul {
+    display: flex;
+    gap: 1.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .menu ul a {
+    color: var(--haze);
+    font-size: var(--step--1);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .menu ul a:hover,
+  .menu ul a[aria-current='page'] {
+    color: var(--starlight);
+  }
+
+  .install {
+    min-height: 2.25rem;
+    padding: 0 1rem;
+  }
+
+  .menu-toggle {
+    display: none;
+  }
+
+  @media (max-width: 760px) {
+    .menu-toggle {
+      display: grid;
+      place-items: center;
+      width: 2.75rem;
+      height: 2.75rem;
+      border: 1px solid var(--rule-strong);
+      border-radius: 999px;
+      background: transparent;
+      color: var(--starlight);
+      cursor: pointer;
+    }
+
+    .menu {
+      position: fixed;
+      inset: 4.25rem 0 auto;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1.25rem;
+      padding: 1.25rem var(--gutter) 1.75rem;
+      border-bottom: 1px solid var(--rule);
+      background: rgb(5 7 15 / 0.96);
+      backdrop-filter: blur(14px);
+      visibility: hidden;
+      opacity: 0;
+      transform: translateY(-0.5rem);
+      transition:
+        opacity 0.2s,
+        transform 0.2s var(--ease-out),
+        visibility 0.2s;
+    }
+
+    .nav[data-open] .menu {
+      visibility: visible;
+      opacity: 1;
+      transform: none;
+    }
+
+    .nav[data-open] {
+      background: rgb(5 7 15 / 0.96);
+    }
+
+    .menu ul {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .menu ul a {
+      display: block;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--rule);
+      color: var(--starlight);
+      font-size: var(--step-1);
+      font-stretch: var(--wide);
+    }
+
+    .install {
+      min-height: 3rem;
+    }
+  }
+</style>
