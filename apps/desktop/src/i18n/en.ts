@@ -257,6 +257,9 @@ export const en = {
     notStored: 'not stored',
     changeSecret: 'Change',
     title: 'Plugins',
+    guide: 'Guide',
+    write: 'Write a plugin',
+    writeHint: 'A new conversation where Atlas writes a plugin with you, checks it and installs it.',
     waits: (code: string) => `waits with ${code}`,
     waiting: (count: number) => (count === 1 ? '1 waits' : `${count} wait`)
   },
@@ -302,6 +305,9 @@ export const en = {
     localChanges: (name: string) =>
       `${name} was changed here since it came. Update it anyway? What it holds now is kept as a version you can bring back.`,
     loadingPage: 'Reading its page…',
+    makeHint: 'Atlas writes a plugin with you in a new conversation; the guide says how to publish it here.',
+    makeYourOwn: 'Make your own',
+    guide: 'Plugin guide',
     need: {
       program: (name: string, state: string) =>
         state === 'met' ? `${name}: on this computer` : `${name}: not found on this computer (it installs anyway)`,

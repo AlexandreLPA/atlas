@@ -272,4 +272,9 @@ test('A plugin saved while the app is open loads again in place, its screen and 
   const counter = page.getByTestId('plugin-row').filter({ hasText: 'counter' })
   await expect(counter.getByTestId('plugin-state')).toHaveText('on')
   await expect(page.getByRole('alert')).toHaveCount(0)
+
+  // Another one is written with Atlas, in a new conversation, out of the settings.
+  await page.getByTestId('plugins-write').click()
+  await expect(page.getByTestId('plugins-view')).toBeHidden()
+  await expect(page.getByRole('textbox', { name: 'Message Atlas' })).toHaveValue('/write-plugin ')
 })

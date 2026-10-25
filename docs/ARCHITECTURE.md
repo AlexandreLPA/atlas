@@ -508,7 +508,8 @@ Skills are folders in Claude Code's format (Tools, above) that learn from use.
   library skill of the same name is kept. Every write goes through the library, so an update or
   `atlas skills reset` (back to what Atlas ships) keeps the previous files as a version. The first
   ones are the programs' skills of step 14b: `github` on `gh`, and the `gws` project's own
-  Gmail and Calendar skills (Apache-2.0).
+  Gmail and Calendar skills (Apache-2.0). `write-plugin` (step 16t) writes a plugin with the
+  user, reading the plugin guide copied into its `references/`.
 - **The curator** makes no model call: at most every 7 days, after 2 idle hours, the first pass deferred one interval, it
   archives a `review` skill nobody loaded or changed for 30 days, counted from its creation when
   it never was (a load by the review counts). A skill a routine names will count
@@ -2167,7 +2168,8 @@ Step 16, in `atlas.plugins`; the first plugin is Telegram, the proof the user ch
   consent is kept as the declaration's fingerprint. An update that declares anything else, not
   only a new capability, turns it off until the user consents again.
 - **The agent cannot consent for the user** (found on 14/10/2026, before the step closed): the
-  gate treats `atlas plugins enable|disable|secret|set`, `atlas pairing approve|forget`,
+  gate treats `atlas plugins enable|disable|secret|set|new`, `atlas plugins
+  install|update|remove` (step 16n), `atlas pairing approve|forget`,
   `atlas marketplace install|update|remove` (step 16s) and any
   command that touches the home's `plugins/`, `plugin-data/` or `atlas.db` as an outward action,
   asked of the user every time, past the guardian and "Auto", in every spelling and inside the
@@ -2316,6 +2318,21 @@ the user is writing, both kept in their home until a plugin store exists: a clie
 server and skills, no Python) and video made with Remotion (skills, a tool, Claude Code when it is
 installed through `delegate`, the Remotion Studio in the side panel through `desktop_preview`).
 Studied on 20/10/2026 with Claude Code's manifest reference of that day. The guide for whoever writes a plugin is [docs/PLUGINS.md](PLUGINS.md).
+
+**How people learn to write one** (step 16t, decided by the user on 25/10/2026):
+
+- **The guide names the whole SDK:** its sections, channels and executors included, and a last
+  one listing every name of `atlas.plugins.sdk` and `@atlas/plugin-sdk`. A test of each side
+  fails when the SDK grows a name the guide does not say, so the guide cannot fall behind.
+- **Atlas writes one with the user:** the bundled skill `write-plugin` picks the smallest kind
+  (a skill, an MCP server, a plugin), makes the plugin in the conversation's folder with `atlas
+  plugins new --folder`, checks it with `validate` and installs it from there; `new`, `install`
+  and `update` are asked of the user by the gate, and turning it on is theirs on the Plugins
+  screen. It publishes in the marketplace only when asked. Its `references/guide.md` is the
+  guide, a test keeping the copy equal.
+- **The app points there:** "Make your own" in the marketplace and "Write a plugin" on the
+  Plugins screen open a new conversation with `/write-plugin ` in its box, beside a link to the
+  guide.
 
 - **Skills, Claude Code's:** the folders of a plugin's `skills/` that hold a `SKILL.md`, read
   where they are while the plugin is on, listed after the user's and named after the plugin

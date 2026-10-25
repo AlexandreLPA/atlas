@@ -2497,6 +2497,17 @@ export function newConversation(): void {
   current().newConversation()
 }
 
+/** The plugin guide, on GitHub: what a plugin may hold and every part of the SDK. */
+export const PLUGIN_GUIDE = 'https://github.com/marqueskaio/atlas/blob/main/docs/PLUGINS.md'
+
+/** A new conversation with `/write-plugin ` in its box, for the user to say what the plugin should
+ *  do: the skill Atlas ships writes it with them. */
+export function writePlugin(): void {
+  const session = current()
+  session.newConversation()
+  session.$restored.setKey(DRAFT, '/write-plugin ')
+}
+
 export function refreshProposals(): Promise<void> {
   return current().refreshProposals()
 }

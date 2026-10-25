@@ -10,11 +10,13 @@ import {
   cancelMarketUpdate,
   closeMarketItem,
   openMarketItem,
+  PLUGIN_GUIDE,
   refreshMarketplace,
   setMarketKind,
   setMarketQuery,
   showConversation,
-  storeMarketSecret
+  storeMarketSecret,
+  writePlugin
 } from '@/store/app'
 import { actionOf, counts, KINDS, type MarketKind, resolved, shown } from '@/store/marketplace'
 import { openSettings } from '@/store/settings'
@@ -50,6 +52,22 @@ function Listing() {
         <div className="min-w-0">
           <h1 className="text-lg font-semibold">{t.marketplace.title}</h1>
           <p className="text-sm text-neutral-500">{t.marketplace.intro}</p>
+          {/* Sharing starts with making one: Atlas writes it with the user, and the guide says how
+              it enters (decided by the user on 25/10/2026). */}
+          <p className="mt-1 flex gap-3 text-sm">
+            <button
+              className="text-violet-600 hover:underline"
+              data-testid="marketplace-make"
+              onClick={writePlugin}
+              title={t.marketplace.makeHint}
+              type="button"
+            >
+              {t.marketplace.makeYourOwn}
+            </button>
+            <a className="text-violet-600 hover:underline" href={PLUGIN_GUIDE} rel="noreferrer" target="_blank">
+              {t.marketplace.guide}
+            </a>
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <input

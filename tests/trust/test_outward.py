@@ -413,6 +413,11 @@ def test_an_installed_programs_files_are_not_read_as_scripts(tmp_path: Path) -> 
         "atlas plugins set telegram api_url http://example.com",
         # It writes a plugin in the home's plugins folder (step 16j).
         "atlas plugins new my-plugin",
+        # What lands in the home's plugins folder, by its address (step 16n).
+        "atlas plugins install owner/repo",
+        "atlas plugins install ./my-plugin --force",
+        "atlas plugins update my-plugin",
+        "atlas plugins remove my-plugin",
         "atlas pairing approve ABCD2345",
         "atlas pairing forget telegram 100",
         # An MCP server from the marketplace connects as it is installed (step 16s).

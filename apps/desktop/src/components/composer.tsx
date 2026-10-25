@@ -41,8 +41,9 @@ export function Composer({ connected, running, to }: { connected: boolean; runni
   const restored = useStore($restored)
   const terminal = useStore($terminalAvailable)
   const owner = selected ?? DRAFT
-  const waiting = selected ? restored[selected] : undefined
-  const restore = useCallback(() => (selected && waiting ? takeRestored(selected) : ''), [selected, waiting])
+  // What was not sent, or what a link put in a new conversation's box (`writePlugin`).
+  const waiting = restored[owner]
+  const restore = useCallback(() => (waiting ? takeRestored(owner) : ''), [owner, waiting])
   const commands = useStore($atlasCommands)[owner]
 
   // Read as the conversation comes on screen, and after each turn, which may have made a skill.

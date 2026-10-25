@@ -128,7 +128,7 @@ test.afterEach(async () => {
   github = undefined
 })
 
-test('the marketplace lists each kind, installs a skill with its server and a plugin, and the model gets both', async () => {
+test('the marketplace lists each kind, installs a skill with its server and a plugin, the model gets both, and one is made from it', async () => {
   scratch = mkdtempSync(path.join(tmpdir(), 'atlas-e2e-market-'))
   github = await FakeGitHub.start()
   const tools = repository(scratch, 'someone/tools', {
@@ -223,4 +223,16 @@ test('the marketplace lists each kind, installs a skill with its server and a pl
   const seen = await model.seen()
   expect(seen).toContain('- pdf: Read PDF files.')
   expect(seen).toContain('- video:cut: Cut a video.')
+
+  // Making one: a new conversation with the skill that writes plugins in its box, sent as it is.
+  await page.getByTestId('marketplace-entry').click()
+  await view.getByTestId('marketplace-make').click()
+  const box = page.getByRole('textbox', { name: 'Message Atlas' })
+  await expect(box).toHaveValue('/write-plugin ')
+  await box.press('End')
+  await box.pressSequentially('a tool that says hello')
+  await model.reply({ text: 'Which folder?' })
+  await box.press('Enter')
+  await expect(page.getByTestId('assistant-message').last()).toContainText('Which folder?')
+  expect(await model.seen()).toContain('atlas plugins new <name> --folder <folder>')
 })

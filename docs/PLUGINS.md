@@ -11,6 +11,7 @@ sits under `atlas` in the same manifest. The decisions behind it are in
 ```bash
 atlas plugins new my-plugin              # in the home's plugins/, where Atlas finds it
 atlas plugins validate ~/.atlas/plugins/my-plugin
+atlas plugins new my-plugin --folder ~/code   # or in a folder of yours, installed from there
 ```
 
 `new` writes the smallest plugin that works: a manifest, a tool and a skill. `validate` loads it
@@ -20,6 +21,10 @@ shows what it declares, and it runs only once you consent. A plugin that declare
 after an update is turned off until you consent again.
 
 A plugin's Python runs inside Atlas with your permissions. There is no sandbox.
+
+**Atlas writes one with you, too:** ask it in a conversation, or type `/write-plugin` and what it
+should do. The skill Atlas ships for it reads this guide, makes the plugin in the conversation's
+folder, checks it with `validate` and installs it, asking you first; you turn it on.
 
 ## The folder
 
@@ -264,6 +269,160 @@ def register(ctx: PluginContext) -> None:
   was, and the turn goes on.
 - `audio` is the only kind for now.
 
+## Channels
+
+A channel lets people talk to Atlas from somewhere else: a chat app, a phone line, a mailbox. It is
+one more client of Atlas, as the app is. Who may talk (pairing), the commands (`/new`, `/stop`),
+which conversation a chat goes on and who answers a question are Atlas's, the same for every
+channel. The channel only carries text, buttons and files.
+
+```json
+"atlas": { "api": 22, "channels": ["my-chat"], "secrets": [{ "name": "MY_CHAT_TOKEN" }] }
+```
+
+```python
+from pathlib import Path
+
+from atlas.plugins.sdk import ChannelHost, Inbound, PluginContext, Prompt
+
+
+class MyChat:
+    def __init__(self, token: str) -> None:
+        self.token = token
+
+    async def run(self, host: ChannelHost) -> None:
+        async for message in my_service.listen(self.token):  # until Atlas cancels it
+            await host.receive(
+                Inbound(
+                    chat=message.chat,
+                    user=message.user_id,
+                    name=message.user_name,
+                    text=message.text,
+                )
+            )
+
+    async def send(self, chat: str, text: str) -> None:
+        await my_service.say(chat, text)  # Markdown, as the models write it
+
+    async def working(self, chat: str, busy: bool) -> None:
+        await my_service.typing(chat, busy)
+
+    async def ask(self, chat: str, prompt: Prompt) -> None:
+        await my_service.buttons(chat, prompt.id, prompt.text, prompt.choices)
+        # A press calls `await host.choose(prompt.id, index, user)`; `None` means it was taken.
+
+    async def settle(self, chat: str, prompt: str, said: str) -> None:
+        await my_service.replace_buttons(chat, prompt, said)
+
+    async def send_file(self, chat: str, path: Path, media_type: str) -> None:
+        await my_service.upload(chat, path, media_type)
+
+
+def register(ctx: PluginContext) -> None:
+    ctx.register_channel("my-chat", lambda: MyChat(ctx.secret("MY_CHAT_TOKEN") or ""))
+```
+
+- **`make` runs each time the channel starts,** so it reads its secrets then. A channel starts
+  when the plugin is on and stops when it is turned off.
+- **`run` receives until it is cancelled.** It returns or raises only when it cannot go on; Atlas
+  says so and does not start it again. `host.failed(reason)` says why first (a refused token), on
+  the Plugins screen.
+- **`Inbound.user` is a stable id**, never a name: pairing lets people in by it. `name` is what the
+  user sees when someone asks to pair.
+- **Files people send** go in `Inbound.files` (`"api": 7`), each an `InboundFile` with its `name`
+  and its bytes (`data`). What the model reads of them is Atlas's, as for a file dropped in the
+  app.
+- **`send_file`** (`"api": 22`) sends a file a tool made; a channel without it gets a line naming
+  the file instead.
+- The Telegram plugin Atlas ships is a whole channel:
+  [src/atlas/plugins/bundled/telegram](../src/atlas/plugins/bundled/telegram).
+
+## Executors
+
+An executor brings an outside harness to the workbench: a coding agent installed on the computer,
+which the user and Atlas hand work to, each session on a card. It only carries, as a channel does:
+it starts the harness, reads what the harness says into events, and writes back the answers Atlas
+gives. Who answers a question or a permission (the user on the card, the guardian, the
+conversation's model) is Atlas's, and the plugin never learns which.
+
+```json
+"atlas": { "api": 18, "executors": ["my-harness"] }
+```
+
+```python
+from pathlib import Path
+
+from atlas.plugins.sdk import (
+    Capabilities,
+    Detection,
+    Executor,
+    ExecutorHost,
+    ExecutorInstance,
+    ExecutorSpec,
+    PluginContext,
+    Transcript,
+)
+
+
+class MyHarness:
+    title = "My harness"  # how the screen and `delegate` call it
+
+    async def detect(self) -> Detection:
+        return Detection(installed=True, version="1.2.0", supported=True)
+
+    def capabilities(self) -> Capabilities:
+        return Capabilities(questions=False, permissions=True, steer=False, auto=False)
+
+    async def start(self, spec: ExecutorSpec, host: ExecutorHost) -> ExecutorInstance:
+        return await MySession.start(spec.folder, host)  # raises ExecutorError when it cannot
+
+    async def transcript(self, session: str, folder: Path) -> Transcript:
+        return Transcript(entries=read_my_log(session, folder))
+
+
+def register(ctx: PluginContext) -> None:
+    def make() -> Executor:
+        return MyHarness()
+
+    ctx.register_executor("my-harness", make)
+```
+
+- **`Executor`** needs `title`, `detect` (installed, its version, its `Account`, with no effect on
+  it), `capabilities`, `start` and `transcript`. The rest is optional, each behind a flag of
+  `Capabilities` that says it is there; Atlas never calls a method whose flag is off:
+
+  | `Capabilities` | What it offers | `api` |
+  |---|---|---|
+  | `questions`, `permissions` | it asks over its channel (`ExecutorHost.ask`, `approve`) | 2 |
+  | `steer`, `auto` | `ExecutorInstance.steer`, `set_auto` | 2 |
+  | `accounts` | `Executor.log_in`, the harness's own login in the browser | 2 |
+  | `sessions`, `fork` | `Executor.sessions`, `SessionInfo`; `ExecutorSpec.fork` | 3 |
+  | `models` | `Executor.models`, `ModelChoice`; `ExecutorInstance.set_model` | 4 |
+  | `connectors` | `Executor.connectors`, `Connector` | 5 |
+  | `folders` | `Executor.folders`, `SessionFolder` | 8 |
+  | `usage` | `Executor.usage`, `PlanUsage`, `UsageWindow`, `UsageChanged` | 9 |
+  | `commands` | `Executor.commands`, `SlashCommand`, `CommandsChanged` | 10 |
+  | `account_folders` | `Executor.account_folder`, `new_account_folder`, `for_account`; `ExecutorSpec.resume_from` | 12 |
+  | `delete_sessions` | `Executor.delete_session` | 12 |
+  | `files` | `ExecutorInstance.prompt(files=)`, `ExecutorFile`, `ExecutorSpec.directories` | 13 |
+
+- **`ExecutorInstance`** is one running harness: `prompt` runs a turn until its `Finished` (Atlas
+  never calls it while a turn runs), and `stop` ends it with every process it started.
+- **What happens is an event, handed to `host.event`:** `Started` (the session's id), `Said`,
+  `Thought`, `Called` and `Returned` (a tool call and its result), `Compacted`, `LimitReached`,
+  `UsageChanged`, `CommandsChanged`, and `Finished`, which ends the turn.
+- **A question or a permission waits on `host`:** `await host.ask([Question(...)])` returns the
+  answers, `await host.approve(Permission(...))` a `Verdict`. Both wait as long as the answer
+  takes. `host.failed(reason)` says the instance cannot go on.
+- **`transcript`** reads a session back, wherever the harness keeps it, in one shape for every
+  harness: `TranscriptEntry` items in a `Transcript`.
+- **A harness that speaks the Agent Client Protocol** needs no channel of its own:
+  `atlas.plugins.acp` (`"api": 18`) starts it, speaks ACP over its stdio and turns its updates
+  into these events. The Gemini CLI and DeepSeek plugins Atlas ships use it:
+  [src/atlas/plugins/bundled/gemini-cli](../src/atlas/plugins/bundled/gemini-cli),
+  [src/atlas/plugins/bundled/deepseek](../src/atlas/plugins/bundled/deepseek). The Claude Code and
+  Codex plugins speak their harness's own protocol.
+
 ## Two examples
 
 **A business system's MCP, no Python.** The system already has an MCP server, so the plugin only
@@ -505,6 +664,51 @@ image: https://raw.githubusercontent.com/your-github-account/atlas-video/<sha>/c
   ```
 
   `--load` runs the plugin's Python: use it on your own plugin, or where foreign code may run.
+
+## What the SDK offers
+
+Everything a plugin's Python may import is in `atlas.plugins.sdk` (`API_VERSION` 23), and the ACP
+client in `atlas.plugins.acp`. Everything a screen may import is in `@atlas/plugin-sdk`
+(`SCREEN_API` 3). Each name below has its section above. A test keeps this list whole: a name the
+SDK adds and the guide does not name fails it.
+
+**`register(ctx)` gets a `PluginContext`:**
+
+| Member | What it is | `api` |
+|---|---|---|
+| `ctx.name`, `ctx.data_folder`, `ctx.logger` | its name, its data folder, its log | 1 |
+| `ctx.secret(name)`, `ctx.setting(name)` | a declared secret from the vault, a declared setting | 1 |
+| `ctx.register_channel(name, make)` | a channel (Channels) | 1 |
+| `ctx.register_executor(name, make)` | an executor (Executors) | 2 |
+| `ctx.register_tool(name, description, parameters, run, read_only=)` | a tool (Tools) | 14 |
+| `ctx.on_unload(stop)` | what stops with it | 14 |
+| `ctx.register_hook(event, run, matcher=)` | a hook (Hooks) | 15 |
+| `ctx.register_command(name, run, description, hint=)` | a slash command | 16 |
+| `ctx.register_cli_command(name, run, description)` | a terminal command | 16 |
+| `ctx.llm.complete(prompt, system=, max_tokens=, json_schema=)` | the user's model: `LlmMessage`, `LlmResult`, `LlmError`, `PluginLlm` | 16 |
+| `ctx.notify(conversation, text)` | a message that starts a turn | 16 |
+| `ctx.register_call(name, run)` | what the screen's `ctx.call` reaches | 17 |
+| `ctx.register_reader(kind, run)` | an attachment read into text (Readers) | 21 |
+
+**What Atlas hands what it registered:**
+
+- A tool's `ToolHost`: `progress(text)`, `conversation`, `send_file(path)` (22).
+- A command's `CommandHost`: `conversation`.
+- A channel's `ChannelHost`: `receive`, `choose`, `failed`; the channel is a `Channel` (`run`,
+  `send`, `working`, `ask`, `settle`), or a `FileChannel` with `send_file`; it hands over an
+  `Inbound` with `InboundFile`s, and shows a `Prompt`.
+- An executor's `ExecutorHost`: `event`, `ask`, `approve`, `failed`. The executor is an `Executor`
+  that starts an `ExecutorInstance`, with `ExecutorSpec`, `Capabilities`, `Detection`, `Account`,
+  `Question`, `Option`, `Permission`, `Verdict`, `Transcript`, `TranscriptEntry`, `SessionInfo`,
+  `SessionFolder`, `ModelChoice`, `Connector`, `SlashCommand`, `PlanUsage`, `UsageWindow`,
+  `ExecutorFile` and `ExecutorError`; its events are `Started`, `Said`, `Thought`, `Called`,
+  `Returned`, `LimitReached`, `Compacted`, `Finished`, `UsageChanged` and `CommandsChanged`.
+
+**A screen's `register(ctx)` gets:** `ctx.plugin`, `ctx.register`, `ctx.call`, `ctx.onEvent`,
+`ctx.onDispose`, `ctx.setInterval`, `ctx.setTimeout`, `ctx.storage` (`get`, `set`, `remove`), and
+with `desktop` declared `ctx.shortcut`, `ctx.paste` and `ctx.bar`. From `@atlas/plugin-sdk` it
+imports `useValue` and `host`: `host.state` (`connection`, `conversation`, `home`),
+`host.request`, `host.openPage`, `host.send`, `host.insertText` and `host.togglePanel`.
 
 ## Not yet
 

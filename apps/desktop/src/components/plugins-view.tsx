@@ -12,10 +12,13 @@ import {
   disablePlugin,
   enablePlugin,
   forgetPairing,
+  PLUGIN_GUIDE,
   reloadPlugins,
   setPluginSetting,
-  storePluginSecret
+  storePluginSecret,
+  writePlugin
 } from '@/store/app'
+import { closeSettings } from '@/store/settings'
 
 /**
  * The plugins (docs/ARCHITECTURE.md, Plugins): each one off until turned on, and turning one on
@@ -34,16 +37,33 @@ export function PluginsSection() {
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-4">
           <p className="text-sm text-neutral-500">{t.plugins.intro}</p>
-          {/* Step 16n: the plugins loaded again; the server also loads a saved file again. */}
-          <button
-            className={`${BUTTON} shrink-0 text-sm`}
-            data-testid="plugins-reload"
-            onClick={() => void reloadPlugins()}
-            title={t.plugins.reloadHint}
-            type="button"
-          >
-            {t.plugins.reload}
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <a className="text-sm text-violet-600 hover:underline" href={PLUGIN_GUIDE} rel="noreferrer" target="_blank">
+              {t.plugins.guide}
+            </a>
+            <button
+              className={`${BUTTON} text-sm`}
+              data-testid="plugins-write"
+              onClick={() => {
+                closeSettings()
+                writePlugin()
+              }}
+              title={t.plugins.writeHint}
+              type="button"
+            >
+              {t.plugins.write}
+            </button>
+            {/* Step 16n: the plugins loaded again; the server also loads a saved file again. */}
+            <button
+              className={`${BUTTON} text-sm`}
+              data-testid="plugins-reload"
+              onClick={() => void reloadPlugins()}
+              title={t.plugins.reloadHint}
+              type="button"
+            >
+              {t.plugins.reload}
+            </button>
+          </div>
         </div>
         {error && (
           <p

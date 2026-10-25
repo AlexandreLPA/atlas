@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { EventParams } from '@/protocol/channel'
 import type { AtlasClient } from '@/protocol/client'
 import type { MarketplaceDone, MarketplaceList, MarketplacePage, MarketplaceRow } from '@/protocol/protocol.generated'
-import { openHome, showMarketplace, startApp } from '@/store/app'
+import { $restored, $view, DRAFT, openHome, showMarketplace, startApp } from '@/store/app'
 import { $settings, $settingsSection } from '@/store/settings'
 
 import { MarketplaceView } from './marketplace-view'
@@ -266,5 +266,16 @@ describe('an item installs from its card, and its page shows what it is and need
 
     expect(calls.filter(([method]) => method === 'marketplace.list')).toHaveLength(2)
     expect(action().dataset.action).toBe('on')
+  })
+})
+
+describe('making one starts from the marketplace', () => {
+  it('opens a new conversation with the skill that writes plugins in its box', async () => {
+    await open(() => listing([]))
+    fireEvent.click(screen.getByTestId('marketplace-make'))
+
+    expect($view.get()).toBe('conversation')
+    expect($restored.get()[DRAFT]).toBe('/write-plugin ')
+    expect(screen.getByRole('link', { name: 'Plugin guide' }).getAttribute('href')).toContain('docs/PLUGINS.md')
   })
 })

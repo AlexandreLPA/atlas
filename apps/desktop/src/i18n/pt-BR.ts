@@ -262,6 +262,9 @@ export const ptBR: Override<Messages> = {
     notStored: 'não guardado',
     changeSecret: 'Trocar',
     title: 'Plugins',
+    guide: 'Guia',
+    write: 'Escrever um plugin',
+    writeHint: 'Uma conversa nova em que o Atlas escreve um plugin com você, confere e instala.',
     waits: (code: string) => `espera com ${code}`,
     waiting: (count: number) => (count === 1 ? '1 esperando' : `${count} esperando`)
   },
@@ -307,6 +310,9 @@ export const ptBR: Override<Messages> = {
     localChanges: (name: string) =>
       `${name} foi mudado aqui depois que veio. Atualizar mesmo assim? O que ele tem agora fica guardado como uma versão que dá para trazer de volta.`,
     loadingPage: 'Lendo a página…',
+    makeHint: 'O Atlas escreve um plugin com você numa conversa nova; o guia diz como publicá-lo aqui.',
+    makeYourOwn: 'Faça o seu',
+    guide: 'Guia de plugins',
     need: {
       program: (name: string, state: string) =>
         state === 'met' ? `${name}: está neste computador` : `${name}: não está neste computador (instala mesmo assim)`,
