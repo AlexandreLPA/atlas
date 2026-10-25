@@ -1273,6 +1273,21 @@ export const en = {
     unverified: (reason: string) => `CI did not verify this version: ${reason}.`,
     updatingServer: 'The server is updating…'
   },
+  browser: {
+    address: 'Web address',
+    back: 'Back',
+    closeTab: 'Close this page',
+    empty: 'Type a web address to open a page.',
+    failed: (why: string) => `The page did not load: ${why}`,
+    forward: 'Forward',
+    invalid: 'That is not a web address.',
+    name: 'Browser',
+    newTab: 'New page',
+    placeholder: 'Type a web address',
+    reload: 'Reload',
+    stop: 'Stop loading',
+    untitled: 'New page'
+  },
   preview: {
     close: 'Close this preview',
     dismiss: 'Dismiss',

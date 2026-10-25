@@ -65,5 +65,6 @@ export {
   IconTrash as Trash,
   IconUpload as Upload,
   IconUserCircle as UserCircle,
+  IconWorld as Web,
   IconX as Close
 } from '@tabler/icons-react'

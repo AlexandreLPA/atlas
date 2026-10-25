@@ -46,6 +46,7 @@ import {
 import { messagesFor, pickLocale } from '../src/i18n'
 
 import { activeHome, AttachedServer, cliRunner, failure, homeFolder, readAlwaysOn } from './always-on'
+import { AppBrowser, configureBrowserSession, registerAppBrowser } from './app-browser'
 import { BackupDownloads } from './backup-down'
 import { Bar, e2ePowers, registerDesktopPowers, systemKeys } from './desktop-powers'
 import { openFolder, openInEditor } from './editor'
@@ -244,6 +245,8 @@ function lookForUpdate(now = false): Promise<null | UpdateStatus> {
 }
 
 let window: BrowserWindow | null = null
+/** The side panel's browser (app-browser.ts), made with the window. */
+let appBrowser: AppBrowser | null = null
 
 // No File, Edit, View bar on the window (asked for by the user on 17/10/2026): Windows and Linux
 // get no application menu, set before Electron installs its default one.
@@ -361,11 +364,13 @@ function createWindow(): void {
     event.preventDefault()
     openOutside(url)
   })
+  appBrowser = new AppBrowser(window, log)
   window.once('ready-to-show', () => window?.show())
   window.on('closed', () => {
     window = null
     // The bar is a window too: left open, the app would not quit.
     desktopBar?.close()
+    appBrowser = null
   })
   // Back after an hour away, the window looks for an update again.
   window.on('focus', () => {
@@ -686,6 +691,8 @@ if (!app.requestSingleInstanceLock()) {
     updateEnded = takeResult(updates)
     registerPreviews(ipcMain, protocol)
     startDesktopPowers()
+    configureBrowserSession()
+    registerAppBrowser(ipcMain, () => appBrowser)
     // Start the opening home's server while the window loads; the window's first dial waits for it.
     void endpoint(null).catch((error: unknown) => {
       log(String(error))

@@ -1,5 +1,7 @@
 /** What the preload hands the window (electron/preload.ts). */
 interface AtlasBridge {
+  /** The side panel's browser (electron/app-browser.ts). */
+  browser: BrowserBridge
   /** Where a home's backup goes, from the system's save dialog; `null` when cancelled. */
   backupTarget: (home: string, label: string) => Promise<null | string>
   /** A part of a remote machine's backup, written where the save dialog said (step 15). */
@@ -47,6 +49,38 @@ interface AtlasBridge {
 interface TabsBridge {
   /** On macOS, ⌘W: close the tab on screen. */
   onClose: (listener: () => void) => () => void
+}
+
+/** A browser tab, as the main process tells it (electron/app-browser.ts, `BrowserTabState`). */
+interface BrowserTab {
+  canGoBack: boolean
+  canGoForward: boolean
+  /** Why the page did not load, or `''`. */
+  error: string
+  id: string
+  loading: boolean
+  title: string
+  url: string
+}
+
+interface BrowserState {
+  selected: null | string
+  tabs: BrowserTab[]
+}
+
+/** What a browser command came to. */
+type BrowserAnswer = { id?: string; ok: true } | { ok: false; reason: 'address' | 'closed' | 'invalid' | 'unknown' }
+
+type BrowserCommand =
+  | { command: 'back' | 'close' | 'forward' | 'reload' | 'select' | 'stop'; id: string }
+  | { command: 'go'; id: null | string; text: string }
+  | { command: 'open' }
+  | { command: 'show'; rect: null | { height: number; width: number; x: number; y: number } }
+
+interface BrowserBridge {
+  command: (command: BrowserCommand) => Promise<BrowserAnswer>
+  onChange: (listener: (state: BrowserState) => void) => () => void
+  state: () => Promise<BrowserState>
 }
 
 /** What a call to the main process says: its value, or why not in words. */

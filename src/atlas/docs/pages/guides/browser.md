@@ -18,6 +18,15 @@ Ask in plain words, and say when you want it to use the browser:
 For a page it only needs to read, Atlas usually fetches it without a browser, which is quicker. The
 browser is for what needs one: a page drawn by JavaScript, a login, a form, a screenshot.
 
+## The Browser tab
+
+The side panel has a **Browser** tab: a browser you use by hand, beside the conversation, with an
+address bar, back, forward and reload. A page that opens a window opens a tab instead.
+
+It opens only web pages (`http` and `https`), refuses downloads, and says no to a site that asks
+for the camera, the microphone, your location or notifications. Atlas itself does not use it yet: it
+works in its own Chrome window (below).
+
 ## Its own profile
 
 By default Atlas opens **its own Chrome profile**, kept in your home (`ATLAS_HOME/browser/profile`),

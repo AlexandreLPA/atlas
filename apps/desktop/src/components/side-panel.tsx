@@ -19,6 +19,7 @@ import {
   currentFolder,
   currentOwner
 } from '@/store/app'
+import { BROWSER_TAB, browserHost } from '@/store/browser'
 import { $previews, closePreview, type PreviewTab } from '@/store/previews'
 import {
   $panelOpen,
@@ -36,12 +37,13 @@ import {
 } from '@/store/terminals'
 import { workspaceAt } from '@/store/workspaces'
 
+import { BrowserView } from './browser-view'
 import { ChangesView } from './changes-view'
 import { ExecutorPanel } from './executor-panel'
 import { baseName } from './executors-list'
 import { PreviewView } from './preview-view'
 import { RailEdge } from './rail-edge'
-import { Close, LayoutSidebarRight, Plus, Preview as PreviewGlyph, Terminal as TerminalGlyph } from './ui/icons'
+import { Close, LayoutSidebarRight, Plus, Preview as PreviewGlyph, Terminal as TerminalGlyph, Web } from './ui/icons'
 import { PILL, PILL_ON } from './ui/pill'
 import { IconButton } from './ui/tip'
 import { useWorkspaceRows } from './workspaces-list'
@@ -82,8 +84,10 @@ export function SidePanel() {
   const panels = inArea(useStore($contributions), 'panel')
   const panel = showsExecutor || showsChanges ? undefined : panels.find(item => `${PLUGIN_TAB}${item.key}` === panelTab)
   const preview = showsExecutor || showsChanges || panel ? undefined : previews.find(tab => tab.id === panelTab)
+  // The app's browser (electron/app-browser.ts): a tab of its own, which none of the others shows with.
+  const showsBrowser = !showsExecutor && !showsChanges && panelTab === BROWSER_TAB && browserHost() !== undefined
   const selected =
-    showsExecutor || showsChanges || preview || panel
+    showsExecutor || showsChanges || showsBrowser || preview || panel
       ? null
       : tabs.some(tab => tab.id === panelTab)
         ? panelTab
@@ -184,6 +188,21 @@ export function SidePanel() {
             {item.title}
           </button>
         ))}
+        {browserHost() && (
+          <button
+            aria-selected={showsBrowser}
+            className={`flex items-center gap-1 rounded px-2 py-1 ${showsBrowser ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+            data-testid="browser-tab"
+            onClick={() => {
+              $panelTab.set(BROWSER_TAB)
+            }}
+            role="tab"
+            type="button"
+          >
+            <Web aria-hidden className="shrink-0" size={13} stroke={1.75} />
+            {t.browser.name}
+          </button>
+        )}
         {available && (
           <IconButton
             icon={Plus}
@@ -204,7 +223,7 @@ export function SidePanel() {
         />
       </div>
       <div
-        className={`relative min-h-0 flex-1 ${showsExecutor || panel ? 'overflow-y-auto' : showsChanges ? '' : 'dark bg-background p-2'}`}
+        className={`relative min-h-0 flex-1 ${showsExecutor || panel ? 'overflow-y-auto' : showsChanges ? '' : showsBrowser ? 'overflow-hidden' : 'dark bg-background p-2'}`}
       >
         {tabs.map(tab => (
           <TerminalView active={tab.id === selected} key={tab.id} tab={tab} />
@@ -216,9 +235,10 @@ export function SidePanel() {
             <ContributionView item={panel} />
           </div>
         )}
-        {tabs.length === 0 && !preview && !showsExecutor && !showsChanges && !panel && (
+        {tabs.length === 0 && !preview && !showsExecutor && !showsChanges && !showsBrowser && !panel && (
           <p className="p-2 text-xs text-muted-foreground">{t.terminal.empty}</p>
         )}
+        {showsBrowser && <BrowserView />}
         {preview && (
           <div className="absolute inset-0" data-testid="preview-view">
             <PreviewView target={preview.target} />
@@ -265,7 +285,9 @@ export function usePanelState(): 'hidden' | 'offered' | 'open' {
     return 'open'
   }
 
-  return available || tabs.length + previews.length + panels.length > 0 || executor || workspace ? 'offered' : 'hidden'
+  return available || tabs.length + previews.length + panels.length > 0 || executor || workspace || browserHost()
+    ? 'offered'
+    : 'hidden'
 }
 
 /** The hidden panel's switch, at the tab strip's end, which brings it back. */

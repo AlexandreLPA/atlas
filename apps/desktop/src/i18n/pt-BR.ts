@@ -1261,6 +1261,21 @@ export const ptBR: Override<Messages> = {
     unverified: (reason: string) => `A CI não verificou esta versão: ${reason}.`,
     updatingServer: 'O servidor está se atualizando…'
   },
+  browser: {
+    address: 'Endereço da web',
+    back: 'Voltar',
+    closeTab: 'Fechar esta página',
+    empty: 'Digite um endereço da web para abrir uma página.',
+    failed: (why: string) => `A página não carregou: ${why}`,
+    forward: 'Avançar',
+    invalid: 'Isso não é um endereço da web.',
+    name: 'Navegador',
+    newTab: 'Nova página',
+    placeholder: 'Digite um endereço da web',
+    reload: 'Recarregar',
+    stop: 'Parar de carregar',
+    untitled: 'Nova página'
+  },
   preview: {
     close: 'Fechar esta prévia',
     dismiss: 'Dispensar',
