@@ -69,13 +69,11 @@ class Routines:
         model: tuple[str, str, str | None] | None = None,
         bot: str | None = None,
     ) -> Routine:
-        """A new routine: a prompt the agent runs, or a command (the user's only). `bot` is the
-        bot a prompt runs as; a command is nobody's."""
+        """A new routine: a prompt the agent runs, or a command, which runs with no model. `bot` is
+        the bot a prompt runs as; a command is nobody's."""
         name = _name(name)
         if (prompt is None) == (command is None) or not (prompt or command or "").strip():
             raise JobsError("A routine runs a prompt or a command: give one of them.")
-        if command is not None and created_by is not Creator.USER:
-            raise JobsError("Only the user makes a routine that runs a command.")
         if command is not None and bot is not None:
             raise JobsError("A bot's routine runs a prompt: a command runs as nobody.")
         now = self._clock()
@@ -110,6 +108,7 @@ class Routines:
         name: str | None = None,
         schedule: str | None = None,
         prompt: str | None = None,
+        command: str | None = None,
     ) -> Routine:
         routine = self.store.get(key)
         changes: dict[str, object] = {}
@@ -122,6 +121,12 @@ class Routines:
                 raise JobsError("A routine's prompt cannot be empty.")
             _scan(prompt)
             changes["prompt"] = prompt.strip()
+        if command is not None:
+            if routine.command is None:
+                raise JobsError(f"{routine.name} runs a prompt, not a command.")
+            if not command.strip():
+                raise JobsError("A routine's command cannot be empty.")
+            changes["command"] = command.strip()
         if schedule is not None:
             now = self._clock()
             parsed = parse_schedule(schedule, now.astimezone(self._zone))

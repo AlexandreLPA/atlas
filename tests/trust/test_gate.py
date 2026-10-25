@@ -38,6 +38,7 @@ async def _nothing(arguments: dict[str, Any]) -> str:
 
 RUN = Tool("run_command", "Runs a command.", {}, _nothing)
 WRITE = Tool("write_file", "Writes a file.", {}, _nothing)
+ROUTINE = Tool("cronjob_manage", "Manages routines.", {}, _nothing)
 
 
 class _User:
@@ -95,6 +96,27 @@ def test_the_users_deny_rules_block_any_spelling_even_in_auto_mode() -> None:
 
     assert said is not None
     assert "deny rule 'git push --force*'" in said
+
+
+def test_a_routines_command_is_judged_as_run_command_would_judge_it_when_scheduled() -> None:
+    user = _User(_yes())
+    gate = ApprovalGate(approver=user)
+
+    plain = _run(gate, ROUTINE, action="create", schedule="every 1h", command="df -h /")
+    prompt = _run(gate, ROUTINE, action="create", schedule="every 1h", prompt="rm -rf /")
+    floor = _run(gate, ROUTINE, action="create", schedule="every 1h", command="rm -rf /")
+    flagged = _run(gate, ROUTINE, action="update", job_id="x", command="git reset --hard")
+    unattended = _run(
+        ApprovalGate(), ROUTINE, action="create", schedule="every 1h", command="git clean -fd"
+    )
+
+    assert plain is None
+    assert prompt is None  # a prompt is the threat scan's, in the routine itself
+    assert floor is not None
+    assert "BLOCKED (hardline)" in floor
+    assert flagged is None
+    assert [(r.tool, r.target) for r in user.asked] == [("cronjob_manage", "git reset --hard")]
+    assert unattended is not None
 
 
 def test_a_flagged_command_asks_the_user_and_an_answer_for_the_conversation_holds() -> None:

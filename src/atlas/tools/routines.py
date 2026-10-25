@@ -1,10 +1,14 @@
 """cronjob_manage: the agent makes, lists, changes, pauses, resumes, removes and runs routines.
 
-Decided on 10/10/2026: deferred behind tool search, with the fields Atlas keeps: a prompt routine
-only (a command routine is the user's, in the terminal), no delivery target (the run is a
-conversation and a notification), no pinned model (the user pins one). The prompt is scanned for
-threats before it is kept, and a routine's run is never given this tool, so a routine cannot make
-routines.
+Decided on 10/10/2026: deferred behind tool search, with the fields Atlas keeps: no delivery
+target (the run is a conversation and a notification), no pinned model (the user pins one). The
+prompt is scanned for threats before it is kept, and a routine's run is never given this tool, so a
+routine cannot make routines.
+
+A command routine, which runs with no model, was the user's alone until 25/10/2026, when the user
+asked for the agent to make one too: its command passes the approval gate as a `run_command` would,
+when it is made and when it is changed (`atlas.trust`), so the gate that would stop the command now
+stops it from being scheduled. A bot makes only prompt routines: a command runs as nobody.
 """
 
 from typing import Any
@@ -15,12 +19,15 @@ from atlas.jobs import Creator, JobsError, Routine, Routines
 _ACTIONS = ("create", "list", "update", "pause", "resume", "remove", "run")
 
 _DESCRIPTION = (
-    "Manages scheduled routines. action='create' schedules one from a prompt; 'list' shows them; "
+    "Manages scheduled routines. action='create' schedules one from a prompt or a command; "
+    "'list' shows them; "
     "'update', 'pause', 'resume', 'remove' and 'run' act on one by job_id (list first; never guess "
     "an id). 'run' fires it within a minute, in the background: its outcome arrives as its own "
     "conversation and a notification, so do not wait. A routine runs in a new conversation with "
     "none of this one's context, so its prompt must stand alone, and its final reply is what the "
-    "user sees; it cannot ask questions. A reply of [SILENT] notifies nobody. Prefer updating a "
+    "user sees; it cannot ask questions. A reply of [SILENT] notifies nobody. A command routine "
+    "runs a shell command with no model, for a script or a check that needs no thinking: its "
+    "output is what the user gets, and an empty output notifies nobody. Prefer updating a "
     "routine over making a near-duplicate."
 )
 
@@ -51,10 +58,13 @@ def cronjob_manage(routines: Routines, *, bot: str | None = None) -> Tool:
             if action == "list":
                 return _listing([r for r in routines.store.all() if bot is None or r.bot == bot])
             if action == "create":
+                prompt = _optional(arguments.get("prompt"))
+                command = _optional(arguments.get("command"))
                 made = routines.create(
-                    _text(arguments.get("name")) or _text(arguments.get("prompt"))[:40],
+                    _text(arguments.get("name")) or (prompt or command or "")[:40],
                     _text(arguments.get("schedule")),
-                    prompt=_text(arguments.get("prompt")),
+                    prompt=prompt if prompt is not None or command is not None else "",
+                    command=command,
                     created_by=Creator.AGENT,
                     bot=bot,
                 )
@@ -68,6 +78,7 @@ def cronjob_manage(routines: Routines, *, bot: str | None = None) -> Tool:
                     name=_optional(arguments.get("name")),
                     schedule=_optional(arguments.get("schedule")),
                     prompt=_optional(arguments.get("prompt")),
+                    command=_optional(arguments.get("command")),
                 )
                 return f"Updated {changed.id}: {_line(changed)}"
             if action == "pause":
@@ -100,7 +111,13 @@ def cronjob_manage(routines: Routines, *, bot: str | None = None) -> Tool:
                 "schedule": {"type": "string", "description": _SCHEDULE},
                 "prompt": {
                     "type": "string",
-                    "description": "Required for create: the whole task, standing alone.",
+                    "description": "For a routine the agent runs: the whole task, standing alone. "
+                    "Give it or command, not both.",
+                },
+                "command": {
+                    "type": "string",
+                    "description": "For a routine that runs no model: a command in the system's "
+                    "shell, run in the working folder. Give it or prompt, not both.",
                 },
             },
             "required": ["action"],

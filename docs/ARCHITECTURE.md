@@ -1570,6 +1570,10 @@ Step 12. Atlas V3's M-106 had reached the catch-up rule below.
   with no confirmation step.
 - **A script-only routine** runs a command and delivers its output; empty
   output notifies nobody. The daily backup is one, `atlas backup`, made in the user's home.
+  The agent makes one too, through `cronjob_manage` (the user's own until 2026-10-25, asked for
+  by the user): its command passes the approval gate as a `run_command` would, when it is made
+  and when it is changed, since the routine runs it later with nobody to approve. A bot makes
+  only prompt routines.
 - **`atlas routines`** `list|create|pause|resume|run|remove|runs`; and **a lean
   screen** (decided with the user): the list, run now, pause, remove, and
   each routine's runs, which open as conversations. Creating stays with the conversation and the

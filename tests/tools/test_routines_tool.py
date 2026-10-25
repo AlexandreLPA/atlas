@@ -86,6 +86,38 @@ def test_what_the_agent_cannot_do_is_said(routines: Routines) -> None:
     assert blocked.startswith("[Atlas: Blocked")
 
 
+def test_the_agent_makes_and_changes_a_routine_that_runs_a_command(routines: Routines) -> None:
+    made = _call(
+        routines,
+        action="create",
+        name="disk",
+        schedule="every day at 7am",
+        command="df -h /",
+    )
+    updated = _call(routines, action="update", job_id="disk", command="df -h /home")
+    reprompted = _call(routines, action="update", job_id="disk", prompt="Check the disk.")
+
+    routine = routines.store.get("disk")
+    assert made.startswith("Made routine ")
+    assert "command: df -h /" in made
+    assert "command: df -h /home" in updated
+    assert routine.command == "df -h /home"
+    assert routine.prompt is None
+    assert routine.created_by is Creator.AGENT
+    assert "runs a command, not a prompt" in reprompted
+
+
+def test_a_routine_runs_a_prompt_or_a_command_never_both(routines: Routines) -> None:
+    both = _call(routines, action="create", schedule="every 1h", prompt="Hi.", command="ls")
+    neither = _call(routines, action="create", name="x", schedule="every 1h")
+    by_bot = _as(routines, "finance", action="create", schedule="every 1h", command="ls")
+
+    assert "a prompt or a command" in both
+    assert "a prompt or a command" in neither
+    assert "runs as nobody" in by_bot
+    assert routines.store.all() == []
+
+
 # -- a bot's routines (step 13b) -----------------------------------------------------------------
 
 

@@ -696,6 +696,12 @@ Do V3 (M-106) vem a confirmação da regra do atraso.
   rotina e sem pedir confirmação ao usuário.
 - **Rotina sem modelo** (`no_agent`): roda um comando e entrega a saída; saída vazia não
   avisa. O backup diário entra assim, criado na casa do usuário com `atlas backup`.
+  - **O agente também cria** (pedido do usuário em 25/10): até então só o usuário criava, pelo
+    terminal, porque o comando roda depois sem ninguém para aprovar e sem o modelo para recusar.
+    Agora a `cronjob_manage` aceita `command`, e o comando passa pelo portão como um
+    `run_command` passaria, ao ser criado e ao ser mudado: o piso bloqueia, a ação para fora e
+    o comando marcado vão para o usuário (ou o guardião), e o modo automático deixa passar o
+    resto. O bot continua só com rotina de prompt.
 - **No terminal**, `atlas routines list|create|pause|resume|run|remove|runs`.
 - **No app, uma tela enxuta** (decidido em 11/10): a lista,
   rodar agora, pausar, apagar, e as execuções de cada rotina, que abrem como conversa. Criar continua

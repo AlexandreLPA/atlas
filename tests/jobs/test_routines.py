@@ -91,8 +91,8 @@ def test_what_cannot_be_a_routine_is_refused_with_why(routines: Routines) -> Non
         (lambda: routines.create("x", "sometime", prompt="Hi."), "not a schedule"),
         (lambda: routines.create("x", "2026-01-01T09:00", prompt="Hi."), "in the past"),
         (
-            lambda: routines.create("x", "every 1h", command="ls", created_by=Creator.AGENT),
-            "Only the user",
+            lambda: routines.create("x", "every 1h", command="ls", bot="finance"),
+            "runs as nobody",
         ),
         (
             lambda: routines.create(

@@ -24,6 +24,10 @@ It is the agent loop's tool gate (`AgentLoop(gate=...)`), one per conversation.
    its lowest effort and room to think, which is Atlas's fix. 8. The user answers once, for the
    conversation, always, or no. Silence is not consent.
 
+**A command routine** the agent makes or changes (`cronjob_manage` with a `command`) passes as a
+command for run_command would: the routine runs it later with nobody to approve, so it is judged
+when it is scheduled.
+
 **A file write** to a system path, the home's settings or its plugins' folders is refused; one to
 the SSH configuration asks the user (the SSH config can run commands through `ProxyCommand`).
 **A tool that needs approval** (an untrusted MCP server's tool that may write) asks the user every
@@ -95,6 +99,8 @@ GUARDIAN_THINKING_TOKENS = 2_048
 #: The effort that turns reasoning off, where a model lists it.
 NO_REASONING = "none"
 COMMAND_TOOL = "run_command"
+#: The tool that schedules a command routine.
+ROUTINE_TOOL = "cronjob_manage"
 WRITE_TOOLS = frozenset({"write_file", "edit_file"})
 #: Shown of a call's arguments on the approval screen.
 TARGET_CHARS = 2_000
@@ -154,6 +160,10 @@ class ApprovalGate:
             if not isinstance(command, str):
                 return None
             return await self._command(command, cwd if isinstance(cwd, str) else None)
+        if tool.name == ROUTINE_TOOL:
+            command = arguments.get("command")
+            if isinstance(command, str) and command.strip():
+                return await self._command(command, tool=ROUTINE_TOOL)
         if tool.name in WRITE_TOOLS:
             path = arguments.get("path")
             refused = self._write(path)
@@ -173,7 +183,9 @@ class ApprovalGate:
 
     # -- commands ---------------------------------------------------------------------------------
 
-    async def _command(self, command: str, cwd: str | None = None) -> str | None:
+    async def _command(
+        self, command: str, cwd: str | None = None, *, tool: str = COMMAND_TOOL
+    ) -> str | None:
         seen = fold_atlas_home(command, str(self._home)) if self._home is not None else command
         floor = self._floor(seen)
         if floor is not None:
@@ -186,7 +198,7 @@ class ApprovalGate:
                     outward += " (in a script the command runs)"
                     break
         if outward is not None:
-            return await self._ask_outward(command, outward)
+            return await self._ask_outward(command, outward, tool)
         if self.auto_mode:
             return None
         flagged, _, reason = detect_dangerous_command(seen)
@@ -205,7 +217,7 @@ class ApprovalGate:
         if denied:
             self._denials += 1
         request = ApprovalRequest(
-            COMMAND_TOOL,
+            tool,
             command,
             reason,
             allow_conversation=not denied,
@@ -257,7 +269,7 @@ class ApprovalGate:
                     return reason
         return None
 
-    async def _ask_outward(self, command: str, reason: str) -> str | None:
+    async def _ask_outward(self, command: str, reason: str, tool: str = COMMAND_TOOL) -> str | None:
         approver = self._approver
         if approver is None:
             _logger.warning("An outward command was refused with nobody to approve it: %s", reason)
@@ -267,7 +279,7 @@ class ApprovalGate:
         if new:
             reason += f" (the first email to {', '.join(new)})"
         request = ApprovalRequest(
-            COMMAND_TOOL, command, reason, allow_conversation=False, allow_always=False
+            tool, command, reason, allow_conversation=False, allow_always=False
         )
         answer = await self._wait(approver, request)
         if answer.outcome is Outcome.ANSWERED and answer.choice not in (None, Choice.DENY):
