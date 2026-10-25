@@ -437,7 +437,8 @@ class _Source:
         self._config_file = config_file
         self._config = config
         self._known: dict[str, set[str]] = {}
-        self._variables_read: set[str] = {HOME_VARIABLE}
+        # ATLAS_INSTALLATION is the installation's, read by `atlas.installation`: no setting.
+        self._variables_read: set[str] = {HOME_VARIABLE, "ATLAS_INSTALLATION"}
 
     # -- lookups ---------------------------------------------------------------------------------
 

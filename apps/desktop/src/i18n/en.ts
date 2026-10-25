@@ -619,12 +619,14 @@ export const en = {
   },
   updates: {
     apply: 'Update and reopen',
+    applyServer: 'Update and reconnect',
     brings: (count: number) =>
       count === 1
         ? 'One change on main that this Atlas lacks:'
         : `${String(count)} changes on main that this Atlas lacks:`,
     button: 'Update Atlas',
     closing: 'Closing to update…',
+    confirmUnverified: "Update anyway, without CI's verification",
     dirty:
       'This installation has changes of its own, which the update refuses: commit or discard them in its folder first.',
     dismiss: 'Dismiss',
@@ -634,15 +636,20 @@ export const en = {
       count === 1 ? 'an executor session at work' : `${String(count)} executor sessions at work`,
     failed: (error: string) => `The update failed, and Atlas stayed as it was: ${error}`,
     how: 'Atlas closes, updates and opens again by itself, in about a minute.',
+    howServer:
+      'The server builds the new version while it keeps running, then restarts for a moment: the app reconnects by itself and says how it went. If anything fails, the server goes back to the version it runs now, with its data as it was.',
     later: 'Not now',
     log: 'See what it did',
     more: (count: number) => `and ${String(count)} more`,
     ok: 'OK',
     runningNow: 'Atlas is updating, and opens by itself when it is done.',
     stops: (what: string) => `Closing stops what runs now: ${what}.`,
+    stopsServer: (what: string) => `The restart stops what runs on the server now: ${what}.`,
     subagents: (count: number) => (count === 1 ? 'a subagent at work' : `${String(count)} subagents at work`),
     title: 'An update for Atlas',
-    turns: (count: number) => (count === 1 ? 'a conversation answering' : `${String(count)} conversations answering`)
+    turns: (count: number) => (count === 1 ? 'a conversation answering' : `${String(count)} conversations answering`),
+    unverified: (reason: string) => `CI did not verify this version: ${reason}.`,
+    updatingServer: 'The server is updating…'
   },
   preview: {
     close: 'Close this preview',

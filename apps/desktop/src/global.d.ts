@@ -95,9 +95,13 @@ interface UpdateStatus {
   current: string
   dirty: boolean
   error: string
+  /** How the installation updates: `native`, or `compose`, a server's host updater. */
+  kind?: string
   reason: string
   supported: boolean
   target: string
+  /** Why CI did not verify the target, which the user then confirms; "" or absent when it did. */
+  unverified?: string
 }
 
 /** How the update the app handed off ended (`atlas.installation.HandedOff`). */

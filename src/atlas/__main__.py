@@ -20,7 +20,7 @@ import sys
 import tempfile
 import threading
 import time
-from collections.abc import Generator, MutableMapping, Sequence
+from collections.abc import Generator, Mapping, MutableMapping, Sequence
 from contextlib import contextmanager, suppress
 from datetime import timedelta
 from decimal import Decimal
@@ -81,11 +81,14 @@ from atlas.home import (
     write_backup,
 )
 from atlas.installation import (
+    COMPOSE_UPDATE_ELSEWHERE,
     Checkout,
     InstallationError,
     Runner,
     Toolchain,
     build_desktop,
+    host_channel,
+    installation_kind,
     launch,
     update,
     write_launcher,
@@ -596,7 +599,7 @@ def main(
         if args.command == "bot":
             return _bots(args, home, reader)
         if args.command in ("desktop", "update"):
-            return _installation(args, home)
+            return _installation(args, home, environ)
         if args.command == "always-on":
             return _always_on(args, home)
     except (HomeError, InstancesError) as error:
@@ -835,8 +838,22 @@ def _serve_held(
         host, port = listen_address(args, settings)
         token = _server_token(settings, host, vault)
     redactor.add(token)
+    try:
+        # A Compose host's server reaches its host updater, for the app's update button.
+        host_updater = host_channel(loaded.variables)
+    except InstallationError as error:
+        _logger.error("%s", error)
+        return 1
     models = Models(catalog, vault, settings.model, ledger=CallLedger(database))
-    gateway = Gateway(home, settings, models, vault, schemas=SCHEMAS, environ=loaded.variables)
+    gateway = Gateway(
+        home,
+        settings,
+        models,
+        vault,
+        schemas=SCHEMAS,
+        environ=loaded.variables,
+        host_updater=host_updater,
+    )
     parent = None if args.parent_pid is None else Parent(args.parent_pid)
     _logger.info(
         "Serving.",
@@ -1175,10 +1192,15 @@ def _routine_line(routine: Routine, routines: Routines) -> str:
     return f"{routine.schedule.display}, {state}, {upcoming}{last}{whose}"
 
 
-def _installation(args: argparse.Namespace, home: Home) -> int:
+def _installation(args: argparse.Namespace, home: Home, environ: Mapping[str, str]) -> int:
     """`atlas desktop` and `atlas update`, on the checkout this Atlas runs from, with the
-    installation's own tools when the installer left them beside it."""
+    installation's own tools when the installer left them beside it. In a Compose host's container
+    `atlas update` is the host's: the host updater runs it (`scripts/compose-host/atlas`), and a
+    command typed here could be the agent's."""
     try:
+        if args.command == "update" and installation_kind(environ) == "compose":
+            sys.stderr.write(f"atlas: {COMPOSE_UPDATE_ELSEWHERE}\n")
+            return 1
         checkout = Checkout.running()
         runner = Runner(Toolchain.of(checkout))
         if args.command == "update":

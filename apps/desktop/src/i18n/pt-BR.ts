@@ -624,12 +624,14 @@ export const ptBR: Override<Messages> = {
   },
   updates: {
     apply: 'Atualizar e reabrir',
+    applyServer: 'Atualizar e reconectar',
     brings: (count: number) =>
       count === 1
         ? 'Uma mudança na main que este Atlas não tem:'
         : `${String(count)} mudanças na main que este Atlas não tem:`,
     button: 'Atualizar o Atlas',
     closing: 'Fechando para atualizar…',
+    confirmUnverified: 'Atualizar mesmo assim, sem a verificação da CI',
     dirty:
       'Esta instalação tem mudanças próprias, que a atualização recusa: faça o commit delas ou descarte-as na pasta dela antes.',
     dismiss: 'Dispensar',
@@ -639,16 +641,21 @@ export const ptBR: Override<Messages> = {
       count === 1 ? 'uma sessão de executor trabalhando' : `${String(count)} sessões de executor trabalhando`,
     failed: (error: string) => `A atualização falhou, e o Atlas ficou como estava: ${error}`,
     how: 'O Atlas fecha, atualiza e abre de novo sozinho, em cerca de um minuto.',
+    howServer:
+      'O servidor prepara a nova versão enquanto continua rodando e depois reinicia por um instante: o app reconecta sozinho e diz como foi. Se algo falhar, o servidor volta à versão de agora, com os dados como estavam.',
     later: 'Agora não',
     log: 'Ver o que ela fez',
     more: (count: number) => `e mais ${String(count)}`,
     ok: 'OK',
     runningNow: 'O Atlas está se atualizando e abre sozinho quando terminar.',
     stops: (what: string) => `Fechar agora para o que está rodando: ${what}.`,
+    stopsServer: (what: string) => `O reinício para o que está rodando no servidor agora: ${what}.`,
     subagents: (count: number) =>
       count === 1 ? 'um subagente trabalhando' : `${String(count)} subagentes trabalhando`,
     title: 'Uma atualização do Atlas',
-    turns: (count: number) => (count === 1 ? 'uma conversa respondendo' : `${String(count)} conversas respondendo`)
+    turns: (count: number) => (count === 1 ? 'uma conversa respondendo' : `${String(count)} conversas respondendo`),
+    unverified: (reason: string) => `A CI não verificou esta versão: ${reason}.`,
+    updatingServer: 'O servidor está se atualizando…'
   },
   preview: {
     close: 'Fechar esta prévia',

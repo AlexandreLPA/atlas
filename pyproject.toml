@@ -113,6 +113,9 @@ dev = [
 target-version = "py313"
 line-length = 100
 src = ["src", "tests"]
+# The host updater runs on the Compose host's own Python, 3.11 or newer (docs/ARCHITECTURE.md, The
+# update of a Compose host): no syntax newer than that.
+per-file-target-version = { "src/atlas/installation/host_updater.py" = "py311" }
 
 [tool.ruff.lint]
 select = [
@@ -181,6 +184,24 @@ type = "forbidden"
 source_modules = ["atlas"]
 forbidden_modules = ["atlas.server"]
 ignore_imports = ["atlas.__main__ -> atlas.server"]
+
+[[tool.importlinter.contracts]]
+# docs/ARCHITECTURE.md, The update of a Compose host: the owner asks from the app's button (the
+# server's update.* methods) or the host's terminal, never the agent, a bot, a routine or a plugin.
+name = "Only the command line and the server's owner methods reach the installation's update"
+type = "forbidden"
+source_modules = [
+    "atlas.agent",
+    "atlas.assistant",
+    "atlas.tools",
+    "atlas.bots",
+    "atlas.plugins",
+    "atlas.jobs",
+    "atlas.hooks",
+    "atlas.mcp",
+    "atlas.server.channels",
+]
+forbidden_modules = ["atlas.installation"]
 
 [[tool.importlinter.contracts]]
 name = "The home is the base: it imports no other subject"

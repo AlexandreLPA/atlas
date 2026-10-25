@@ -1,20 +1,24 @@
 """The installation's I/O: its checkout, the commands it runs, the stamps, the launcher, the app."""
 
 import hashlib
+import json
 import logging
 import os
 import shutil
+import socket
 import stat
 import subprocess
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TextIO
+from typing import Protocol, TextIO, cast
 
 from atlas.installation.errors import InstallationError
+from atlas.installation.host_updater import Request, request_line
 from atlas.installation.model import (
     APP_NAME,
     BUILD_INPUTS,
+    HOST_SOCKET,
     TOOLCHAIN_FILE,
     TOOLS_FOLDER,
     desktop_entry,
@@ -353,3 +357,51 @@ def _succeeds(command: list[str]) -> bool:
         )
     except (OSError, subprocess.SubprocessError):
         return False
+
+
+# -- the way to a Compose host's updater -----------------------------------------------------------
+
+#: The longest answer the host updater gives: its log's tail is 64 KiB.
+_ANSWER_BYTES = 1024 * 1024
+
+
+class HostChannel(Protocol):
+    """The way to the host updater (`atlas.installation.host_updater`): one request, one answer."""
+
+    def ask(self, request: Request) -> Mapping[str, object]: ...
+
+
+class SocketChannel:
+    """The host updater's Unix socket, which the Compose file mounts into the container."""
+
+    def __init__(self, path: str = HOST_SOCKET, seconds: float = 60.0) -> None:
+        self.path = path
+        self.seconds = seconds
+
+    def ask(self, request: Request) -> Mapping[str, object]:
+        if sys.platform == "win32":
+            raise InstallationError("The host updater is reached from Linux only.")
+        data = b""
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
+                connection.settimeout(self.seconds)
+                connection.connect(self.path)
+                connection.sendall(request_line(request))
+                while b"\n" not in data and len(data) < _ANSWER_BYTES:
+                    part = connection.recv(65536)
+                    if not part:
+                        break
+                    data += part
+        except FileNotFoundError:
+            raise InstallationError(
+                "The host updater is not installed on this server: see docs/COMPOSE_HOST.md."
+            ) from None
+        except OSError as error:
+            raise InstallationError(f"The host updater did not answer ({error}).") from None
+        try:
+            found: object = json.loads(data.split(b"\n", 1)[0].decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise InstallationError("The host updater answered something unreadable.") from None
+        if not isinstance(found, dict):
+            raise InstallationError("The host updater answered something unreadable.")
+        return cast("dict[str, object]", found)

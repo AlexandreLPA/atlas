@@ -632,6 +632,61 @@ export interface HomeImportParams {
   /** The new home's name; no home may have it. */
   name: string
 }
+/** Whether the server's installation has an update, as the app's update button shows it (`atlas.installation.UpdateStatus`). */
+export interface UpdateInfo {
+  supported: boolean
+  available: boolean
+  /** How it updates: `compose`, by its host updater; `native` installations update from the app on their own machine, so a remote one offers nothing here. */
+  kind: string
+  reason: string
+  current: string
+  target: string
+  behind: number
+  commits: string[]
+  commits_pt_br: string[]
+  dirty: boolean
+  error: string
+  /** Why CI did not verify the target: the user confirms it explicitly. "" when verified. */
+  unverified: string
+}
+export interface UpdateApplyParams {
+  /** The commit the user was shown: the update refuses when `main` moved since. */
+  target: string
+  /** The user confirmed a target CI did not verify. */
+  allow_unverified?: boolean
+}
+export interface UpdateApplied {
+  /** The update was admitted, and runs on the host; the server restarts as it ends. */
+  ok: boolean
+  /** Why not, when not. */
+  error: string
+}
+export interface UpdateProgress {
+  /** An update runs on the host now. */
+  running: boolean
+  /** Its step: `building`, `snapshot`, `starting`, `rolling back`. */
+  step: string
+  started_at: string
+  target: string
+  /** How the last one ended, or `null` before any. */
+  ended: UpdateEnded | null
+}
+/** How the last update ended (`atlas.installation.HandedOff`). */
+export interface UpdateEnded {
+  ok: boolean
+  before: string
+  after: string
+  commits: string[]
+  error: string
+  /** Where the log is, on the host. */
+  log: string
+  ended_at: string
+  reopen: string
+}
+export interface UpdateLog {
+  /** The tail of the last update's log, at most 64 KiB. */
+  text: string
+}
 export interface BotList {
   bots: BotRow[]
 }
@@ -1570,6 +1625,14 @@ export interface RpcMethods {
   'terminal.resize': { params: TerminalResizeParams; result: Empty }
   /** Whether the trust gate's detection finds a command dangerous, so the ▶ asks before it runs it (step 16f). */
   'trust.check': { params: CommandParams; result: CommandCheck }
+  /** Update the server's installation to the commit the user was shown: the host updater builds it while this server runs, then restarts it. The owner's client only. */
+  'update.apply': { params: UpdateApplyParams; result: UpdateApplied }
+  /** Whether the server's installation has an update, for the update button when the server is another machine's: a Compose host's, through its host updater. The owner's client only. */
+  'update.check': { params: Empty; result: UpdateInfo }
+  /** The tail of the last update's log, on the host. */
+  'update.log': { params: Empty; result: UpdateLog }
+  /** The update running on the server's host, and how the last one ended: asked again after the restart's reconnection. */
+  'update.status': { params: Empty; result: UpdateProgress }
   /** Log the instance's harness into another account on the user's browser, then go on with the same session; never while one of its instances works. */
   'workbench.account': { params: WorkbenchAccountParams; result: InstanceRow }
   /** What changes if the instance goes on on another account: who it is logged in as, and the connectors it lacks. It takes seconds. */
@@ -1690,6 +1753,10 @@ export const RPC_METHODS = [
   'terminal.open',
   'terminal.resize',
   'trust.check',
+  'update.apply',
+  'update.check',
+  'update.log',
+  'update.status',
   'workbench.account',
   'workbench.account_switch',
   'workbench.atlas_answers',
@@ -1788,6 +1855,8 @@ export interface EventMap {
   'tool.progress': ToolProgressPayload
   /** A tool call began. */
   'tool.start': ToolStart
+  /** The update of the server's host ended, in the minutes before this connection: the server that restarted tells each client as it connects. */
+  'update.ended': UpdateEnded
   /** An executor instance said, thought, called, got or was given something. */
   'workbench.activity': InstanceActivityPayload
   /** An executor instance on the workbench started, changed or ended; the workbench is the same in every conversation. */
@@ -1824,6 +1893,7 @@ export const EVENT_NAMES = [
   'tool.complete',
   'tool.progress',
   'tool.start',
+  'update.ended',
   'workbench.activity',
   'workbench.update'
 ] as const satisfies readonly EventName[]

@@ -2287,12 +2287,14 @@ export function redialHome(name: null | string): void {
 
 /** What would stop if the app closed now, in every open home: the turns that run, Atlas's
  * subagents at work, and the executor sessions that work or wait for an answer. The update asks
- * before it closes the app on them. */
-export function workUnderway(): { executors: number; subagents: number; turns: number } {
+ * before it closes the app on them. Given a server's session, what its restart would stop there:
+ * a server's update restarts it. */
+export function workUnderway(only?: HomeSession): { executors: number; subagents: number; turns: number } {
   const underway = { executors: 0, subagents: 0, turns: 0 }
-
   // Another machine's turns go on there when this app closes.
-  for (const session of sessions.filter(each => machineOf(each.key) === null)) {
+  const counted = only ? [only] : sessions.filter(each => machineOf(each.key) === null)
+
+  for (const session of counted) {
     underway.turns += Object.values(session.$threads.get()).filter(thread => thread.running).length
     underway.subagents += Object.values(session.$subagents.get())
       .flatMap(rows => rows ?? [])

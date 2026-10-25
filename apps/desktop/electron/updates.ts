@@ -32,9 +32,12 @@ export interface UpdateStatus {
   current: string
   dirty: boolean
   error: string
+  /** `native` here; a server's host updater says `compose` (src/store/updates.ts). */
+  kind?: string
   reason: string
   supported: boolean
   target: string
+  unverified?: string
 }
 
 /** How the update the app handed off ended (`atlas.installation.HandedOff`). */

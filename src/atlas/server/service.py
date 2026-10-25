@@ -111,6 +111,16 @@ from atlas.home import (
     write_picture,
 )
 from atlas.hooks import Hooks
+from atlas.installation import (
+    HandedOff,
+    HostChannel,
+    InstallationError,
+    UpdateStatus,
+    compose_apply,
+    compose_check,
+    compose_log,
+    compose_progress,
+)
 from atlas.jobs import JobsError, RouteTarget, Routine, Run, RunStatus, Scheduler
 from atlas.memory import FILES as MEMORY_FILES
 from atlas.memory import Action, OpenProposal, Operation, Target, apply, size
@@ -150,6 +160,7 @@ from atlas.server.previews import read_preview
 from atlas.server.protocol import (
     ATTACHMENT_PART_BYTES,
     EVENTS,
+    FORBIDDEN,
     INTERNAL_ERROR,
     INVALID_PARAMS,
     INVALID_REQUEST,
@@ -334,6 +345,12 @@ from atlas.server.protocol import (
     ToolProgressPayload,
     ToolStart,
     TranscriptRow,
+    UpdateApplied,
+    UpdateApplyParams,
+    UpdateEnded,
+    UpdateInfo,
+    UpdateLog,
+    UpdateProgress,
     UsageWindowRow,
     UserSaid,
     WorkbenchAccountParams,
@@ -391,6 +408,8 @@ LIST_MOST = 200
 PREVIEW_CHARS = 120
 #: The conversations' table, as a backup's manifest counts it for the import dialog.
 _THREADS_TABLE = "conversations_threads"
+#: How long after the host's update ended a server that starts still tells its clients.
+UPDATE_NEWS_SECONDS = 600.0
 
 _logger = logging.getLogger("atlas.server")
 
@@ -435,8 +454,16 @@ class Gateway:
         schemas: tuple[Schema, ...],
         terminals: Terminals | None = None,
         environ: Mapping[str, str] | None = None,
+        host_updater: HostChannel | None = None,
     ) -> None:
         self.replay = Replay()
+        #: The way to a Compose host's updater, for the update button of a remote app; `None` on
+        #: a native installation, whose app updates it on its own machine.
+        self._host_updater = host_updater
+        #: How the host's last update ended, when it ended moments before this server started:
+        #: each client that connects is told (`update.ended`).
+        self._update_ended: UpdateEnded | None = None
+        self._update_news: asyncio.Task[None] | None = None
         #: The environment the settings were read from: its `ATLAS_*` variables win over
         #: config.toml, so the settings screen shows them locked (step 15b).
         self._environ = dict(environ or {})
@@ -553,6 +580,10 @@ class Gateway:
             "memory.edit": self._memory_edit,
             "home.picture": self._home_picture,
             "home.set_picture": self._home_set_picture,
+            "update.check": self._update_check,
+            "update.apply": self._update_apply,
+            "update.status": self._update_status,
+            "update.log": self._update_log,
             "home.list": self._homes,
             "home.create": self._home_create,
             "home.backup": self._home_backup,
@@ -638,6 +669,8 @@ class Gateway:
         # The executors are waited for a moment, so the first conversation already sees them;
         # one that takes longer is found in the background.
         self._executors_start = asyncio.create_task(self.load_executors())
+        if self._host_updater is not None:
+            self._update_news = asyncio.create_task(self._read_update_news())
         await asyncio.wait({self._executors_start}, timeout=EXECUTORS_WAIT_SECONDS)
 
     async def load_plugins(self) -> None:
@@ -826,7 +859,7 @@ class Gateway:
             return Detection(False, problem=f"Its detection failed: {error!r}")
 
     async def close(self) -> None:
-        for task in (self._housekeeping, self._plugin_watch):
+        for task in (self._housekeeping, self._plugin_watch, self._update_news):
             if task is not None:
                 task.cancel()
                 await asyncio.gather(task, return_exceptions=True)
@@ -846,6 +879,8 @@ class Gateway:
         self._connections.add(connection)
         writer = asyncio.create_task(connection.write())
         connection.put(self._event_frame("server.ready", Ready(__version__, self.replay.epoch)))
+        if self._update_ended is not None:
+            connection.put(self._event_frame("update.ended", self._update_ended))
         try:
             while not connection.gone and (text := await peer.receive()) is not None:
                 await self._receive(connection, text)
@@ -1232,6 +1267,86 @@ class Gateway:
         if choice is None:
             return ConversationModel(None, None, None, picked)
         return ConversationModel(choice.provider, choice.model, choice.effort, picked)
+
+    # -- the update of the server's host (docs/ARCHITECTURE.md, The update of a Compose host) --
+
+    def _owner(self, connection: Connection) -> None:
+        """The update is the owner's: a client that presented the server token, never a
+        channel's bridge (a bot's chat). A plugin's screen is refused in the app
+        (`apps/desktop/src/plugins/sdk.ts`), and no tool reaches these methods."""
+        if type(connection) is not Connection:
+            raise ProtocolError(FORBIDDEN, "Only the owner's app may update the server.")
+
+    async def _update_check(self, connection: Connection, params: Empty) -> UpdateInfo:
+        self._owner(connection)
+        if self._host_updater is None:
+            return UpdateInfo(supported=False, available=False, kind="native", reason="native")
+        return _update_info(await asyncio.to_thread(compose_check, self._host_updater))
+
+    async def _update_apply(
+        self, connection: Connection, params: UpdateApplyParams
+    ) -> UpdateApplied:
+        self._owner(connection)
+        if self._host_updater is None:
+            return UpdateApplied(
+                False, "This server's installation updates from the app on its own machine."
+            )
+        try:
+            await asyncio.to_thread(
+                compose_apply,
+                self._host_updater,
+                params.target,
+                allow_unverified=params.allow_unverified,
+            )
+        except InstallationError as error:
+            return UpdateApplied(False, str(error))
+        _logger.warning(
+            "The owner's app asked the host to update; the server restarts when it is built.",
+            extra={"target": params.target[:12], "unverified": params.allow_unverified},
+        )
+        return UpdateApplied(True)
+
+    async def _update_status(self, connection: Connection, params: Empty) -> UpdateProgress:
+        self._owner(connection)
+        if self._host_updater is None:
+            return UpdateProgress(False)
+        try:
+            found = await asyncio.to_thread(compose_progress, self._host_updater)
+        except InstallationError as error:
+            raise ProtocolError(INTERNAL_ERROR, str(error)) from error
+        ended = None if found.ended is None else _update_ended(found.ended)
+        return UpdateProgress(found.running, found.step, found.started_at, found.target, ended)
+
+    async def _update_log(self, connection: Connection, params: Empty) -> UpdateLog:
+        self._owner(connection)
+        if self._host_updater is None:
+            return UpdateLog("")
+        try:
+            return UpdateLog(await asyncio.to_thread(compose_log, self._host_updater))
+        except InstallationError as error:
+            raise ProtocolError(INTERNAL_ERROR, str(error)) from error
+
+    async def _read_update_news(self) -> None:
+        """At start, whether the host's last update ended moments ago: this server is then the
+        one it started, and every client that connects hears how it went, once per connection.
+        Those already connected hear it now."""
+        assert self._host_updater is not None  # noqa: S101 - started only with one
+        try:
+            found = await asyncio.to_thread(compose_progress, self._host_updater)
+        except InstallationError as error:
+            _logger.warning("The host updater did not answer: %s", error)
+            return
+        if found.running or found.ended is None:
+            return
+        try:
+            ended_at = datetime.fromisoformat(found.ended.ended_at)
+        except ValueError:
+            return
+        if (self._clock() - ended_at).total_seconds() > UPDATE_NEWS_SECONDS:
+            return
+        self._update_ended = _update_ended(found.ended)
+        for connection in self._connections:
+            connection.put(self._event_frame("update.ended", self._update_ended))
 
     async def _homes(self, connection: Connection, params: Empty) -> HomeList:
         found = await asyncio.to_thread(list_homes, home_root(self._home.root))
@@ -2817,3 +2932,33 @@ def _executor_states(plugins: Plugins) -> dict[str, _ExecutorState]:
         for view in plugins.all()
         if view.manifest is not None and view.manifest.executors
     }
+
+
+def _update_info(status: UpdateStatus) -> UpdateInfo:
+    return UpdateInfo(
+        supported=status.supported,
+        available=status.available,
+        kind=status.kind,
+        reason=status.reason,
+        current=status.current,
+        target=status.target,
+        behind=status.behind,
+        commits=list(status.commits),
+        commits_pt_br=list(status.commits_pt_br),
+        dirty=status.dirty,
+        error=status.error,
+        unverified=status.unverified,
+    )
+
+
+def _update_ended(ended: HandedOff) -> UpdateEnded:
+    return UpdateEnded(
+        ok=ended.ok,
+        before=ended.before,
+        after=ended.after,
+        commits=list(ended.commits),
+        error=ended.error,
+        log=ended.log,
+        ended_at=ended.ended_at,
+        reopen=ended.reopen,
+    )

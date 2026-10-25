@@ -57,6 +57,8 @@ INVALID_PARAMS = -32602
 INTERNAL_ERROR = -32603
 #: No conversation has this id.
 NOT_FOUND = 4001
+#: Only the owner's own client may call it: never a channel's bridge (a bot's chat).
+FORBIDDEN = 4003
 
 #: The most raw bytes one `attachment.add` part carries: 4 MiB, a third of it again in base64,
 #: well inside the 16 MiB a WebSocket frame holds (uvicorn's `ws_max_size`).
@@ -1686,6 +1688,80 @@ class SubagentControl:
     text: str
 
 
+# -- the update of the server's machine (docs/ARCHITECTURE.md, The update of a Compose host) ------
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateInfo:
+    """Whether the server's installation has an update, as the app's update button shows it
+    (`atlas.installation.UpdateStatus`)."""
+
+    supported: bool
+    available: bool
+    #: How it updates: `compose`, by its host updater; `native` installations update from the app
+    #: on their own machine, so a remote one offers nothing here.
+    kind: str
+    reason: str = ""
+    current: str = ""
+    target: str = ""
+    behind: int = 0
+    commits: list[str] = field(default_factory=list[str])
+    commits_pt_br: list[str] = field(default_factory=list[str])
+    dirty: bool = False
+    error: str = ""
+    #: Why CI did not verify the target: the user confirms it explicitly. "" when verified.
+    unverified: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateApplyParams:
+    #: The commit the user was shown: the update refuses when `main` moved since.
+    target: str
+    #: The user confirmed a target CI did not verify.
+    allow_unverified: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateApplied:
+    #: The update was admitted, and runs on the host; the server restarts as it ends.
+    ok: bool
+    #: Why not, when not.
+    error: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateEnded:
+    """How the last update ended (`atlas.installation.HandedOff`)."""
+
+    ok: bool
+    before: str = ""
+    after: str = ""
+    commits: list[str] = field(default_factory=list[str])
+    error: str = ""
+    #: Where the log is, on the host.
+    log: str = ""
+    ended_at: str = ""
+    reopen: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateProgress:
+    #: An update runs on the host now.
+    running: bool
+    #: Its step: `building`, `snapshot`, `starting`, `rolling back`.
+    step: str = ""
+    started_at: str = ""
+    target: str = ""
+    #: How the last one ended, or `null` before any.
+    ended: UpdateEnded | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateLog:
+    #: The tail of the last update's log, at most 64 KiB.
+    text: str
+
+
 @dataclass(frozen=True, slots=True)
 class Method:
     name: str
@@ -2049,6 +2125,29 @@ METHODS: Mapping[str, Method] = {
             "Make a new named home from a backup, checked whole first and published only once "
             "restored; the client then opens it.",
         ),
+        Method(
+            "update.check",
+            Empty,
+            UpdateInfo,
+            "Whether the server's installation has an update, for the update button when the "
+            "server is another machine's: a Compose host's, through its host updater. The "
+            "owner's client only.",
+        ),
+        Method(
+            "update.apply",
+            UpdateApplyParams,
+            UpdateApplied,
+            "Update the server's installation to the commit the user was shown: the host updater "
+            "builds it while this server runs, then restarts it. The owner's client only.",
+        ),
+        Method(
+            "update.status",
+            Empty,
+            UpdateProgress,
+            "The update running on the server's host, and how the last one ended: asked again "
+            "after the restart's reconnection.",
+        ),
+        Method("update.log", Empty, UpdateLog, "The tail of the last update's log, on the host."),
         Method("bot.list", Empty, BotList, "The home's bots, by name."),
         Method(
             "bot.open",
@@ -2636,6 +2735,13 @@ EVENTS: Mapping[str, Event] = {
             "proposals.changed",
             ProposalCount,
             "A memory proposal was made, approved or discarded; read them with memory.proposals.",
+            conversation=False,
+        ),
+        Event(
+            "update.ended",
+            UpdateEnded,
+            "The update of the server's host ended, in the minutes before this connection: the "
+            "server that restarted tells each client as it connects.",
             conversation=False,
         ),
     )

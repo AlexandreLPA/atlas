@@ -7,9 +7,10 @@ taken in Python, since one app has few of them.
 
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from pathlib import PurePosixPath
-from typing import cast
+from typing import Literal, cast
 
 from atlas.installation.errors import InstallationError
 
@@ -102,6 +103,29 @@ def parse_toolchain(text: str) -> dict[str, PurePosixPath]:
 #: The most commits an update's status names; its count says how many there are.
 UPDATE_COMMITS = 30
 
+#: How an installation is updated (docs/ARCHITECTURE.md, The update of a Compose host): `native`,
+#: the checkout the app or `atlas update` brings to `main` itself; `compose`, a container that
+#: Docker Compose runs on a home server, which the host updater updates from outside.
+type InstallationKind = Literal["native", "compose"]
+#: Says which, set by whoever runs Atlas: the host updater's Compose file sets `compose`. Unset is
+#: `native`, every installation before this one.
+INSTALLATION_VARIABLE = "ATLAS_INSTALLATION"
+#: Where the container reaches the host updater (`atlas.installation.host_updater.SOCKET_FILE`).
+HOST_SOCKET = "/run/atlas-updater/updater.sock"
+
+
+def installation_kind(environ: Mapping[str, str]) -> InstallationKind:
+    """This installation's kind, from `ATLAS_INSTALLATION`; anything unknown is refused, never
+    guessed: a wrong guess would update the wrong way."""
+    value = environ.get(INSTALLATION_VARIABLE, "").strip().lower()
+    if value in ("", "native"):
+        return "native"
+    if value == "compose":
+        return "compose"
+    raise InstallationError(
+        f"{INSTALLATION_VARIABLE}={value!r} is no installation kind Atlas knows (native, compose)."
+    )
+
 
 @dataclass(frozen=True, slots=True)
 class UpdateStatus:
@@ -126,6 +150,11 @@ class UpdateStatus:
     #: Why the look failed (offline, a login refused): nothing is offered, and it looks again
     #: later.
     error: str = ""
+    #: How this installation updates (`InstallationKind`).
+    kind: str = "native"
+    #: Why CI did not verify the target, when it could not say (a Compose host's update only):
+    #: the user then confirms it explicitly. "" when verified, or when nobody asks CI (native).
+    unverified: str = ""
 
     @property
     def available(self) -> bool:
@@ -155,3 +184,74 @@ class HandedOff:
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False)
+
+
+@dataclass(frozen=True, slots=True)
+class UpdateProgress:
+    """A Compose host's update, as its updater says: whether one runs and its step (`building`,
+    `snapshot`, `starting`, `rolling back`), and how the last one ended."""
+
+    running: bool
+    step: str = ""
+    started_at: str = ""
+    target: str = ""
+    ended: HandedOff | None = None
+
+
+def _texts(value: object) -> tuple[str, ...]:
+    return (
+        tuple(str(item) for item in cast("list[object]", value)) if isinstance(value, list) else ()
+    )
+
+
+def _fields(value: object) -> Mapping[str, object]:
+    return cast("Mapping[str, object]", value) if isinstance(value, dict) else {}
+
+
+def status_from_host(found: object) -> UpdateStatus:
+    """The host updater's look, read into the app's status; one out of shape is a failed look."""
+    data = _fields(found)
+    if not isinstance(data.get("supported"), bool):
+        return UpdateStatus(True, kind="compose", error="The host updater answered no status.")
+    behind = data.get("behind")
+    return UpdateStatus(
+        supported=bool(data["supported"]),
+        reason=str(data.get("reason", "")),
+        current=str(data.get("current", "")),
+        target=str(data.get("target", "")),
+        behind=behind if isinstance(behind, int) and not isinstance(behind, bool) else 0,
+        commits=_texts(data.get("commits")),
+        commits_pt_br=_texts(data.get("commits_pt_br")),
+        dirty=data.get("dirty") is True,
+        error=str(data.get("error", "")),
+        kind="compose",
+        unverified=str(data.get("unverified", "")),
+    )
+
+
+def handed_off_from_host(found: object) -> HandedOff | None:
+    """How the host updater's last update ended, or `None` when it says none."""
+    data = _fields(found)
+    if not isinstance(data.get("ok"), bool):
+        return None
+    return HandedOff(
+        ok=bool(data["ok"]),
+        before=str(data.get("before", "")),
+        after=str(data.get("after", "")),
+        commits=_texts(data.get("commits")),
+        error=str(data.get("error", "")),
+        log=str(data.get("log", "")),
+        ended_at=str(data.get("ended_at", "")),
+        reopen=str(data.get("reopen", "")),
+    )
+
+
+def progress_from_host(found: object) -> UpdateProgress:
+    data = _fields(found)
+    return UpdateProgress(
+        running=data.get("running") is True,
+        step=str(data.get("step", "")),
+        started_at=str(data.get("started_at", "")),
+        target=str(data.get("target", "")),
+        ended=handed_off_from_host(data.get("ended")),
+    )

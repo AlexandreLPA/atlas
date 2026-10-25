@@ -1,0 +1,43 @@
+#!/bin/sh
+# atlas-compose-host-shim: `atlas` on a Compose host (docs/COMPOSE_HOST.md), installed by
+# scripts/compose-host/install.sh as /usr/local/bin/atlas.
+#
+# `atlas update` is the host updater's, run as root through sudo: it looks, says what the update
+# brings and whether CI verified it, and updates on a yes; the same update the app's button asks
+# for. Every other command is Atlas's own, in its container.
+set -eu
+
+HELPER=/usr/local/lib/atlas-host-updater/host_updater.py
+PYTHON=/usr/bin/python3
+# Where the project and the service are named; another file only for the tests.
+CONFIG=${ATLAS_HOST_UPDATER_CONFIG:-/etc/atlas-updater/config.toml}
+
+if [ "${1-}" = update ]; then
+    if [ "$#" -ne 1 ]; then
+        echo "atlas: \`atlas update\` takes nothing more here: it looks, asks, and updates." >&2
+        exit 2
+    fi
+    exec sudo "$PYTHON" -I "$HELPER" update
+fi
+
+setting() {
+    sed -n "s/^$1 *= *\"\([A-Za-z0-9_.-]*\)\" *\$/\1/p" "$CONFIG" | head -n 1
+}
+
+if [ ! -r "$CONFIG" ]; then
+    echo "atlas: $CONFIG is missing; run scripts/compose-host/install.sh again." >&2
+    exit 1
+fi
+project=$(setting project)
+service=$(setting service)
+container=$(sudo docker ps --quiet \
+    --filter "label=com.docker.compose.project=$project" \
+    --filter "label=com.docker.compose.service=$service" | head -n 1)
+if [ -z "$container" ]; then
+    echo "atlas: Atlas's container ($project, $service) is not running." >&2
+    exit 1
+fi
+if [ -t 0 ] && [ -t 1 ]; then
+    exec sudo docker exec --interactive --tty "$container" atlas "$@"
+fi
+exec sudo docker exec --interactive "$container" atlas "$@"

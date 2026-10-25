@@ -1,0 +1,38 @@
+# The host updater of a Compose host (docs/COMPOSE_HOST.md), installed by
+# scripts/compose-host/install.sh as /etc/systemd/system/atlas-host-updater.service.
+#
+# It runs as root, since it drives Docker, from a root-owned copy of host_updater.py, never from the
+# user's checkout. It reads nothing under /home (ProtectHome) and writes only its own state and its
+# socket's folder, which the Atlas container mounts.
+[Unit]
+Description=Atlas host updater: updates the Atlas container when its owner asks
+Documentation=https://github.com/marqueskaio/atlas/blob/main/docs/COMPOSE_HOST.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -I /usr/local/lib/atlas-host-updater/host_updater.py serve
+Restart=on-failure
+RestartSec=5
+# The socket's folder outlives a restart, so the container's mount of it stays valid.
+RuntimeDirectory=atlas-updater
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+StateDirectory=atlas-updater
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/atlas-updater /run/atlas-updater
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target

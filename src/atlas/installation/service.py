@@ -9,13 +9,14 @@ import logging
 import os
 import time
 import traceback
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol, TextIO
 
 from atlas.home import FileBusyError, Parent, format_utc, list_homes, locked, replace_file, utc_now
 from atlas.installation.errors import InstallationBusyError, InstallationError
+from atlas.installation.host_updater import Request
 from atlas.installation.model import (
     BUILD_LOCK,
     BUILD_STAMP,
@@ -23,9 +24,20 @@ from atlas.installation.model import (
     PACKAGES_STAMP,
     UPDATE_COMMITS,
     HandedOff,
+    UpdateProgress,
     UpdateStatus,
+    installation_kind,
+    progress_from_host,
+    status_from_host,
 )
-from atlas.installation.store import Checkout, Runner, launch, sandbox_problem
+from atlas.installation.store import (
+    Checkout,
+    HostChannel,
+    Runner,
+    SocketChannel,
+    launch,
+    sandbox_problem,
+)
 
 _logger = logging.getLogger("atlas.installation")
 
@@ -312,3 +324,49 @@ def _said(log: TextIO | None, text: str) -> None:
 def checkout_of(path: Path | None = None) -> Checkout:
     """The checkout at `path`, or the one the running Atlas comes from."""
     return Checkout.running() if path is None else Checkout(path)
+
+
+# -- the update of a Compose host (docs/ARCHITECTURE.md, The update of a Compose host) -------------
+
+#: What `atlas update` says inside a Compose host's container: the update runs on the host, where
+#: the container cannot reach Docker, and a command run in the container could be the agent's.
+COMPOSE_UPDATE_ELSEWHERE = (
+    "This Atlas runs in a container that Docker Compose runs, and the host updates it: type "
+    "`atlas update` on the host, or use the app's Update button."
+)
+
+
+def host_channel(environ: Mapping[str, str]) -> HostChannel | None:
+    """The way to the host updater, for a Compose host's server; `None` for a native one."""
+    return SocketChannel() if installation_kind(environ) == "compose" else None
+
+
+def _asked(channel: HostChannel, request: Request) -> Mapping[str, object]:
+    answer = channel.ask(request)
+    if answer.get("ok") is not True:
+        raise InstallationError(str(answer.get("error") or "The host updater refused."))
+    return answer
+
+
+def compose_check(channel: HostChannel) -> UpdateStatus:
+    """The host updater's look: what `main` brings, and whether CI verified it."""
+    try:
+        return status_from_host(_asked(channel, Request("check")).get("status"))
+    except InstallationError as error:
+        return UpdateStatus(True, kind="compose", error=str(error))
+
+
+def compose_apply(channel: HostChannel, target: str, *, allow_unverified: bool) -> None:
+    """Ask the host updater to update to `target`, the commit the user was shown; raises with
+    its reason when it refuses. It answers once the update is admitted, and runs it after."""
+    _asked(channel, Request("apply", target, allow_unverified))
+
+
+def compose_progress(channel: HostChannel) -> UpdateProgress:
+    """The update running on the host, and how the last one ended."""
+    return progress_from_host(_asked(channel, Request("status")).get("progress"))
+
+
+def compose_log(channel: HostChannel) -> str:
+    """The tail of the host's last update's log."""
+    return str(_asked(channel, Request("log")).get("log", ""))

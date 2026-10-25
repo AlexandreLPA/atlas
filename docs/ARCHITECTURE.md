@@ -1017,6 +1017,114 @@ V3's image (M-87, M-89).
   one stand-in is the OpenAI provider's address, pointed at the fake model in a container beside
   it. `scripts/prove_docker.py` runs the same path through the app against a real model.
 
+### The update of a Compose host — decided 2026-10-24
+
+Asked for by the user: Atlas on a home server, run by Docker Compose from a checkout with its own
+untracked `Dockerfile.homelab` and `docker-compose.homelab.yml`, updated with **the same `atlas
+update` and the same Update button** as the desktop's installation, with nothing new to learn and
+no `docker compose exec` to type. How to install it on the server: [COMPOSE_HOST.md](COMPOSE_HOST.md).
+
+- **The installation kind is said, never guessed** (`atlas.installation.installation_kind`):
+  `ATLAS_INSTALLATION=compose`, set by the host updater's Compose file, or unset for `native`, every
+  installation before this one. An unknown value is refused. The native update, its hand-off and
+  its button are unchanged; the dispatch only adds the Compose way beside them.
+- **The host updater** (`atlas.installation.host_updater`) does the update on the host, as root,
+  since only root reaches Docker there. It is one standalone file, the standard library alone on
+  the host's Python 3.11 or newer, which the installer copies to
+  `/usr/local/lib/atlas-host-updater/` and `atlas-host-updater.service` runs. Atlas imports it for
+  its constants and its tests; it imports nothing of Atlas's. A new host updater comes only when the
+  installer runs again, by the owner's own `sudo`: an update never replaces the code root runs.
+- **Root runs nothing the user's checkout holds.** The checkout is the user's, and through them
+  the agent's; its `.git/config` and hooks would run as root under a root `git`. So the source
+  comes from the host updater's own mirror (`/var/lib/atlas-updater/mirror.git`), fetched from the
+  address in its settings with hooks off and only that protocol allowed, and each build is a clean
+  `git archive` of one commit, never a working tree: the untracked homelab files are never read,
+  moved nor deleted. The Compose file and the Dockerfile are root's, in `/etc/atlas-updater/`,
+  migrated once from the homelab's by the installer (`docker compose config`, so the copy stands
+  alone with its `.env`), the originals left where they were.
+- **The Compose file is checked before every update** (`compose_problems`): no Docker socket
+  mounted, ever; no privileged service, added capabilities, host devices or device rules, host
+  namespaces or disabled profiles (`unconfined`, `label=disable`); no host folder but the updater's
+  socket folder, and that one read-only; no volume a driver's options make (a bind of `/` in
+  disguise), no config or secret read from a host file, no other container's volumes, no
+  `env_file` or `label_file` read again at each start, no `build` (a folder Compose would build
+  from, maybe the checkout); the service runs the image the settings
+  name, is told `ATLAS_INSTALLATION=compose`, mounts the socket folder and keeps `/data` in the
+  named volume the snapshot covers. The file as checked, resolved, is kept root's alone
+  (`/var/lib/atlas-updater/compose.json`), and the update's containers are made from it: a file
+  the Compose files name, changed after the check, never reaches them.
+- **Root's own folders are root's alone**: the settings, every file they name and a folder to
+  fetch from are refused unless they and every folder above them are root's and written by no one
+  else, and none under `/home`; so are the state folder, where root unpacks and deletes, and the
+  socket's folder. The host updater runs with a `0077` umask, under `sudo` too, so the snapshots of
+  `/data` are root's alone. The installer copies the program root runs from its own tree, never
+  from `--checkout`, the user's, and refuses to run from a tree, or a folder above it, that is not
+  root's alone.
+- **The container reaches the host updater through one Unix socket**,
+  `/run/atlas-updater/updater.sock`, its folder bind-mounted read-only at the same path, the
+  socket owned by the container's user (10001) and no one else. A `tmpfiles.d` entry makes the
+  folder at boot, so the container Docker restarts finds its bind mount before the service starts. Its peer must be that user's
+  **main process** in the container: the kernel names it (`SO_PEERCRED`), and it must be the
+  oldest child of the container's init. A command the agent runs is the server's child, and one
+  that left it for the init started later, so neither passes (`PeerCheck`). A request is one JSON
+  line of four shapes, `check`, `status`, `log` and `apply` with the commit the user was shown and
+  whether they confirmed it unverified; its exact keys, nothing more: no path, no command, no
+  Compose override. Thirty requests a minute at most; a look is reused for a minute (GitHub's 60
+  unauthenticated calls an hour); an update at a time under a file lock, and none within two
+  minutes of the last.
+- **Who may ask**, in Atlas: the server's `update.check`, `update.apply`, `update.status` and
+  `update.log` answer only a client that presented the server token, never a channel's bridge
+  (a bot's chat): `FORBIDDEN` (4003). A plugin's screen is refused in the app (`host.request`).
+  No tool, bot, routine, hook or plugin imports `atlas.installation` (an import contract), and
+  `atlas update` typed in the container refuses, pointing to the host's: a command typed there could
+  be the agent's. The guards are defense in depth, as everywhere in Atlas: whoever holds the server
+  token could also ask the server, which is why the update itself is bounded (below).
+- **What an update may do**: only move forward, to the commit the user was shown (one `main` moved
+  past since the look is refused), verified by CI. The verification reads GitHub Actions' runs for
+  the commit: green when it has some and every one ended green; **failed**, and not offered, when a
+  job ran and failed; **unverified** when it has none, they still run, GitHub could not be reached
+  or every failed job never started a step (a billing or quota block stops jobs before their first
+  step, which says nothing of the code). An unverified commit is offered with its reason, and
+  updates only on the user's explicit yes: a box ticked in the dialog, or `update anyway` typed on
+  the host. Never a silent pull of an unverified `main`.
+- **The steps**: export and build the image, tagged by its commit and labelled with it
+  (`org.atlas.revision`), **while the old service keeps serving**: a failed build changes nothing.
+  Then stop the service, snapshot `/data` whole (a tar from a container of the old image, no
+  network, the newest three kept), tag the new image as the service's, recreate the container
+  (`--no-build --pull never --force-recreate`), and wait for it to call itself healthy, or answer
+  `/health` when its image has no health check, then check it runs the new image. Any failure
+  after the stop goes back: the old image (the one the old container ran, not whatever the tag
+  names by then) tagged again, `/data` emptied and filled from the
+  snapshot (the new version may have migrated it), the old container recreated and checked. A way
+  back that fails says so and where the snapshot is. Never `down -v`, never `git clean`.
+- **The same button, a server's** (`apps/desktop/src/store/updates.ts`): with another machine's
+  server or a container on screen, the button and its dialog show that server's look, through
+  `update.check`, every hour and when the server comes on screen, and "Update and reconnect"
+  asks `update.apply`. **The one difference**, which a server cannot avoid: it restarts where the
+  desktop's app closes. The dialog may close meanwhile; the app asks `update.status` every
+  3 seconds and again when its connection comes back, and when the host's last update is no longer
+  the one before, says how it ended in the same strip as the desktop's, once; its log comes down
+  through `update.log`. A server that started moments after an update ended (10 minutes) tells
+  each client as it connects (`update.ended`). What the restart stops is that server's turns,
+  subagents and executor sessions. A server from before these methods offers nothing.
+- **`atlas update` on the host** stays those words: `/usr/local/bin/atlas`, the installer's shim,
+  runs the host updater as root through `sudo` (which asks for the password as it always does):
+  it looks, says what the update brings and whether CI verified it, and updates on a yes, the
+  same update the button asks for, under the same lock. Every other `atlas` command runs in the
+  container (`docker exec`).
+- **Left out**: updates pulled from an image registry (the image is built on the host from the
+  verified commit), signed tags (CI's verification is the check, until releases are cut), a
+  downgrade from the app, and more than one Compose service per host.
+- **Proved** by `tests/installation/test_host_updater.py` (real git, Docker played, `/data` a real
+  folder snapshotted and restored: a successful update, a failed build with no downtime, an
+  unhealthy container rolled back with its data, the refusals, the request shapes, the peer check,
+  the host's command; the socket and `SO_PEERCRED` on Linux), `tests/installation/test_compose_update.py`
+  (the dispatch, `atlas update` in the container), `tests/server/test_update.py` (the methods over
+  the real server, owner only, the restarted server's news),
+  `tests/installation/test_compose_host_scripts.py` (the shim and the installer, staged) and
+  `apps/desktop/src/components/update-bar.server.test.tsx` (the button following the server, the
+  restart and the reconnection, the unverified yes, plugin screens refused).
+
 ## Desktop app — decided 2026-10-11
 
 Electron, with TypeScript, React and Vite. The app talks to a
@@ -1359,6 +1467,8 @@ Step 11, the first switch: the user moves to Atlas for every day.
   - **Left out**: a progress window during the update (a page in the system's
     browser, its own "decoration"), update channels (`stable`, `canary`), the update of a packaged
     or store app (step 18b), and a bridge of markers between several desktops.
+  - **A server's update**, a Compose host's, goes through the same button and the same `atlas
+    update`: The update of a Compose host (Container, above).
 - **A conversation's model** is chosen in the app, in the model and effort pills of the
   composer, and kept with the conversation, so it survives a restart:
   - the picker lists the providers with a key in the vault, each with its
@@ -3207,7 +3317,8 @@ never the server itself.
   others kept connected, so a turn elsewhere goes on and notifies; a connection opens the first
   time its machine is opened (no surprise tunnel). Test probes `/health` and the WebSocket with the
   token. A server whose protocol differs is refused, naming the side to update. A roster merged
-  across machines and "update all instances" are left out.
+  across machines and "update all instances" are left out; the machine on screen, when it is a
+  Compose host, updates from the same button (The update of a Compose host).
 - **Settings begin here**, with one section, Machines: this machine's always on, open, code and
   new token; the other machines with Add, Test, Rename and Remove.
   It opens from a gear at the foot of the sidebar and from the machine selector. Step 15b gave it

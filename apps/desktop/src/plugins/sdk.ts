@@ -32,8 +32,14 @@ export const host = {
     /** The home on screen, by its name; `null` before the first answer. */
     home: $home
   },
-  /** Call one of the server's methods, as the app does (docs: the protocol). */
+  /** Call one of the server's methods, as the app does (docs: the protocol). Never the update's:
+   *  only the owner, from the update button, updates Atlas (docs/ARCHITECTURE.md, The update of a
+   *  Compose host). */
   request<M extends RpcMethod>(method: M, params: RpcMethods[M]['params']): Promise<RpcMethods[M]['result']> {
+    if (method.startsWith('update.')) {
+      return Promise.reject(new Error("A plugin's screen cannot update Atlas."))
+    }
+
     return current().client.call(method, params)
   },
   /** Show a plugin's page in the main area, by its key (`<plugin>:<id>`). */
