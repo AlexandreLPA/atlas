@@ -1576,7 +1576,12 @@ class Gateway:
 
     async def _plugin_screens(self, connection: Connection, params: Empty) -> PluginScreens:
         found = await asyncio.to_thread(self.plugins.screens)
-        return PluginScreens([PluginScreenRow(screen.plugin, screen.source) for screen in found])
+        return PluginScreens(
+            [
+                PluginScreenRow(screen.plugin, screen.source, list(screen.desktop))
+                for screen in found
+            ]
+        )
 
     async def _plugin_call_python(
         self, connection: Connection, params: PluginCallParams

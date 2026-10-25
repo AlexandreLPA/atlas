@@ -73,6 +73,8 @@ what it keeps while it runs (caches, `node_modules`, renders) goes in its data f
 - `network` lists the hosts it reaches. It is shown at consent and not enforced.
 - `hooks` names the events its Python hooks into (needs `api` 15).
 - `readers` names the kinds of attachment its Python reads into text, `audio` (needs `api` 21).
+- `desktop` names what its screen does outside the app's window (needs `api` 23 and a screen):
+  `shortcut`, a key heard in every program, and `paste`, text pasted into the program in focus.
 
 Claude Code's `userConfig` works too: each option is a setting, and a `sensitive` one goes to the
 vault as `<PLUGIN>_<KEY>` (`erp` and `apiToken`: `ERP_API_TOKEN`). An MCP server reads an option
@@ -399,6 +401,14 @@ export default {
 - `host.insertText(text)` puts words after what the conversation's box holds, for the user to read
   and send (a dictation); `host.send(text)` sends a message as the box does, making the
   conversation when none is open.
+- With `desktop` declared (`"api": 23`): `ctx.shortcut(id, accelerator, run)` holds a key heard
+  in every program while the app is open, named as Electron names keys (`Capslock`, `F9`,
+  `Control+Shift+Space`), and resolves `''` or why it cannot be held; `ctx.paste(text)` types the
+  text where the app's cursor is when its window has the focus (`app`), else pastes it in the
+  program in focus (`pasted`), or leaves it on the clipboard when that program takes no keys
+  (`copied`). `ctx.bar({ text, tone })` shows a floating bar that never takes the focus (`tone`:
+  `recording`, `working`, `done`, `error`), `null` hides it. The voice plugin's dictation anywhere
+  uses all three.
 - `ctx.call(name, params)` calls the plugin's Python, which registers it with
   `ctx.register_call(name, run)` and names it under `atlas.calls` (`"api": 17`). It runs where
   Atlas runs, also when the app is on another machine.

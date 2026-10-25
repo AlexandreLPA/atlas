@@ -27,12 +27,25 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, protocol, safeStorage, shell } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  dialog,
+  globalShortcut,
+  ipcMain,
+  Menu,
+  protocol,
+  safeStorage,
+  screen,
+  shell
+} from 'electron'
 
 import { messagesFor, pickLocale } from '../src/i18n'
 
 import { activeHome, AttachedServer, cliRunner, failure, homeFolder, readAlwaysOn } from './always-on'
 import { BackupDownloads } from './backup-down'
+import { Bar, e2ePowers, registerDesktopPowers, systemKeys } from './desktop-powers'
 import { openInEditor } from './editor'
 import { backupName, homesRoot, lastHome, rememberHome } from './homes'
 import { type Machine, MachineError, Machines, type Transport } from './machines'
@@ -270,6 +283,8 @@ function createWindow(): void {
   window.once('ready-to-show', () => window?.show())
   window.on('closed', () => {
     window = null
+    // The bar is a window too: left open, the app would not quit.
+    desktopBar?.close()
   })
   // Back after an hour away, the window looks for an update again.
   window.on('focus', () => {
@@ -564,6 +579,7 @@ if (!app.requestSingleInstanceLock()) {
 
     updateEnded = takeResult(updates)
     registerPreviews(ipcMain, protocol)
+    startDesktopPowers()
     // Start the opening home's server while the window loads; the window's first dial waits for it.
     void endpoint(null).catch((error: unknown) => {
       log(String(error))
@@ -579,6 +595,44 @@ if (!app.requestSingleInstanceLock()) {
     setInterval(() => {
       void lookForUpdate(true)
     }, CHECK_EVERY_MS)
+  })
+}
+
+/** A plugin's screen's powers outside the window (step 17b): under the end-to-end tests, ones
+ * that reach nothing, seen as `atlasDesktop`. */
+let desktopBar: Bar | null = null
+
+function startDesktopPowers(): void {
+  let letGo: () => void
+
+  if (e2e) {
+    const { powers, probe } = e2ePowers(clipboard)
+    Object.defineProperty(globalThis, 'atlasDesktop', { value: probe })
+    letGo = registerDesktopPowers(
+      ipcMain,
+      () => window,
+      powers,
+      clipboard,
+      () => probe.appFocused ?? window?.isFocused() ?? false
+    )
+  } else {
+    const bar = new Bar({ BrowserWindow, screen })
+    desktopBar = bar
+    const done = registerDesktopPowers(
+      ipcMain,
+      () => window,
+      { bar, keys: systemKeys(), shortcuts: globalShortcut },
+      clipboard
+    )
+    letGo = () => {
+      done()
+      bar.close()
+    }
+  }
+
+  app.on('will-quit', () => {
+    letGo()
+    globalShortcut.unregisterAll()
   })
 }
 

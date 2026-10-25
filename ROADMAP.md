@@ -3393,6 +3393,62 @@ uma página para cada item. Hoje só se instala por endereço (16n), sabendo o e
   - de ponta a ponta no app: abrir a Loja, achar um item em cada aba, abrir a página, instalar,
     ligar e ver funcionar.
 
+### Ditado em qualquer lugar (decidido em 25/10, passo 17b)
+
+Pedido do usuário em 24/10: ditar em qualquer campo do computador, como num programa de ditado, e
+não só na caixa do Atlas e do bot. A aba Executores nem tem o 🎤. Pesquisado em 24/10: os programas
+de ditado seguram uma tecla para falar, usam dois toques para o modo mãos-livres, mostram uma
+barrinha da gravação sem roubar o foco, colam pela área de transferência com um Ctrl+V apertado
+por eles e devolvem depois o que estava copiado, e guardam o histórico; há os que fazem isso em
+Electron, como o app. Os harnesses de agente não ditam fora da própria janela.
+
+- **Continua no plugin `voice`, e o núcleo não ganha voz.** As telas de plugin ganham três aberturas
+  novas, que o consentimento mostra: um atalho global, colar no programa em foco e uma barrinha
+  flutuante.
+- **Clicar para falar, clicar para parar** (decidido pelo usuário em 25/10): o primeiro toque no
+  atalho grava e o segundo para, transcreve e cola. Usa o atalho global do próprio Electron. Segurar
+  e soltar, e os dois toques do mãos-livres, ficam para depois: o Electron só sabe quando a tecla
+  desce, e saber quando ela sobe pediria uma biblioteca nativa (`uiohook-napi`). Sem essa biblioteca,
+  um atalho feito só de modificadores (Ctrl+Win) também não dá.
+- **O atalho de fábrica é o Caps Lock** (decidido pelo usuário em 25/10), trocado na tela do plugin.
+  O Electron aceita a tecla sozinha (`Capslock`, testado em 25/10). Se outro programa já tiver
+  ocupado o atalho, a tela diz isso, em vez de falhar calada.
+- **O texto é cru** (decidido pelo usuário em 25/10): sai da transcrição como sai hoje no 🎤, sem
+  passar por um modelo que tire os "é…" e as correções. Essa limpeza fica para depois, como opção.
+- **Onde o texto cai:** no programa em foco, pela área de transferência e um Ctrl+V simulado, como
+  nos programas de ditado. Depois, a área de transferência volta a ter o que tinha. Se o foco estiver no próprio
+  Atlas, o texto é digitado onde está o cursor dele, sem passar pela área de transferência (também
+  no terminal de um executor).
+- **Os ditados ficam na casa** (decidido pelo usuário em 25/10): o áudio e o texto na pasta de dados
+  do plugin, que o backup leva. O plugin ganha a página "Ditados", com cada um para ouvir, copiar ou
+  apagar, e com a tecla para trocar. Ficam guardados até o usuário apagar. **Escolhas próprias,
+  marcadas:** os ditados do 🎤 da caixa também ficam guardados ali; a gravação é guardada antes da
+  transcrição, e uma que a OpenAI não escreveu fica com o motivo e um botão "Escrever de novo", para
+  a fala nunca se perder.
+- **Funciona enquanto o app está aberto**, inclusive minimizado. Fechar a janela fecha o app, e o
+  ícone na bandeja fica de fora até fazer falta. Com a casa em outra máquina, a transcrição roda no
+  Python do plugin dessa casa, como o 🎤.
+- **Escolhas próprias, marcadas:**
+  - uma gravação de menos de meio segundo é descartada sem ir à OpenAI (um toque sem querer);
+  - uma gravação para sozinha em 10 minutos, porque o `dictate` aceita até 10 MB;
+  - o atalho apertado enquanto o texto ainda é transcrito não abre uma gravação nova.
+- **Defeitos esperados, cada um com o seu passo na prova:**
+  - um programa aberto como administrador não aceita a colagem de um programa comum; nesse caso o
+    texto fica copiado e a barrinha avisa;
+  - o Caps Lock pode mudar entre maiúsculas e minúsculas além de gravar, o que a prova confere
+    (**confirmado em 25/10**: o toque que grava também trocava as maiúsculas; agora o app aperta o
+    Caps Lock mais uma vez, com o atalho solto nesse meio tempo, e as maiúsculas ficam como estavam);
+  - uma colagem que acontece antes de a área de transferência mudar cola o texto velho, então a
+    prova cola em um campo de verdade e lê o que caiu ali.
+- **A prova:**
+  - testes do app com o atalho, a colagem e a barrinha falsos: o ciclo de gravar, parar, transcrever
+    e colar, o toque curto descartado e o atalho ocupado;
+  - testes do Python contra a OpenAI falsa: o ditado guardado com o áudio, listado e apagado;
+  - de ponta a ponta no app, com o microfone falso do Chromium: o atalho grava, o texto cai num campo
+    de outra janela e o ditado aparece na página "Ditados";
+  - com a OpenAI de verdade (perguntar antes, menos de US$ 0,01): um ditado no Bloco de Notas, outro
+    no terminal de um executor e outro numa janela do navegador.
+
 ## Assuntos de desenho ainda abertos
 
 A arquitetura do código foi decidida em 07/10 e está em `docs/ARCHITECTURE.md`: laço próprio sem
@@ -3496,6 +3552,7 @@ cumpriu.
 | 16s | A loja (decidida em 24/10 e revista em 25/10: Loja, acima): o repositório público `atlas-marketplace` no GitHub, onde cada item entra por PR revisado pelo usuário, fixado num commit; quatro tipos separados, a skill dizendo os programas e os MCPs de que precisa; no app, a entrada Loja com as abas Plugins, Skills, MCPs e Executores, os oficiais marcados, uma página por item, instalar e atualizar pelo servidor da casa; sem downloads nem estrelas por enquanto. Pedido do usuário em 24/10 | 16n | |
 | 17 | Plugins oficiais, um de cada vez, cada um com a sua tela | 16 | |
 | 17a | O plugin `voice` (decidido em 24/10: Voz, acima): o áudio do Telegram e do app transcrito pela OpenAI, o 🎤 da caixa que dita, a fala só quando o usuário pede, e a conversa por voz de microfone aberto com o `gpt-live-1` passando o trabalho ao Atlas, no modelo da conversa ou num fixo só para voz (GPT-6 Luna por padrão); o núcleo só ganha três aberturas no SDK. Pedido do usuário em 24/10 | 16g, 16m | **Parte 1, código pronto em 24/10 (docs/ARCHITECTURE.md, Voice):** o leitor de anexo no SDK (versão 21, `register_reader`, declarado em `atlas.readers` e mostrado no consentimento) e o plugin `voice` com o `gpt-transcribe` da OpenAI (US$ 0,0045 por minuto). O áudio é transcrito uma vez e guardado com o anexo, no mesmo ponto da descrição de imagem; sem chave, ou com a OpenAI recusando, fica a nota de hoje e o turno segue. **Escolha própria, marcada:** um áudio mandado no meio de um turno é transcrito antes de entrar (a imagem nesse caso não é descrita), porque mandar áudio no meio é comum no celular. Provado contra o servidor falso, que agora também faz a transcrição da OpenAI, e pelo Telegram num servidor de verdade. **Parte 2, código pronto em 24/10:** o resto do 17a. A fala pedida é a ferramenta `voice_speak` (o `gpt-4o-mini-tts`, em Ogg Opus); o SDK vai para a versão 22 com `ToolHost.send_file`: o arquivo fica nos anexos da casa, aparece no turno do app (`message.file`) e vai ao Telegram como balão de voz (`sendVoice`), por um `send_file` do canal. As telas de plugin vão para a versão 2: botões na caixa (`box`), `host.insertText` e `host.send`. O 🎤 dita na caixa, sem mandar. A conversa por voz é o `gpt-live-1` em WebRTC no app; o Python do plugin abre a sessão com a chave, que nunca vai ao app; cada pedido vira um turno da conversa com a nota de fala (um gancho `UserPromptSubmit`, sem mudar o núcleo), no GPT-6 Luna sem raciocínio, a não ser que a configuração diga `conversation`. Fecha no botão, numa frase de parar dita sozinha ou depois de 120 s de silêncio. **Escolhas próprias, marcadas:** o modelo de voz é trocado na conversa enquanto a voz roda (o protocolo escolhe modelo por conversa) e devolvido no fim; um pedido feito com um turno rodando corrige o turno em vez de pará-lo; o arquivo mandado não fica no histórico, e a conversa reaberta mostra o resultado da ferramenta no lugar da ficha. Provado contra a OpenAI falsa (transcrição, fala e sessão ao vivo), pelo Telegram num servidor de verdade, no Vitest (o motor da conversa com uma ligação falsa) e de ponta a ponta no app com o microfone falso do Chromium: os dois botões, o ditado chegando à caixa sem ser mandado, e a sessão ao vivo chegando à OpenAI com a oferta do app e a chave do servidor. A voz falada e ouvida de verdade fica para a prova do usuário com a OpenAI (perguntar antes: cerca de US$ 0,25 por 5 minutos) |
+| 17b | O ditado em qualquer lugar do plugin `voice` (decidido em 25/10: Ditado em qualquer lugar, acima): um atalho global (Caps Lock de fábrica) grava e, no segundo toque, cola o texto cru no programa em foco; os ditados ficam na casa com o áudio, na página "Ditados". As telas de plugin ganham o atalho global, a colagem no programa em foco e a barrinha. Pedido do usuário em 24/10 | 17a | **Código pronto em 25/10 (docs/ARCHITECTURE.md, Dictation anywhere):** o SDK vai para a versão 23 (`atlas.desktop`: `shortcut` e `paste`, mostrados no consentimento) e as telas para a versão 3 (`ctx.shortcut`, `ctx.paste`, `ctx.bar`). O atalho é o `globalShortcut` do Electron; a colagem usa a área de transferência e um Ctrl+V apertado por um PowerShell que fica aberto no Windows (`osascript` no Mac, `xdotool` ou `wtype` no Linux), sem biblioteca nativa, e devolve o que estava copiado. Com o foco no próprio Atlas, o texto é digitado onde está o cursor. Um programa aberto como administrador não aceita a colagem: o texto fica copiado e a barrinha avisa. **Achado na prova:** o Caps Lock como atalho também trocava as maiúsculas; o app aperta a tecla mais uma vez, com o atalho solto. Os ditados ficam na pasta de dados do plugin com o áudio, na página "Ditados" (ouvir, copiar, apagar, trocar a tecla). **Escolhas próprias, marcadas:** os ditados da caixa também ficam guardados; a gravação é guardada antes da transcrição, e uma que falhou pode ser escrita de novo. Provado nos testes do Python e do app, de ponta a ponta no app com o microfone falso e, no Windows, com as peças de verdade: o Caps Lock apertado pelo sistema ouvido sem trocar as maiúsculas, a barrinha sem roubar o foco e o texto com acentos colado na janela de outro programa, com a área de transferência devolvida. Falta a prova do usuário com a OpenAI de verdade (menos de US$ 0,01) e com o microfone dele, e a de um programa aberto como administrador |
 | 18 | Instalador de uma linha, e a chave pedida pela tela na primeira abertura (decidido em 13/10: Instalador, acima). Decidido pelo usuário em 13/10: vem antes do 15, para mandar o Atlas a testadores convidados no repositório privado; os scripts num gist público; a chave conferida sem custo e barrada só quando recusada; sem o login OAuth da OpenRouter. Desenho fechado em 13/10 | 10 | ✅. Os dois testadores convidados instalaram com a linha do gist e usaram sem problema: um num MacBook e outro no Windows, além do Windows do usuário e do CI no Windows e no Ubuntu. Achado do testador no Windows: com a chave gratuita do Gemini, o Gemini 3.6 Flash respondeu HTTP 503 ("high demand", o Google recusando quem não paga quando está cheio); com outra chave funcionou. Não é defeito do instalador nem da tela de chave |
 | 18b | O app empacotado sem assinatura (decidido em 15/10: Instalador, acima): o `Setup.exe` do NSIS no Windows, o DMG com a assinatura ad-hoc no Mac, o AppImage no Linux; instala, põe o atalho na área de trabalho e se atualiza pelo próprio app (o electron-updater no Windows e no Linux, um atualizador nosso no Mac). Grátis, com o aviso do Windows e do Mac na primeira abertura. Dividido pelo usuário em 15/10 | 18 | |
 | 18c | A assinatura do app empacotado: MSIX pela Microsoft Store ou SignPath no Windows, DMG notarizado no Mac (estudados em 13/10: Instalador, acima). Tira os avisos do 18b e troca o atualizador nosso do Mac pelo do Electron. Vem quando o repositório abrir | 18b | |

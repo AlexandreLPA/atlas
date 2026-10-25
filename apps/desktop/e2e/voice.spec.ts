@@ -80,3 +80,71 @@ test('the live conversation opens its session through the plugin, the key kept o
   expect(session?.authorization).toBe('Bearer fake-key')
   await expect(talk).toHaveAttribute('data-state', 'idle', { timeout: 30_000 })
 })
+
+interface Probe {
+  appFocused: boolean | null
+  bars: ({ text: string; tone: string } | null)[]
+  held: Map<string, () => void>
+  pasted: string[]
+  press: (accelerator: string) => boolean
+}
+
+test('the shortcut dictates anywhere: pasted where the user is, and kept on the Dictations page', async () => {
+  desktop = await launch({ chromium: MICROPHONE, setup: voiceOn })
+  const { app, model, page } = desktop
+  // Each runs in the main process, where the end-to-end powers note what the screen did.
+  const held = () =>
+    app.evaluate(() => [...(globalThis as unknown as { atlasDesktop: Probe }).atlasDesktop.held.keys()])
+  const press = () =>
+    app.evaluate(() => (globalThis as unknown as { atlasDesktop: Probe }).atlasDesktop.press('Capslock'))
+  const focusApp = (focused: boolean) =>
+    app.evaluate((_electron, given) => {
+      ;(globalThis as unknown as { atlasDesktop: Probe }).atlasDesktop.appFocused = given
+    }, focused)
+  const pasted = () => app.evaluate(() => (globalThis as unknown as { atlasDesktop: Probe }).atlasDesktop.pasted)
+  const tone = () =>
+    app.evaluate(() => (globalThis as unknown as { atlasDesktop: Probe }).atlasDesktop.bars.at(-1)?.tone ?? null)
+
+  // Caps Lock, unless the user chose another: held for the plugin as its screen loads.
+  await expect.poll(() => held(), { timeout: 30_000 }).toEqual(['Capslock'])
+
+  // Another program has the focus: the words are pasted there.
+  await focusApp(false)
+  await model.transcribe('Send the report to the team.')
+  expect(await press()).toBe(true)
+  await expect.poll(() => tone()).toBe('recording')
+  await page.waitForTimeout(800)
+  await press()
+  await expect.poll(() => pasted(), { timeout: 30_000 }).toEqual(['Send the report to the team.'])
+  await expect.poll(() => tone()).toBe('done')
+
+  // The app has the focus, its box the cursor: the words are typed there, unsent.
+  const box = page.getByRole('textbox', { name: 'Message Atlas' })
+  await box.click()
+  await focusApp(true)
+  await model.transcribe('And book the room.')
+  await page.waitForTimeout(400)
+  await press()
+  await page.waitForTimeout(800)
+  await press()
+  await expect(box).toHaveValue('And book the room.', { timeout: 30_000 })
+  expect(await pasted()).toHaveLength(1)
+  expect((await model.requests()).some(request => request.path === '/v1/chat/completions')).toBe(false)
+
+  // Both kept in the home, with their audio, on the plugin's page.
+  await page.getByTestId('plugin-page-voice:dictations').click()
+  const rows = page.getByTestId('voice-dictation-text')
+  await expect(rows).toHaveCount(2, { timeout: 30_000 })
+  await expect(page.getByTestId('voice-dictations')).toContainText('Send the report to the team.')
+  await expect(page.getByTestId('voice-shortcut')).toHaveText('Capslock')
+
+  // The key changed on the page: the old one let go, the new one held.
+  await page.getByTestId('voice-shortcut-change').click()
+  await page.keyboard.press('F9')
+  await expect(page.getByTestId('voice-shortcut')).toHaveText('F9')
+  await expect.poll(() => held()).toEqual(['F9'])
+
+  // Deleted from the page, gone from the home.
+  await page.getByTestId('voice-dictation-remove').first().click()
+  await expect(rows).toHaveCount(1)
+})

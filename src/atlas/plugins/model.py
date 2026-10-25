@@ -90,6 +90,9 @@ CALLS_API = 17
 #: The SDK version of attachment readers (step 17a), and the kinds a reader may read.
 READERS_API = 21
 READER_KINDS = ("audio",)
+#: The SDK version of a screen's desktop powers (step 17b), and the powers a screen may declare.
+DESKTOP_API = 23
+DESKTOP_POWERS = ("paste", "shortcut")
 #: A plugin's screen, its desktop half (step 16m).
 SCREEN_FILE = "desktop/plugin.js"
 #: A hook's event, Claude Code's way of naming them.
@@ -232,6 +235,9 @@ class Manifest:
     calls: tuple[str, ...] = ()
     #: The kinds of attachment its Python reads into text (`atlas.readers`, version 21): `audio`.
     readers: tuple[str, ...] = ()
+    #: What its screen does outside the app's window (`atlas.desktop`, version 23): `shortcut`, a
+    #: key heard in every program, and `paste`, text pasted into the program in focus.
+    desktop: tuple[str, ...] = ()
     #: The other plugins it needs on (Claude Code's `dependencies`, step 16n).
     dependencies: tuple[Dependency, ...] = ()
 
@@ -329,6 +335,15 @@ class Manifest:
             "reads."
             for kind in self.readers
         ]
+        if "shortcut" in self.desktop:
+            lines.append(
+                "Its screen listens for a key you choose in every program, while the app is open."
+            )
+        if "paste" in self.desktop:
+            lines.append(
+                "Its screen pastes text into the program you are in: it puts the text on the "
+                "clipboard, presses Ctrl+V for you, and puts back what the clipboard held."
+            )
         if self.dependencies:
             lines.append(
                 f"Needs the plugins {', '.join(map(str, self.dependencies))}, turned on first."
@@ -388,6 +403,8 @@ class Manifest:
             declared["calls"] = sorted(self.calls)
         if self.readers:
             declared["readers"] = sorted(self.readers)
+        if self.desktop:
+            declared["desktop"] = sorted(self.desktop)
         text = json.dumps(declared, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -486,6 +503,17 @@ def parse_manifest(
             f"{name} declares readers for {', '.join(unknown)}; a reader reads "
             f"{', '.join(READER_KINDS)}."
         )
+    desktop = _names(own, "desktop", _NAME)
+    if desktop and not screen:
+        raise ManifestError(f"{name} declares desktop powers but brings no {SCREEN_FILE}.")
+    if desktop and api < DESKTOP_API:
+        raise ManifestError(f"{name} declares desktop powers, which need atlas.api {DESKTOP_API}.")
+    unknown = sorted(set(desktop) - set(DESKTOP_POWERS))
+    if unknown:
+        raise ManifestError(
+            f"{name} declares the desktop powers {', '.join(unknown)}; a screen may declare "
+            f"{', '.join(DESKTOP_POWERS)}."
+        )
     secrets = tuple(
         SecretDeclaration(entry["name"], entry.get("description", ""), entry.get("url", ""))
         for entry in _entries(own, "secrets", _SECRET)
@@ -549,6 +577,7 @@ def parse_manifest(
         screen=screen,
         calls=calls,
         readers=readers,
+        desktop=desktop,
         dependencies=_dependencies(name, data.get("dependencies")),
     )
 

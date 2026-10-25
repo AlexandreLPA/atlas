@@ -5,7 +5,7 @@
  */
 import { $screens } from '@/store/app'
 
-import { loadedScreens, loadedSource, loadScreen, unloadScreen } from './loader'
+import { loadedPowers, loadedScreens, loadedSource, loadScreen, unloadScreen } from './loader'
 
 let syncing: Promise<void> = Promise.resolve()
 
@@ -13,7 +13,8 @@ let syncing: Promise<void> = Promise.resolve()
 export function startScreens(): () => void {
   const stop = $screens.subscribe(screens => {
     syncing = syncing.then(async () => {
-      const wanted = new Map(screens.map(screen => [screen.plugin, screen.source]))
+      // A server before step 17b names no desktop powers.
+      const wanted = new Map(screens.map(screen => [screen.plugin, screen]))
 
       for (const plugin of loadedScreens()) {
         if (!wanted.has(plugin)) {
@@ -21,9 +22,9 @@ export function startScreens(): () => void {
         }
       }
 
-      for (const [plugin, source] of wanted) {
-        if (loadedSource(plugin) !== source) {
-          await loadScreen(plugin, source)
+      for (const [plugin, { desktop = [], source }] of wanted) {
+        if (loadedSource(plugin) !== source || loadedPowers(plugin) !== desktop.join(',')) {
+          await loadScreen(plugin, source, desktop)
         }
       }
     })

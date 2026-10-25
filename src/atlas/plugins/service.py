@@ -194,6 +194,8 @@ class PluginScreen:
 
     plugin: str
     source: str
+    #: Its desktop powers (`atlas.desktop`, version 23), which the app gives it.
+    desktop: tuple[str, ...] = ()
 
 
 #: The largest screen Atlas hands the app: a plugin's whole screen in one file.
@@ -482,7 +484,13 @@ class Plugins:
             if len(data) > SCREEN_BYTES:
                 self.failed(view.name, f"Its screen is over {SCREEN_BYTES // 1024 // 1024} MB.")
                 continue
-            found.append(PluginScreen(view.name, data.decode("utf-8", errors="replace")))
+            found.append(
+                PluginScreen(
+                    view.name,
+                    data.decode("utf-8", errors="replace"),
+                    view.manifest.desktop,
+                )
+            )
         return found
 
     async def cli_commands(self) -> list[LoadedCli]:

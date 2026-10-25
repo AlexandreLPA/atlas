@@ -740,6 +740,8 @@ class PluginScreenRow:
 
     plugin: str
     source: str
+    #: What it may do outside the app's window (step 17b): `shortcut`, `paste`.
+    desktop: list[str] = field(default_factory=list[str])
 
 
 @dataclass(frozen=True, slots=True)

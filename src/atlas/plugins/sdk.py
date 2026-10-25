@@ -97,8 +97,9 @@ from typing import Any, Literal, Protocol
 #: 15, hooks; 16, commands, terminal commands, the user's model, and messages to a conversation;
 #: 17, the calls its screen makes; 18, the ACP client (`atlas.plugins.acp`); 19, whether the plan
 #: pays on past its limits; 20, a session's tokens of context; 21, attachment readers; 22, files
-#: a tool sends the user, and a channel that sends them.
-API_VERSION = 22
+#: a tool sends the user, and a channel that sends them; 23, a screen's desktop powers (a global
+#: shortcut, pasting into the program in focus).
+API_VERSION = 23
 
 
 @dataclass(frozen=True, slots=True)

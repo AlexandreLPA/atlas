@@ -1,7 +1,8 @@
 /**
  * What the window may ask of the main process: a home's server address and token, to let a home's
  * server go, to be brought forward, a backup's path from the system's dialogs, to keep the home on
- * screen for next time, a session's folder opened in VS Code, and the app's update. Nothing else
+ * screen for next time, a session's folder opened in VS Code, the app's update, and a plugin's
+ * screen's powers outside the window (a shortcut, a paste, a bar). Nothing else
  * crosses: the bridge stays narrow. A sandboxed preload loads only Electron's own modules, so this
  * file imports nothing else.
  */
@@ -29,6 +30,24 @@ contextBridge.exposeInMainWorld('atlas', {
   /** A home's server, started if needed; `null` is the home that opens first. */
   connection: (home: null | string = null): Promise<{ token: string; url: string }> =>
     ipcRenderer.invoke('atlas:connection', home),
+  /** What a plugin's screen does outside the window (step 17b): a shortcut heard in every program,
+   * a text pasted into the program in focus, the floating bar. */
+  desktop: {
+    bar: (state: unknown): Promise<void> => ipcRenderer.invoke('atlas:desktop:bar', state),
+    onPressed: (listener: (key: string) => void): (() => void) => {
+      const handler = (_event: unknown, key: string) => {
+        listener(key)
+      }
+      ipcRenderer.on('atlas:desktop:pressed', handler)
+
+      return () => {
+        ipcRenderer.removeListener('atlas:desktop:pressed', handler)
+      }
+    },
+    paste: (text: string): Promise<string> => ipcRenderer.invoke('atlas:desktop:paste', text),
+    shortcut: (key: string, accelerator: string): Promise<string> =>
+      ipcRenderer.invoke('atlas:desktop:shortcut', key, accelerator)
+  },
   e2e,
   /** Only under the end-to-end tests: how long a command runs before it is "still running". */
   terminalWait,

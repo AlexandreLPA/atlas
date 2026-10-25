@@ -15,8 +15,9 @@ import { $pluginPage, insertIntoBox } from './registry'
 
 /** What this app offers screens: 1, panels and pages, the app's state, the server's methods; 2,
  *  buttons in the conversation's box, words put into it, and a message sent as the box sends
- *  one (step 17a). */
-export const SCREEN_API = 2
+ *  one (step 17a); 3, a shortcut heard in every program, a text pasted where the user is, and the
+ *  floating bar (`ctx.shortcut`, `ctx.paste`, `ctx.bar`, step 17b). */
+export const SCREEN_API = 3
 
 /** Read a store and follow it, in a component: `useValue(host.state.conversation)`. */
 export const useValue = useStore

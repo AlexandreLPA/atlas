@@ -460,6 +460,8 @@ export interface PluginScreens {
 export interface PluginScreenRow {
   plugin: string
   source: string
+  /** What it may do outside the app's window (step 17b): `shortcut`, `paste`. */
+  desktop: string[]
 }
 /** A plugin's screen calls its Python (step 16m, SDK version 17). */
 export interface PluginCallParams {

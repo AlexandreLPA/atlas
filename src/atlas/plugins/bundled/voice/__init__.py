@@ -3,7 +3,9 @@
 - **Audio the user sends**, dropped in the app or sent on a channel, is written down by OpenAI's
   transcription model before the turn (a reader, SDK version 21), and the model reads what it says.
 - **Dictation**: the box's microphone (its screen, `desktop/plugin.js`) records, and the words come
-  back into the box to be corrected before they are sent (the `dictate` call).
+  back into the box to be corrected before they are sent (the `dictate` call). **Anywhere** (step
+  17b): a shortcut heard in every program records, and the words are pasted where the user is.
+  Every dictation is kept in the home with its recording (`dictations`, the screen's page).
 - **Atlas speaks when asked**: `voice_speak` says a text with OpenAI's speech model and sends it to
   the user (SDK version 22), a voice message on Telegram, a file in the app. Receiving audio never
   makes Atlas answer in audio.
@@ -18,15 +20,17 @@ import base64
 import binascii
 import secrets
 import time
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any, cast
 
 from atlas.plugins.sdk import PluginContext, ToolHost
 
+from .dictations import Dictation, Dictations
 from .endpoint import OpenAIError
 from .live import LiveSessions, history_of, turn_note
 from .speech import Speaker
-from .transcribe import Transcriber
+from .transcribe import NO_KEY, Transcriber
 
 #: The vault name of the OpenAI key, the one Atlas's OpenAI provider reads.
 KEY_SECRET = "OPENAI_API_KEY"  # noqa: S105 - a name, not the key
@@ -108,6 +112,17 @@ def register(ctx: PluginContext) -> None:
             }
         }
 
+    kept = Dictations(ctx.data_folder / "dictations")
+
+    async def write_down(dictation: Dictation, data: bytes) -> Dictation:
+        name = "dictation.ogg" if "ogg" in dictation.media_type else "dictation.webm"
+        try:
+            text = await transcriber().transcribe_data(name, data, dictation.media_type)
+        except OpenAIError as error:
+            kept.written(dictation, "", str(error))
+            raise ValueError(str(error)) from error
+        return kept.written(dictation, text)
+
     async def dictate(params: Any) -> dict[str, str]:
         given = _object(params)
         try:
@@ -119,11 +134,35 @@ def register(ctx: PluginContext) -> None:
         if len(data) > DICTATION_BYTES:
             raise ValueError("The recording is too long to dictate; record a shorter one.")
         media_type = str(given.get("media_type") or "audio/webm")
-        name = "dictation.ogg" if "ogg" in media_type else "dictation.webm"
-        try:
-            return {"text": await transcriber().transcribe_data(name, data, media_type)}
-        except OpenAIError as error:
-            raise ValueError(str(error)) from error
+        # Kept before it is written down: a failed transcription loses no speech.
+        dictation = kept.keep(data, media_type, str(given.get("where") or "box"))
+        done = await write_down(dictation, data)
+        return {"id": done.id, "text": done.text}
+
+    async def dictation_status(_params: Any) -> dict[str, Any]:
+        ready = bool(ctx.secret(KEY_SECRET))
+        return {
+            "ready": ready,
+            "why": "" if ready else NO_KEY,
+            "shortcut": ctx.setting("dictation_shortcut").strip(),
+        }
+
+    async def dictations(_params: Any) -> dict[str, Any]:
+        return {"dictations": [asdict(dictation) for dictation in kept.listed()]}
+
+    async def dictation_audio(params: Any) -> dict[str, str]:
+        dictation = kept.get(str(_object(params).get("id") or ""))
+        data = kept.audio(dictation)
+        return {"audio": base64.b64encode(data).decode("ascii"), "media_type": dictation.media_type}
+
+    async def dictation_again(params: Any) -> dict[str, str]:
+        dictation = kept.get(str(_object(params).get("id") or ""))
+        done = await write_down(dictation, kept.audio(dictation))
+        return {"id": done.id, "text": done.text}
+
+    async def dictation_delete(params: Any) -> bool:
+        kept.delete(str(_object(params).get("id") or ""))
+        return True
 
     def live() -> LiveSessions:
         return LiveSessions(
@@ -165,6 +204,11 @@ def register(ctx: PluginContext) -> None:
     ctx.register_tool("voice_speak", SPEAK_DESCRIPTION, SPEAK_PARAMETERS, speak)
     ctx.register_hook("UserPromptSubmit", note_spoken_turn)
     ctx.register_call("dictate", dictate)
+    ctx.register_call("dictation_status", dictation_status)
+    ctx.register_call("dictations", dictations)
+    ctx.register_call("dictation_audio", dictation_audio)
+    ctx.register_call("dictation_again", dictation_again)
+    ctx.register_call("dictation_delete", dictation_delete)
     ctx.register_call("live_status", live_status)
     ctx.register_call("live_session", live_session)
     ctx.register_call("live_turn", live_turn)

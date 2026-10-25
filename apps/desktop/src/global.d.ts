@@ -12,6 +12,8 @@ interface AtlasBridge {
   chooseFolder: () => Promise<null | string>
   /** A home's server, started if needed; `null` (the default) is the home that opens first. */
   connection: (home?: null | string) => Promise<{ token: string; url: string }>
+  /** What a plugin's screen does outside the window (step 17b, electron/desktop-powers.ts). */
+  desktop: DesktopBridge
   /** Started by the end-to-end tests (`--atlas-e2e`). */
   e2e: boolean
   focus: () => void
@@ -108,6 +110,19 @@ interface HandedOff {
   log: string
   ok: boolean
   reopen: string
+}
+
+/** A plugin's screen's powers outside the window (step 17b). */
+interface DesktopBridge {
+  /** Show the floating bar, or hide it with `null`. */
+  bar: (state: null | { text: string; tone: 'done' | 'error' | 'recording' | 'working' }) => Promise<void>
+  /** Hear a shortcut held for `key` (`<plugin>:<id>`). */
+  onPressed: (listener: (key: string) => void) => () => void
+  /** Put a text where the user is: typed in the app (`app`), pasted in the program in focus
+   *  (`pasted`), or left on the clipboard (`copied`). */
+  paste: (text: string) => Promise<'app' | 'copied' | 'pasted'>
+  /** Hold `accelerator` for `key`, `''` to let go; `''`, or why it cannot be held. */
+  shortcut: (key: string, accelerator: string) => Promise<string>
 }
 
 interface UpdatesBridge {

@@ -2507,6 +2507,63 @@ the user: the voice conversation is to be the best there is, paid).
   from the server; the fake answers no real WebRTC, so the voice itself, spoken and heard, waits for
   the user's proof with OpenAI.
 
+### Dictation anywhere — decided 2026-10-25
+
+Step 17b, asked for by the user on 24/10/2026: dictating into any field of the computer, not only
+the conversation's box. Researched on 24/10/2026: dictation apps hold a key to talk, tap it twice
+to talk hands-free, show a small bar that never takes the focus, and paste the words through the
+clipboard with a paste key pressed for the user, putting back what the clipboard held. Still the
+voice plugin's, and still no voice in the core: screens gain what they may do outside the window.
+
+- **Desktop powers** (SDK version 23, `atlas.desktop` in the manifest, `shortcut` and `paste`,
+  needing a screen, shown at consent and counted in its fingerprint). The server hands them with
+  the screen (`PluginScreenRow.desktop`), and the app gives a screen only the ones it declares.
+- **The plugins' screens, version 3** (`SCREEN_API`): `ctx.shortcut(id, accelerator, run)`, a key
+  heard in every program while the app is open, as Electron names keys, resolving `''` or why it
+  cannot be held (another program's, another plugin's, no key at all); `ctx.paste(text)`; and
+  `ctx.bar(state)`, the floating bar. All three are let go with the plugin.
+- **The shortcut** is Electron's `globalShortcut` (`electron/desktop-powers.ts`), which hears a key
+  go down and never come up: a press records and the next stops (decided by the user: press to
+  talk, press to stop), and a key held, repeating, is heard once. Holding the key to talk, the
+  double tap and a shortcut of modifiers alone need a native key hook, and wait for it.
+  **Found while testing it:** Caps Lock as the shortcut still flips the capitals as the system reads
+  it, so the app presses it once more for the user, the shortcut let go meanwhile so that press
+  is not heard as the user's.
+- **The paste**: with the app's window in focus, the words are typed where its cursor is
+  (`webContents.insertText`), the conversation's box or an executor's terminal alike, the clipboard
+  untouched. Else they go on the clipboard, a paste key is pressed, and after 600 ms the clipboard
+  gets back its text, HTML, rich text and image, unless something else was copied meanwhile. The
+  keys are the system's own: on Windows a PowerShell kept running with a few system calls compiled
+  in (`SendInput`), on a Mac `osascript`, on Linux `xdotool` or `wtype`; the app ships no native
+  library. On Windows a program running as administrator refuses an ordinary program's keys without
+  a word, so the helper reads the rights of the window in focus first, and above the app's (or
+  unreadable) the words stay on the clipboard and the bar says to paste them.
+- **The bar**: a frameless window above the taskbar of the screen the mouse is on, never focusable,
+  ignoring the mouse, its page a fixed text and dot. It closes with the app's window, which would
+  otherwise keep the app from quitting.
+- **The voice plugin's half** (`desktop/plugin.js`, `dictations.py`): the `dictation_shortcut`
+  setting, `Capslock` by default (decided by the user); the words written down raw, as the box's
+  microphone writes them (decided by the user: no model cleans them yet). **Atlas's own,
+  marked:** a recording under half a second is dropped unsent, one stops on its own at 10 minutes
+  (the `dictate` call's 10 MB), and a press while the words are being written down starts nothing.
+- **Dictations kept** (decided by the user: in the home, until deleted): each recording and a JSON
+  beside it in the plugin's data folder, which a backup carries. **Atlas's own, marked:** the
+  box's dictations are kept too; the recording is kept before it is written down, so a failed
+  transcription keeps it with why, to write down again (`dictation_again`). The page "Dictations"
+  lists them, plays, copies and deletes them, and changes the key, letting the held one go while the
+  new one is pressed.
+- **Proved** by the Python tests (the manifest and its refusals, the consent's lines, the screen
+  row's powers, dictations kept, listed, failed and written down again, an id outside the folder
+  refused), the app's tests (shortcuts held, taken, repeated and Caps Lock put back; the paste typed
+  in the app, pasted with the clipboard put back, left copied, and leaving what was copied
+  meanwhile; the screen's engine with a fake microphone), end to end in the real app with
+  Chromium's fake microphone and the powers' end-to-end double (the shortcut held, two
+  dictations, one pasted elsewhere and one typed in the box unsent, both on the page, the key
+  changed and a dictation deleted), and on Windows with the real pieces: the shortcut heard on a
+  Caps Lock pressed through the system with the capitals left as they were, the bar shown without
+  taking the focus, and the words, accents included, landing in another program's field with the
+  clipboard put back.
+
 ## The executors tab and the side panel — decided 2026-10-15
 
 Step 16f, asked for by the user on 15/10/2026: the workbench's card played a conversation squeezed
