@@ -1,16 +1,15 @@
-"""The plugin guide, docs/PLUGINS.md, kept whole: every name of the SDK said in it, and the copy the
-write-plugin skill reads the same as the guide."""
+"""The plugin guide, the documentation's `extending/plugins` page, kept whole: every name of the SDK
+said in it, and the copy the write-plugin skill reads the same as the guide."""
 
 import inspect
 import re
-from pathlib import Path
 from typing import Protocol
 
+from atlas.docs import PAGES_FOLDER
 from atlas.plugins import sdk
 from atlas.skills import BUNDLED_FOLDER
 
-ROOT = Path(__file__).parents[2]
-GUIDE = ROOT / "docs" / "PLUGINS.md"
+GUIDE = PAGES_FOLDER / "extending" / "plugins.md"
 
 
 def _said() -> set[str]:
@@ -38,12 +37,13 @@ def _sdk_names() -> set[str]:
 def test_the_guide_names_everything_the_sdk_offers() -> None:
     missing = sorted(_sdk_names() - _said())
 
-    assert missing == [], f"docs/PLUGINS.md does not name: {', '.join(missing)}"
+    assert missing == [], f"The plugin guide does not name: {', '.join(missing)}"
 
 
 def test_the_skill_that_writes_plugins_reads_the_guide_as_it_is() -> None:
     copy = BUNDLED_FOLDER / "write-plugin" / "references" / "guide.md"
 
     assert copy.read_text(encoding="utf-8") == GUIDE.read_text(encoding="utf-8"), (
-        "Copy docs/PLUGINS.md to src/atlas/skills/bundled/write-plugin/references/guide.md."
+        "Copy src/atlas/docs/pages/extending/plugins.md to "
+        "src/atlas/skills/bundled/write-plugin/references/guide.md."
     )

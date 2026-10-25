@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import guide from '../../../../docs/PLUGINS.md?raw'
+import guide from '../../../../src/atlas/docs/pages/extending/plugins.md?raw'
 
 import loader from './loader.ts?raw'
 import * as sdk from './sdk'
@@ -19,7 +19,7 @@ function contextMembers(): string[] {
   return [...body.matchAll(/^ {2}(?:readonly )?(\w+)\??:/gm)].map(match => match[1] ?? '')
 }
 
-describe('the plugin guide, docs/PLUGINS.md', () => {
+describe('the plugin guide, src/atlas/docs/pages/extending/plugins.md', () => {
   it('names everything a screen gets: the module, its host and its context', () => {
     const names = [...Object.keys(sdk), ...Object.keys(sdk.host), ...Object.keys(sdk.host.state), ...contextMembers()]
     const words = said()

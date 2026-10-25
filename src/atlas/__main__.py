@@ -1,6 +1,7 @@
 """Command line entry point: `atlas serve`, `atlas server`, `atlas secrets`, `atlas models`,
 `atlas usage`, `atlas skills`, `atlas memory`, `atlas backup`, `atlas restore`, `atlas home`,
-`atlas routines`, `atlas always-on`, `atlas desktop`, `atlas update` and `atlas version`.
+`atlas routines`, `atlas always-on`, `atlas desktop`, `atlas update`, `atlas docs` and
+`atlas version`.
 
 This is a process edge: it reads the environment, passes it to the settings loader once, and hands
 the settings to whoever needs them.
@@ -10,6 +11,7 @@ import argparse
 import asyncio
 import getpass
 import inspect
+import io
 import json
 import logging
 import os
@@ -34,6 +36,16 @@ from atlas import __version__
 from atlas.bots import BotError, Bots
 from atlas.conversations import SCHEMA as CONVERSATIONS_SCHEMA
 from atlas.conversations import ConversationStore
+from atlas.docs import (
+    DocsError,
+    find,
+    read_pages,
+    render_all,
+    render_index,
+    render_page,
+    render_search,
+    search,
+)
 from atlas.home import (
     BACKUP_PREFIX,
     DEFAULT_HOME,
@@ -194,6 +206,23 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
 
     commands.add_parser("version", help="Print the installed version.")
+
+    docs = commands.add_parser(
+        "docs",
+        help="Read the documentation of this Atlas: the list of pages, one page, a search, or "
+        "every page. It opens no home.",
+    )
+    docs.add_argument(
+        "page",
+        nargs="?",
+        help="A page from the list, such as install or guides/memory; with --search, the search "
+        "stays in it.",
+    )
+    reading = docs.add_mutually_exclusive_group()
+    reading.add_argument(
+        "--search", nargs="+", metavar="WORD", help="The sections that mention every word."
+    )
+    reading.add_argument("--all", action="store_true", help="Every page, one after another.")
 
     serve = commands.add_parser("serve", help="Run the server that clients connect to.")
     serve.add_argument(
@@ -622,6 +651,8 @@ def main(
     if args.command == "version":
         sys.stdout.write(f"{__version__}\n")
         return 0
+    if args.command == "docs":
+        return _docs(args)
 
     environ = os.environ if environ is None else environ
     reader: TextIO = sys.stdin if stdin is None else stdin
@@ -756,6 +787,40 @@ def _plugin_cli(
         sys.stderr.write(f"atlas {name}: {type(error).__name__}: {error}\n")
         return 1
     return 0 if code is None else int(code)
+
+
+def _docs(args: argparse.Namespace) -> int:
+    """`atlas docs`: this installation's documentation. It opens no home, so it answers on a
+    machine that has none, and the agent reads it with a command as any reader would."""
+    page: str | None = args.page
+    words: list[str] | None = args.search
+    try:
+        pages = read_pages()
+        if words:
+            text = render_search(search([find(pages, page)] if page else pages, words), words)
+        elif args.all and page:
+            raise DocsError("--all prints every page: leave the page out, or drop --all.")
+        elif args.all:
+            text = render_all(pages)
+        elif page:
+            text = render_page(find(pages, page))
+        else:
+            text = render_index(pages)
+    except DocsError as error:
+        sys.stderr.write(f"atlas: {error}\n")
+        return 1
+    out: TextIO = sys.stdout
+    if isinstance(out, io.TextIOWrapper):
+        # Piped or redirected, the pages go out as UTF-8, not in Windows' old code page, which
+        # turns their dashes and quotes into garbage; a character a terminal cannot show is
+        # replaced, never the end of the command.
+        wrapper = cast("io.TextIOWrapper[Any]", out)
+        if wrapper.isatty():
+            wrapper.reconfigure(errors="replace")
+        else:
+            wrapper.reconfigure(encoding="utf-8", errors="replace")
+    out.write(text if text.endswith("\n") else f"{text}\n")
+    return 0
 
 
 def _owner(plugins: Plugins, name: str) -> str:

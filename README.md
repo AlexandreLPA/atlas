@@ -183,11 +183,20 @@ logged in by the harness itself.
 
 ## Documentation
 
-- [Memory](docs/MEMORY.md): what Atlas remembers, how, and how to change it
-- [Tools](docs/TOOLS.md): every tool the agent has, and how the rest are found
-- [Bots](docs/BOTS.md): making a bot and talking to it
-- [Background review](docs/BACKGROUND_REVIEW.md): how Atlas learns from a conversation
-- [Plugins](docs/PLUGINS.md): writing a plugin
+The documentation lives in [src/atlas/docs/pages/](src/atlas/docs/pages/), and every installed Atlas reads its own version of it
+with `atlas docs`: Atlas reads it there too before it answers a question about itself.
+
+- [What Atlas is](src/atlas/docs/pages/index.md) and [how to install it](src/atlas/docs/pages/install.md)
+- [Coding agents and accounts](src/atlas/docs/pages/guides/coding-agents.md) and [several machines](src/atlas/docs/pages/guides/machines.md)
+- [Memory](src/atlas/docs/pages/guides/memory.md): what Atlas remembers, how, and how to change it
+- [Background review](src/atlas/docs/pages/guides/background-review.md): how Atlas learns from a conversation
+- [Bots](src/atlas/docs/pages/guides/bots.md): making a bot and talking to it
+- [The approval gate](src/atlas/docs/pages/guides/approval-gate.md): what asks, what never runs, and auto mode
+- [Commands](src/atlas/docs/pages/reference/commands.md), [settings](src/atlas/docs/pages/reference/settings.md) and [tools](src/atlas/docs/pages/reference/tools.md): the reference, the first two written from the code
+- [Plugins](src/atlas/docs/pages/extending/plugins.md): writing a plugin
+
+For whoever works on the code:
+
 - [Architecture](docs/ARCHITECTURE.md): the decisions and the rules the code follows
 - [Glossary](docs/GLOSSARY.md): the words Atlas uses
 

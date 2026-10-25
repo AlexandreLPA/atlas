@@ -36,7 +36,12 @@ docker compose up --build  # run in a container
 docker build -t atlas:local . && ATLAS_TEST_IMAGE=atlas:local uv run pytest tests/docker --no-cov
                            # the image's tests: an empty container, a key, a conversation
 uv run python scripts/gen_protocol.py   # the app's TypeScript protocol, after a protocol change
+uv run python scripts/gen_docs.py       # the documentation's commands and settings pages,
+                                        # after a command or a setting changes
 ```
+
+The documentation for whoever uses Atlas is in `src/atlas/docs/pages/`: a change to what a user
+sees changes its page in the same commit (docs/ARCHITECTURE.md, The documentation).
 
 The desktop app, in `apps/desktop/` (Node 24):
 

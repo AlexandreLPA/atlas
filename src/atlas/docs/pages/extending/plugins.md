@@ -1,10 +1,15 @@
-# Writing a plugin
+---
+title: "Writing a plugin"
+description: "Write a plugin: its folder and manifest, and the skills, commands, hooks, tools, channels and executors it can add."
+sidebar:
+  order: 1
+---
 
 A plugin is a folder that adds to Atlas. Its format is Claude Code's, so a plugin written for
 Claude Code (skills, commands, agents, hooks, MCP servers, programs, options and monitors) runs in
 Atlas as it is. What only Atlas reads
 sits under `atlas` in the same manifest. The decisions behind it are in
-[ARCHITECTURE.md](ARCHITECTURE.md), Plugins.
+[ARCHITECTURE.md](https://github.com/marqueskaio/atlas/blob/main/docs/ARCHITECTURE.md), Plugins.
 
 ## Start one
 
@@ -335,7 +340,7 @@ def register(ctx: PluginContext) -> None:
 - **`send_file`** (`"api": 22`) sends a file a tool made; a channel without it gets a line naming
   the file instead.
 - The Telegram plugin Atlas ships is a whole channel:
-  [src/atlas/plugins/bundled/telegram](../src/atlas/plugins/bundled/telegram).
+  [src/atlas/plugins/bundled/telegram](https://github.com/marqueskaio/atlas/tree/main/src/atlas/plugins/bundled/telegram).
 
 ## Executors
 
@@ -419,8 +424,8 @@ def register(ctx: PluginContext) -> None:
 - **A harness that speaks the Agent Client Protocol** needs no channel of its own:
   `atlas.plugins.acp` (`"api": 18`) starts it, speaks ACP over its stdio and turns its updates
   into these events. The Gemini CLI and DeepSeek plugins Atlas ships use it:
-  [src/atlas/plugins/bundled/gemini-cli](../src/atlas/plugins/bundled/gemini-cli),
-  [src/atlas/plugins/bundled/deepseek](../src/atlas/plugins/bundled/deepseek). The Claude Code and
+  [src/atlas/plugins/bundled/gemini-cli](https://github.com/marqueskaio/atlas/tree/main/src/atlas/plugins/bundled/gemini-cli),
+  [src/atlas/plugins/bundled/deepseek](https://github.com/marqueskaio/atlas/tree/main/src/atlas/plugins/bundled/deepseek). The Claude Code and
   Codex plugins speak their harness's own protocol.
 
 ## Two examples

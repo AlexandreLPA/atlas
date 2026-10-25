@@ -14,7 +14,7 @@ export default defineConfig({
     // Its `react` is the app's, as the loader's shims make it, though the file sits outside the app.
     dedupe: ['react']
   },
-  // The repository is read too: the plugin guide, docs/PLUGINS.md, that a test keeps whole.
+  // The repository is read too: the plugin guide, src/atlas/docs/pages/extending/plugins.md, that a test keeps whole.
   server: { fs: { allow: [path.join(here, '..', '..')] } },
   test: {
     projects: [

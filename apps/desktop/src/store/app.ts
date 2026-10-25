@@ -2498,7 +2498,7 @@ export function newConversation(): void {
 }
 
 /** The plugin guide, on GitHub: what a plugin may hold and every part of the SDK. */
-export const PLUGIN_GUIDE = 'https://github.com/marqueskaio/atlas/blob/main/docs/PLUGINS.md'
+export const PLUGIN_GUIDE = 'https://github.com/marqueskaio/atlas/blob/main/src/atlas/docs/pages/extending/plugins.md'
 
 /** A new conversation with `/write-plugin ` in its box, for the user to say what the plugin should
  *  do: the skill Atlas ships writes it with them. */

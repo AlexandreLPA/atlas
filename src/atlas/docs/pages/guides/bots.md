@@ -1,9 +1,14 @@
-# Atlas Bots
+---
+title: "Bots"
+description: "Make a bot and talk to it: what its definition holds, and what it shares with the home."
+sidebar:
+  order: 5
+---
 
-**Status:** reference, 2026-10-14. How to make a bot and talk to it, what its definition holds, and
+How to make a bot and talk to it, what its definition holds, and
 what it shares with the home. Why bots work this way lives in
- [ARCHITECTURE.md](ARCHITECTURE.md#bots--decided-2026-10-13) (Bots); what each tool takes,
-in [TOOLS.md](TOOLS.md). The code is in `src/atlas/bots/`, and in `atlas.assistant` for how a bot's
+ [ARCHITECTURE.md](https://github.com/marqueskaio/atlas/blob/main/docs/ARCHITECTURE.md#bots--decided-2026-10-13) (Bots); what each tool takes,
+in [Tools](/docs/reference/tools/). The code is in `src/atlas/bots/`, and in `atlas.assistant` for how a bot's
 conversation runs.
 
 A bot is a named agent that lives in your Atlas home beside the main agent. It has its own mission,
@@ -229,7 +234,7 @@ bot's routines with its handle, and the button above its conversation counts the
 ## Agents writing to each other
 
 In a home with bots, the main agent and the bots have a `message_agent` tool (its arguments are in
-[TOOLS.md](TOOLS.md), Other agents).
+[Tools](/docs/reference/tools/), Other agents).
 
 - **The main agent writes to a bot from any conversation you hold with it.** Say "ask finance
   whether the electricity bill is paid": it writes to the bot and ends its turn. The bot answers in

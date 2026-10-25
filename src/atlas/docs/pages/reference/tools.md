@@ -1,7 +1,12 @@
-# Atlas Tools
+---
+title: "Tools"
+description: "Every tool the agent has, when it has it, and what it takes."
+sidebar:
+  order: 3
+---
 
-**Status:** reference, 2026-10-14. What each of the agent's tools does, when the agent has it, and
-what it takes. Why each tool is shaped the way it is lives in [ARCHITECTURE.md](ARCHITECTURE.md)
+What each of the agent's tools does, when the agent has it, and
+what it takes. Why each tool is shaped the way it is lives in [ARCHITECTURE.md](https://github.com/marqueskaio/atlas/blob/main/docs/ARCHITECTURE.md)
 (Tools, and the section each entry below names). The exact description and schema the model
 receives live in the code: `src/atlas/tools/`, and `src/atlas/browser/` for `browser_exec`.
 

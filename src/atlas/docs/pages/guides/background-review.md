@@ -1,10 +1,15 @@
-# Atlas Background Review
+---
+title: "The background review"
+description: "When Atlas rereads a conversation to learn from it, what it may change in your profile, notes and skills, and what it costs."
+sidebar:
+  order: 4
+---
 
-**Status:** reference, 2026-10-14. When the background review runs, what it may change in your
+When the background review runs, what it may change in your
 profile, the agent's notes and the skills, what you see of it, and what it costs. Why it works this
 way lives in
-[ARCHITECTURE.md](ARCHITECTURE.md#memory--decided-2026-10-09) (Memory, Memory proposals, Skills);
-the memory it writes, in [MEMORY.md](MEMORY.md); the tools it calls, in [TOOLS.md](TOOLS.md). The
+[ARCHITECTURE.md](https://github.com/marqueskaio/atlas/blob/main/docs/ARCHITECTURE.md#memory--decided-2026-10-09) (Memory, Memory proposals, Skills);
+the memory it writes, in [Memory](/docs/guides/memory/); the tools it calls, in [Tools](/docs/reference/tools/). The
 code is in `src/atlas/memory/service.py` (`BackgroundReview`, `review_due`, `skill_review_due`),
 `src/atlas/skills/service.py` (its hold on skills, and the curator) and
 `src/atlas/assistant/service.py` (`_after_turn`, which starts it).
@@ -54,7 +59,7 @@ agent. It may answer "Nothing to save." and stop.
   entry is not applied: the whole call, its adds included, becomes a proposal you approve or
   discard (a review could otherwise delete standing rules). It is checked first as if applied, so
   an entry not found, an ambiguous one, a result over the limit or an attack is refused there and
-  nothing waits. The proposals are in [MEMORY.md](MEMORY.md#proposals-changes-that-wait-for-you).
+  nothing waits. The proposals are in [Memory](/docs/guides/memory/#proposals-changes-that-wait-for-you).
 - **A review due for skills only is not given `memory` at all.**
 
 ### The skill half
@@ -81,7 +86,7 @@ agent. It may answer "Nothing to save." and stop.
 - **Every write keeps what the skill held before**, 20 versions per skill, in `skills/.versions/`:
   `atlas skills revert NAME` brings the last one back.
 - **In a bot's conversation** a new skill goes to the bot's own folder; a skill that already exists
-  is changed where it is, in the library too ([BOTS.md](BOTS.md#skills)).
+  is changed where it is, in the library too ([Bots](/docs/guides/bots/#skills)).
 
 ## What it may use
 
@@ -160,7 +165,7 @@ The curator cleans up after the skill half. It makes no model call.
 - **The review sees one conversation.** What you said in another one reaches it only through that
   one's own review.
 - **The terminal cannot apply a bot's memory proposal**; the app can
-  ([MEMORY.md](MEMORY.md#limits-to-know)).
+  ([Memory](/docs/guides/memory/#limits-to-know)).
 
 ## When something is off
 

@@ -184,13 +184,21 @@ com o login feito pelo próprio harness.
 
 ## Documentação
 
-Os documentos estão em inglês.
+Os documentos estão em inglês. A documentação fica em [src/atlas/docs/pages/](src/atlas/docs/pages/), e cada Atlas instalado lê a
+da sua versão com `atlas docs`: o próprio Atlas também a lê ali antes de responder uma pergunta
+sobre si.
 
-- [Memória](docs/MEMORY.md): o que o Atlas lembra, como, e como mudar
-- [Ferramentas](docs/TOOLS.md): cada ferramenta do agente, e como o resto é achado
-- [Bots](docs/BOTS.md): criar um bot e conversar com ele
-- [Revisão em segundo plano](docs/BACKGROUND_REVIEW.md): como o Atlas aprende com uma conversa
-- [Plugins](docs/PLUGINS.md): escrever um plugin
+- [O que é o Atlas](src/atlas/docs/pages/index.md) e [como instalar](src/atlas/docs/pages/install.md)
+- [Agentes de código e contas](src/atlas/docs/pages/guides/coding-agents.md) e [várias máquinas](src/atlas/docs/pages/guides/machines.md)
+- [Memória](src/atlas/docs/pages/guides/memory.md): o que o Atlas lembra, como, e como mudar
+- [Revisão em segundo plano](src/atlas/docs/pages/guides/background-review.md): como o Atlas aprende com uma conversa
+- [Bots](src/atlas/docs/pages/guides/bots.md): criar um bot e conversar com ele
+- [O portão de aprovação](src/atlas/docs/pages/guides/approval-gate.md): o que pergunta, o que nunca roda, e o modo automático
+- [Comandos](src/atlas/docs/pages/reference/commands.md), [configurações](src/atlas/docs/pages/reference/settings.md) e [ferramentas](src/atlas/docs/pages/reference/tools.md): a referência, as duas primeiras escritas a partir do código
+- [Plugins](src/atlas/docs/pages/extending/plugins.md): escrever um plugin
+
+Para quem trabalha no código:
+
 - [Arquitetura](docs/ARCHITECTURE.md): as decisões e as regras que o código segue
 - [Glossário](docs/GLOSSARY.md): as palavras que o Atlas usa
 

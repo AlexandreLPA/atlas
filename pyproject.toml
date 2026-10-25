@@ -290,6 +290,12 @@ ignore_imports = [
 unmatched_ignore_imports_alerting = "none"
 
 [[tool.importlinter.contracts]]
+name = "docs is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.docs.*"]
+allowed_importers = ["atlas.docs"]
+
+[[tool.importlinter.contracts]]
 name = "instances is reached only through its package root"
 type = "protected"
 protected_modules = ["atlas.instances.*"]

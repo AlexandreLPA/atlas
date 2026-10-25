@@ -276,6 +276,6 @@ describe('making one starts from the marketplace', () => {
 
     expect($view.get()).toBe('conversation')
     expect($restored.get()[DRAFT]).toBe('/write-plugin ')
-    expect(screen.getByRole('link', { name: 'Plugin guide' }).getAttribute('href')).toContain('docs/PLUGINS.md')
+    expect(screen.getByRole('link', { name: 'Plugin guide' }).getAttribute('href')).toContain('extending/plugins.md')
   })
 })

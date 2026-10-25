@@ -162,13 +162,20 @@ Atlas 有自己的智能体循环，底层不依赖任何智能体框架：它�
 
 ## 文档
 
-文档为英文。
+文档为英文。文档位于 [src/atlas/docs/pages/](src/atlas/docs/pages/)，每个已安装的 Atlas 都可以用 `atlas docs` 阅读与自身版本对应的
+文档；Atlas 在回答关于自身的问题之前，也会先在那里查阅。
 
-- [记忆](docs/MEMORY.md)：Atlas 记住什么、如何记住，以及如何修改
-- [工具](docs/TOOLS.md)：智能体的每个工具，以及其余工具如何被找到
-- [机器人](docs/BOTS.md)：创建机器人并与之对话
-- [后台复盘](docs/BACKGROUND_REVIEW.md)：Atlas 如何从对话中学习
-- [插件](docs/PLUGINS.md)：编写插件
+- [Atlas 是什么](src/atlas/docs/pages/index.md)以及[如何安装](src/atlas/docs/pages/install.md)
+- [编程智能体与账号](src/atlas/docs/pages/guides/coding-agents.md)以及[多台机器](src/atlas/docs/pages/guides/machines.md)
+- [记忆](src/atlas/docs/pages/guides/memory.md)：Atlas 记住什么、如何记住，以及如何修改
+- [后台复盘](src/atlas/docs/pages/guides/background-review.md)：Atlas 如何从对话中学习
+- [机器人](src/atlas/docs/pages/guides/bots.md)：创建机器人并与之对话
+- [审批关卡](src/atlas/docs/pages/guides/approval-gate.md)：哪些操作需要确认、哪些永远不会执行，以及自动模式
+- [命令](src/atlas/docs/pages/reference/commands.md)、[设置](src/atlas/docs/pages/reference/settings.md)和[工具](src/atlas/docs/pages/reference/tools.md)：参考资料，前两项直接由代码生成
+- [插件](src/atlas/docs/pages/extending/plugins.md)：编写插件
+
+面向参与代码开发的人：
+
 - [架构](docs/ARCHITECTURE.md)：代码遵循的决策与规则
 - [术语表](docs/GLOSSARY.md)：Atlas 使用的词汇
 

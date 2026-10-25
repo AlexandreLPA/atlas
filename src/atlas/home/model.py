@@ -360,7 +360,10 @@ class SecretText:
 
 @dataclass(frozen=True, slots=True)
 class ServerSettings:
+    #: The address the server listens on: this machine only, unless told otherwise. `0.0.0.0`
+    #: belongs only inside a container or behind a firewall.
     host: str = DEFAULT_HOST
+    #: The port the server listens on. `0` lets the system choose one.
     port: int = DEFAULT_PORT
     #: What a client presents to be let in, from `ATLAS_SERVER_TOKEN`, set by whoever starts the
     #: server. Unset, the server makes a fresh one nobody knows.
@@ -369,6 +372,7 @@ class ServerSettings:
 
 @dataclass(frozen=True, slots=True)
 class LogSettings:
+    #: The least serious lines the log keeps: `DEBUG`, `INFO`, `WARNING` or `ERROR`.
     level: LogLevel = "INFO"
     #: Also write `logs/atlas.log`. A container usually turns it off and reads stderr instead.
     file: bool = True

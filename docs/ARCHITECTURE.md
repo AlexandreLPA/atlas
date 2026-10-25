@@ -27,7 +27,7 @@ src/atlas/
   agent/       the loop: messages, model call, tool execution, guards
   assistant/   the agent put together for a conversation: loop, stored history, tools, gate, review
   models/      provider adapters (OpenAI-compatible protocol in core)
-  tools/       the built-in tools and tool search (docs/TOOLS.md)
+  tools/       the built-in tools and tool search (the documentation's Tools page)
   mcp/         the client for the user's MCP servers, whose tools are deferred
   memory/      the profile and the memory, the instructions that carry them, the background review
   conversations/ stored conversations and their search
@@ -44,6 +44,8 @@ src/atlas/
   plugins/     plugin loader and the public SDK; the plugins Atlas ships in bundled/
   marketplace/ the marketplace: its items read and checked, installed, updated and retired
   installation/ the checkout the user runs every day: its app built and opened, its update
+  docs/        the documentation for whoever uses Atlas: its pages, which the site shows and
+               `atlas docs` reads (The documentation, below)
 apps/desktop/  Electron app (TypeScript)
 tests/<subject>/
 tests/docker/  the image's tests, run against a built image (the Dockerfile and its compose file
@@ -266,7 +268,7 @@ In `atlas.assistant.titles`.
 
 ## Tools
 
-What each tool does, who has it and what it takes: [TOOLS.md](TOOLS.md). Why they are so:
+What each tool does, who has it and what it takes: [Tools](../src/atlas/docs/pages/reference/tools.md). Why they are so:
 
 Decided 2026-10-09, in step 5 (`atlas.tools`):
 
@@ -2317,7 +2319,7 @@ Step 16j, asked by the user for "the definitive plugin SDK". Its shape comes fro
 the user is writing, both kept in their home until a plugin store exists: a client's ERP (its MCP
 server and skills, no Python) and video made with Remotion (skills, a tool, Claude Code when it is
 installed through `delegate`, the Remotion Studio in the side panel through `desktop_preview`).
-Studied on 20/10/2026 with Claude Code's manifest reference of that day. The guide for whoever writes a plugin is [docs/PLUGINS.md](PLUGINS.md).
+Studied on 20/10/2026 with Claude Code's manifest reference of that day. The guide for whoever writes a plugin is [Writing a plugin](../src/atlas/docs/pages/extending/plugins.md).
 
 **How people learn to write one** (step 16t, decided by the user on 25/10/2026):
 
@@ -3471,6 +3473,40 @@ never the server itself.
   notifying, the terminal and ▶ through the server, a backup coming down), the SSH tunnel against a
   container running `sshd` and Atlas in Linux CI, and `scripts/prove_machines.py` with the user:
   this PC always on and open, reached from another of the user's machines over Tailscale.
+
+## The documentation — decided 2026-10-25
+
+Step 19, asked for by the user on 25/10/2026: one documentation for whoever uses Atlas, shown by the
+website and read by Atlas itself to answer a question about Atlas, which no model knows from its
+training.
+
+- **The pages live in the package**, `atlas/docs/pages/`, not in `site/`: a checkout, the
+  container's image (which copies `src/`) and the packaged app carry the pages of the version they
+  run, offline. The site builds its documentation from that folder. `docs/` at the repository's
+  root stays for whoever works on the code.
+- **A page** is Markdown with a header the site and `atlas.docs` both read: `title` and
+  `description`, and `sidebar.order`, its place in its group. A value YAML would refuse bare
+  (a `: ` inside, a reserved character first) is refused by `atlas.docs` too, so the two readers
+  never differ. A page's name is its path, `guides/memory`; the groups are the folders
+  (`atlas.docs.GROUPS`, which the site's sidebar lists in the same order).
+- **`atlas docs`** reads them: the list of pages, one page (by its name, the end of it or its
+  title), a search, or every page. A search returns the sections holding every word, a word in a
+  heading counting more; with none, the sections holding the most words, since a reader asks in
+  words of their own. The command opens no home, so it answers on any installation; the links
+  between pages print as the command that shows the page, and a pipe gets UTF-8.
+- **The bundled skill `atlas`** is the one line the agent sees: "Questions about Atlas itself:
+  answer from `atlas docs`." It holds no documentation of its own: the review may improve any skill
+  (Skills, above), and what it edits there is a pointer, never the pages. The agent runs
+  `atlas docs` with `run_command`: the app starts the server with `uv run`, whose environment
+  leads the PATH, the container has `atlas` on its PATH, and the commands Atlas runs write UTF-8.
+- **The generated reference**, by `scripts/gen_docs.py`: the commands page from `build_parser`,
+  and the settings page from the settings' dataclasses and the `#:` comment above each field, which
+  every setting must have (the generator refuses one without). `tests/docs/test_reference.py`
+  fails when a committed page differs from what the code renders.
+- **What proves it:** every page reads, sits in a group and links only to pages that are there
+  (`tests/docs`); the site's build checks every internal link and every `#` section of the built
+  pages (`site/scripts/check-dist.mjs`); every command the skill gives runs, and a page reaches the
+  agent whole through `run_command` (`tests/docs/test_skill.py`).
 
 ## Language
 
