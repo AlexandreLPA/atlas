@@ -1,5 +1,6 @@
 {
   "name": "voice",
+  "displayName": "Voice",
   "version": "0.3.0",
   "description": "Talk to Atlas by voice: audio you send is written down, you dictate in the box or anywhere on the computer with a shortcut, Atlas speaks when you ask, and a live voice conversation hands the work to Atlas.",
   "author": { "name": "the Atlas contributors" },

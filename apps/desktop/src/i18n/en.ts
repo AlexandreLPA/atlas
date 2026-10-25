@@ -282,6 +282,69 @@ export const en = {
     status: (status: string) => STATUSES[status] ?? status,
     title: 'Routines'
   },
+  marketplace: {
+    back: 'All items',
+    brought: (names: string) => `Also installed, since it needs them: ${names}.`,
+    by: (author: string) => `by ${author}`,
+    cancel: 'Cancel',
+    community: 'Community',
+    confirmRemove: 'Remove it?',
+    empty: 'Nothing here yet.',
+    entry: 'What goes into your mcp.json',
+    homepage: 'Home page',
+    install: 'Install',
+    installed: 'Installed',
+    installing: 'Installing…',
+    intro:
+      'Skills, MCP servers, plugins and executors made for Atlas. Each was reviewed, and installs exactly as it was reviewed.',
+    kinds: { executor: 'Executor', mcp: 'MCP server', plugin: 'Plugin', skill: 'Skill' },
+    license: (license: string) => `License ${license}`,
+    localChanges: (name: string) =>
+      `${name} was changed here since it came. Update it anyway? What it holds now is kept as a version you can bring back.`,
+    loadingPage: 'Reading its page…',
+    need: {
+      program: (name: string, state: string) =>
+        state === 'met' ? `${name}: on this computer` : `${name}: not found on this computer (it installs anyway)`,
+      server: (name: string, state: string) =>
+        state === 'met'
+          ? `MCP server ${name}: already here`
+          : state === 'brought'
+            ? `MCP server ${name}: installed along with it`
+            : `MCP server ${name}: missing, and the marketplace does not have it`,
+      system: (names: string, state: string) => (state === 'met' ? `Works here (${names})` : `Works only on ${names}`)
+    },
+    needs: 'What it needs',
+    noMatch: 'Nothing matches the search.',
+    official: 'By the Atlas team',
+    officialBadge: 'Official',
+    on: 'On',
+    paste: 'Paste the value',
+    reading: 'Reading the marketplace…',
+    refresh: 'Read again',
+    remove: 'Remove',
+    removing: 'Removing…',
+    retired: 'Retired',
+    save: 'Save',
+    screenshots: 'Screenshots',
+    search: 'Search',
+    secretMissing: 'Not stored',
+    secretStored: 'Stored',
+    secrets: 'Secrets it reads',
+    shipped: 'Comes with Atlas',
+    source: 'Source code',
+    stale: (problem: string, when: string) =>
+      `The marketplace could not be read now (${problem}). This is how it was on ${when}.`,
+    tabs: { executor: 'Executors', mcp: 'MCPs', plugin: 'Plugins', skill: 'Skills' },
+    title: 'Marketplace',
+    turnOn: 'Turn on',
+    turnOnHint: 'Plugins arrive off. Turning one on shows what it declares, for your consent.',
+    unavailable: 'Unavailable',
+    unread: (problem: string) => `The marketplace could not be read: ${problem}`,
+    update: 'Update',
+    updateAnyway: 'Update anyway',
+    updating: 'Updating…',
+    version: (version: string) => `Version ${version}`
+  },
   soul: {
     blank: "Blank, so Atlas's default stands in:",
     intro:

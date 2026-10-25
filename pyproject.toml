@@ -393,6 +393,12 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
+name = "marketplace is reached only through its package root"
+type = "protected"
+protected_modules = ["atlas.marketplace.*"]
+allowed_importers = ["atlas.marketplace"]
+
+[[tool.importlinter.contracts]]
 name = "hooks is reached only through its package root"
 type = "protected"
 protected_modules = ["atlas.hooks.*"]

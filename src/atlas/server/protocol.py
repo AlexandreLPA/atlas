@@ -766,6 +766,132 @@ class PluginCallResult:
     result: Json = None
 
 
+# -- the marketplace (step 16s) --------------------------------------------------------------------
+
+type MarketplaceKind = Literal["skill", "mcp", "plugin", "executor"]
+#: `installed` for a skill or an MCP server in the home; `off` and `on` for a plugin or an
+#: executor; `retired` for an item the marketplace pulled after it was installed, now stopped.
+type MarketplaceState = Literal["available", "installed", "off", "on", "retired"]
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceRow:
+    """An item as the marketplace's screen lists it (step 16s)."""
+
+    name: str
+    kind: MarketplaceKind
+    title: str
+    summary: str
+    #: The GitHub account that made it; `Atlas` for what Atlas ships.
+    author: str
+    license: str
+    #: `official`: made by the Atlas team.
+    tier: Literal["official", "community"]
+    version: str
+    state: MarketplaceState
+    #: Atlas ships it: it is turned on, never installed.
+    shipped: bool
+    #: The marketplace has another version than the one installed.
+    update: bool
+    #: Its picture, from its own repository at its commit; empty for none.
+    image: str
+    #: Where its code is read, at its commit; an MCP server's page.
+    source_url: str
+    #: What keeps it from installing or running, or why it was retired.
+    problem: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceList:
+    name: str
+    description: str
+    items: list[MarketplaceRow]
+    #: When the marketplace was last read well, in UTC; `null` when it never was.
+    read_at: str | None
+    #: Why it could not be read now: the last read stands in, or nothing does.
+    problem: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceListParams:
+    #: Read the marketplace again now, not only once the last read is an hour old.
+    refresh: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceRef:
+    name: str
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceNeed:
+    """Something a skill says it needs: a program, an MCP server, or the systems it works on."""
+
+    kind: Literal["program", "server", "system"]
+    name: str
+    #: `brought`: a server the marketplace installs along with the skill.
+    state: Literal["met", "brought", "missing"]
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceSecretRow:
+    name: str
+    description: str
+    url: str
+    #: The vault holds it. Its value is never sent.
+    stored: bool
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplacePage:
+    """An item's page: its README at its commit (a skill's own `SKILL.md`), and what it needs."""
+
+    item: MarketplaceRow
+    #: Markdown, from the item's repository: raw HTML is not to be rendered.
+    readme: str
+    #: Where its relative pictures are read, and its relative links lead; empty for none.
+    picture_base: str
+    link_base: str
+    needs: list[MarketplaceNeed]
+    secrets: list[MarketplaceSecretRow]
+    screenshots: list[str]
+    homepage: str
+    #: An MCP server's entry as JSON, exactly as it goes into `mcp.json`; empty for the others.
+    entry: str
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceUpdateParams:
+    name: str
+    #: Update a skill or a server changed in the home since it came; a skill keeps it as a
+    #: version.
+    force: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceDone:
+    item: MarketplaceRow
+    #: The items installed or updated, those brought along first.
+    changed: list[str]
+    #: Not updated: it was changed here since it came, so it waits for `force`.
+    local_changes: bool
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceSecretParams:
+    #: The item, an MCP server, that reads the secret.
+    name: str
+    secret: str
+    #: The value the user pasted. It is never sent back.
+    value: str
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceChanged:
+    #: What was installed, updated, removed or retired; empty when the marketplace was read again.
+    name: str = ""
+
+
 @dataclass(frozen=True, slots=True)
 class PairingRow:
     """Someone a channel let in, or who waits with a code."""
@@ -2028,6 +2154,47 @@ METHODS: Mapping[str, Method] = {
             "the message it raised.",
         ),
         Method(
+            "marketplace.list",
+            MarketplaceListParams,
+            MarketplaceList,
+            "The marketplace (step 16s): what it offers, what Atlas ships and what came from it, "
+            "read again when the last read is an hour old or when asked.",
+        ),
+        Method(
+            "marketplace.page",
+            MarketplaceRef,
+            MarketplacePage,
+            "An item's page: its README at its commit, and what it needs in this home.",
+        ),
+        Method(
+            "marketplace.install",
+            MarketplaceRef,
+            MarketplaceDone,
+            "Install an item, with the MCP servers a skill needs; a plugin arrives off, for the "
+            "consent of plugin.enable.",
+        ),
+        Method(
+            "marketplace.update",
+            MarketplaceUpdateParams,
+            MarketplaceDone,
+            "Bring an installed item to the marketplace's version; one changed here waits for "
+            "force.",
+        ),
+        Method(
+            "marketplace.remove",
+            MarketplaceRef,
+            MarketplaceRow,
+            "Take away an item installed from the marketplace: a skill is archived, a plugin's "
+            "data stays.",
+        ),
+        Method(
+            "marketplace.secret",
+            MarketplaceSecretParams,
+            MarketplacePage,
+            "Store a secret an MCP server of the marketplace reads, and try the server again. "
+            "The value is never sent back.",
+        ),
+        Method(
             "pairing.list",
             Empty,
             PairingList,
@@ -2702,6 +2869,13 @@ EVENTS: Mapping[str, Event] = {
             PluginsChanged,
             "A plugin was turned on, off or failed, or someone asked to pair; read plugin.list "
             "and pairing.list.",
+            conversation=False,
+        ),
+        Event(
+            "marketplace.changed",
+            MarketplaceChanged,
+            "An item was installed, updated, removed or retired, from any client or the "
+            "terminal; read marketplace.list.",
             conversation=False,
         ),
         Event(

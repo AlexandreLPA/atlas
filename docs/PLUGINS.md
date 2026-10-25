@@ -451,6 +451,61 @@ atlas plugins remove video                           # its data stays
 It arrives off; turn it on with consent, as any other. An update that declares something else
 waits for your consent again.
 
+## Publishing it in the marketplace
+
+The marketplace is a public repository, `marqueskaio/atlas-marketplace`: every Atlas lists what it
+holds, in the app's Marketplace and with `atlas marketplace list`. An item enters by a pull request
+that adds one file, `items/<name>.yaml`, and the maintainer reviews it.
+
+```yaml
+name: video            # lowercase letters, digits and dashes; the file is named after it
+kind: plugin           # skill, mcp, plugin or executor
+title: Video
+summary: Cut and render videos with Remotion.
+author: your-github-account
+license: MIT
+repo: your-github-account/atlas-video
+sha: 0123456789abcdef0123456789abcdef01234567   # the whole commit that is reviewed
+path: plugins/video    # the folder in the repository; leave it out for the root
+version: "1.0.0"       # what you call it; the commit is what installs
+image: https://raw.githubusercontent.com/your-github-account/atlas-video/<sha>/cover.png
+```
+
+- **Pick the smallest kind.** A skill alone is a `skill`, one folder with its `SKILL.md`; one MCP
+  server is an `mcp` item; a plugin that registers an executor is an `executor`; anything that
+  brings more (skills with a server of its own, hooks, a screen, Python) is a `plugin`. The
+  marketplace's CI refuses an item whose code is not the kind it says.
+- **A skill says what it needs** in its own frontmatter, and the marketplace checks it on the
+  user's machine before installing:
+
+  ```yaml
+  metadata:
+    requires:
+      bins: [ffmpeg]        # programs it runs; said when missing, installed anyway
+      mcp: [docs]           # MCP servers it calls: items of the marketplace, brought along
+      os: [linux, macos]    # where it works; refused elsewhere
+  ```
+
+  Its scripts carry their own libraries: a Python script declares them in its `# /// script`
+  header and runs with `uv run`; a Node package runs with `npx` at an exact version. A skill
+  brings no secret, since the commands the model runs never see the vault: what needs a key goes
+  through an MCP server, or is a plugin.
+- **An MCP server** is its `mcp.json` entry under `server`, with each `${NAME}` it reads under
+  `secrets` (a name, what it is, the page that makes one). What it runs is pinned: `npx` with
+  `name@1.2.3`, `uvx` with `name==1.2.3`, `docker run` with an image by its digest, or a remote
+  `https` address. Servers that sign in with OAuth wait until Atlas does.
+- **A new version is a new pull request** that moves `sha`; the reviewer reads what changed
+  between the two commits. Your code must not fetch and replace itself, nor carry compiled files.
+  What it does on the network, in the background or outside its own folder goes in its README.
+- **Check it first**, as the CI does:
+
+  ```bash
+  atlas marketplace check items/video.yaml          # the file, and its code at its commit
+  atlas marketplace check items/video.yaml --load   # and its Python loaded, in a home thrown away
+  ```
+
+  `--load` runs the plugin's Python: use it on your own plugin, or where foreign code may run.
+
 ## Not yet
 
 Atlas lists a plugin that brings any of these, and refuses to turn it on: LSP servers, output

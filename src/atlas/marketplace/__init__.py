@@ -1,0 +1,57 @@
+"""The marketplace (step 16s): skills, MCP servers, plugins and executors other people made for
+Atlas, each reviewed and pinned to a commit in a public repository, installed into the home."""
+
+from atlas.marketplace.errors import MarketplaceError
+from atlas.marketplace.model import (
+    FORMAT,
+    Index,
+    Item,
+    Kind,
+    Retired,
+    Secret,
+    State,
+    Tier,
+    parse_item,
+    parse_meta,
+    parse_removed,
+)
+from atlas.marketplace.service import (
+    Done,
+    Listing,
+    Marketplace,
+    Need,
+    Page,
+    Row,
+    SecretState,
+    check,
+    shipped_names,
+)
+from atlas.marketplace.store import MarketplaceStore, McpFile, Record, read_index
+
+__all__ = [
+    "FORMAT",
+    "Done",
+    "Index",
+    "Item",
+    "Kind",
+    "Listing",
+    "Marketplace",
+    "MarketplaceError",
+    "MarketplaceStore",
+    "McpFile",
+    "Need",
+    "Page",
+    "Record",
+    "Retired",
+    "Row",
+    "Secret",
+    "SecretState",
+    "State",
+    "Tier",
+    "check",
+    "parse_item",
+    "parse_meta",
+    "parse_removed",
+    "read_index",
+    "shipped_names",
+]

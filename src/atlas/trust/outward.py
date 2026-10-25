@@ -12,10 +12,11 @@ A rule leans towards asking: a `gws` or `gcloud` command asks unless its method 
 cannot parse asks.
 
 **Atlas's own decisions go the same way** (step 16): turning a plugin on, storing its secret or
-setting, letting someone talk through a channel, and any command that touches the home's
-`plugins/`, `plugin-data/` or `atlas.db`. They are the user's consent, so the agent asks every time,
-past the guardian and the ⚡, as for an email; found on 14/10/2026, when `atlas plugins enable
---yes` from the agent would have skipped the consent the Plugins screen asks for.
+setting, letting someone talk through a channel, installing, updating or removing a marketplace
+item (step 16s: an MCP server connects as it is installed), and any command that touches the
+home's `plugins/`, `plugin-data/` or `atlas.db`. They are the user's consent, so the agent asks
+every time, past the guardian and the ⚡, as for an email; found on 14/10/2026, when `atlas plugins
+enable --yes` from the agent would have skipped the consent the Plugins screen asks for.
 """
 
 import re
@@ -308,8 +309,10 @@ _PROGRAMS = {"gh": _gh, "gws": _gws, "gcloud": _gcloud}
 # -- atlas ----------------------------------------------------------------------------------------
 
 #: `atlas <group> <verb>` that the user decides: a plugin on, its secrets and settings, a new one
-#: in the home's plugins folder (step 16j), who may talk through a channel.
+#: in the home's plugins folder (step 16j), who may talk through a channel, and what comes from the
+#: marketplace (step 16s), which may start a server or change a skill the model reads.
 _USER_DECIDES: dict[str, frozenset[str]] = {
+    "marketplace": frozenset(("install", "update", "remove")),
     "pairing": frozenset(("forget", "approve")),
     "plugins": frozenset(("new", "set", "secret", "disable", "enable")),
 }

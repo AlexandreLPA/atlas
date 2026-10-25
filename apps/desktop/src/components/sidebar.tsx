@@ -18,6 +18,7 @@ import {
   $workbench,
   newConversation,
   selectConversation,
+  showMarketplace,
   showProposals,
   showRoutines,
   showSidebarTab,
@@ -32,7 +33,7 @@ import { ExecutorsList } from './executors-list'
 import { HomeBar } from './home-bar'
 import { RailEdge } from './rail-edge'
 import { StatusDot, useConversationDot, useConversationsDot, useInstancesDot } from './status-dot'
-import { Bulb, CalendarTime, LayoutSidebar, MessagePlus, Messages, Plug, Robot, Terminal } from './ui/icons'
+import { Bulb, CalendarTime, LayoutSidebar, MessagePlus, Messages, Plug, Robot, Store, Terminal } from './ui/icons'
 import { IconButton, Tip } from './ui/tip'
 import { UpdateBar, UpdateStrip } from './update-bar'
 import { when } from './when'
@@ -128,6 +129,13 @@ export function Sidebar() {
           label={t.routines.title}
           onClick={showRoutines}
           testId="routines-entry"
+        />
+        <Entry
+          current={view === 'marketplace'}
+          icon={Store}
+          label={t.marketplace.title}
+          onClick={showMarketplace}
+          testId="marketplace-entry"
         />
         {pages.map(page => (
           <Entry

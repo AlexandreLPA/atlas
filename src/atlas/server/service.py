@@ -122,6 +122,10 @@ from atlas.installation import (
     compose_progress,
 )
 from atlas.jobs import JobsError, RouteTarget, Routine, Run, RunStatus, Scheduler
+from atlas.marketplace import Kind as MarketKind
+from atlas.marketplace import Marketplace, MarketplaceError, MarketplaceStore
+from atlas.marketplace import Page as MarketPage
+from atlas.marketplace import Row as MarketRow
 from atlas.memory import FILES as MEMORY_FILES
 from atlas.memory import Action, OpenProposal, Operation, Target, apply, size
 from atlas.models import (
@@ -249,6 +253,17 @@ from atlas.server.protocol import (
     KeyProvider,
     KeyProviders,
     ListParams,
+    MarketplaceChanged,
+    MarketplaceDone,
+    MarketplaceList,
+    MarketplaceListParams,
+    MarketplaceNeed,
+    MarketplacePage,
+    MarketplaceRef,
+    MarketplaceRow,
+    MarketplaceSecretParams,
+    MarketplaceSecretRow,
+    MarketplaceUpdateParams,
     MemoryEdit,
     MemoryEntries,
     MemoryEntriesParams,
@@ -367,6 +382,7 @@ from atlas.server.protocol import (
     read,
 )
 from atlas.server.replay import Replay
+from atlas.skills import SkillLibrary, SkillUsage
 from atlas.terminals import TerminalError, Terminals
 from atlas.tools import (
     SECRET_REQUEST_SECONDS,
@@ -510,6 +526,18 @@ class Gateway:
         )
         self.plugins = Plugins(home, Database(home.database_file), vault, clock=clock)
         self.plugins.host = AssistantPluginHost(self.assistant)
+        #: The marketplace (step 16s), installing into this home.
+        self.marketplace = Marketplace(
+            home,
+            MarketplaceStore(home.marketplace_folder, settings.marketplace),
+            self.plugins,
+            SkillLibrary(home.skills_folder, SkillUsage(Database(home.database_file))),
+            stored=self._stored_names,
+            clock=clock,
+        )
+        #: `mcp.json` as last seen (step 16s): read again once it changes, by the marketplace or
+        #: by hand.
+        self._mcp_stamp: tuple[int, int] | None = None
         #: The model catalog before any plugin added a provider (step 16l).
         self._base_catalog: Catalog | None = None
         #: The calls the plugins' screens may make to their Python (step 16m).
@@ -543,6 +571,12 @@ class Gateway:
             "plugin.reload": self._plugin_reload,
             "plugin.screens": self._plugin_screens,
             "plugin.call": self._plugin_call_python,
+            "marketplace.list": self._marketplace_list,
+            "marketplace.page": self._marketplace_page,
+            "marketplace.install": self._marketplace_install,
+            "marketplace.update": self._marketplace_update,
+            "marketplace.remove": self._marketplace_remove,
+            "marketplace.secret": self._marketplace_secret,
             "pairing.list": self._pairing_list,
             "pairing.approve": self._pairing_approve,
             "pairing.forget": self._pairing_forget,
@@ -731,6 +765,7 @@ class Gateway:
         while True:
             await asyncio.sleep(self._plugin_watch_seconds)
             try:
+                await self._watch_mcp_file()
                 if self._plugin_stamps is None:
                     continue
                 now = await asyncio.to_thread(self.plugins.stamps)
@@ -1777,6 +1812,107 @@ class Gateway:
     async def _plugin_changed(self, name: str) -> PluginRow:
         self.plugins_changed()
         return self._plugin_row(await asyncio.to_thread(self.plugins.view, name))
+
+    # -- the marketplace (step 16s) ---------------------------------------------------------------
+
+    async def _marketplace_list(
+        self, connection: Connection, params: MarketplaceListParams
+    ) -> MarketplaceList:
+        listing = await self._market_call(self.marketplace.listing, refresh=params.refresh)
+        return MarketplaceList(
+            name=listing.name,
+            description=listing.description,
+            items=[_market_row(row) for row in listing.rows],
+            read_at=format_utc(listing.read_at) if listing.read_at is not None else None,
+            problem=listing.problem,
+        )
+
+    async def _marketplace_page(
+        self, connection: Connection, params: MarketplaceRef
+    ) -> MarketplacePage:
+        return _market_page(await self._market_call(self.marketplace.page, params.name))
+
+    async def _marketplace_install(
+        self, connection: Connection, params: MarketplaceRef
+    ) -> MarketplaceDone:
+        done = await self._market_call(self.marketplace.install, params.name)
+        await self._market_changed(done.row.kind, params.name)
+        return MarketplaceDone(_market_row(done.row), done.changed, done.local_changes)
+
+    async def _marketplace_update(
+        self, connection: Connection, params: MarketplaceUpdateParams
+    ) -> MarketplaceDone:
+        done = await self._market_call(self.marketplace.update, params.name, force=params.force)
+        if done.changed:
+            await self._market_changed(done.row.kind, params.name)
+        return MarketplaceDone(_market_row(done.row), done.changed, done.local_changes)
+
+    async def _marketplace_remove(
+        self, connection: Connection, params: MarketplaceRef
+    ) -> MarketplaceRow:
+        row = await self._market_call(self.marketplace.remove, params.name)
+        await self._market_changed(row.kind, params.name)
+        return _market_row(row)
+
+    async def _marketplace_secret(
+        self, connection: Connection, params: MarketplaceSecretParams
+    ) -> MarketplacePage:
+        """A secret an MCP server of the marketplace reads, pasted on its page: stored in the
+        vault, and the server tried again."""
+        page = await self._market_call(self.marketplace.page, params.name)
+        if params.secret not in {secret.name for secret in page.secrets}:
+            raise ProtocolError(INVALID_PARAMS, f"{params.name} reads no secret {params.secret}.")
+        try:
+            await asyncio.to_thread(self._vault.set, params.secret, params.value)
+        except SecretsError as error:
+            raise ProtocolError(INVALID_PARAMS, str(error)) from error
+        await self._secret_stored(params.secret)
+        self._marketplace_changed(params.name)
+        return _market_page(await self._market_call(self.marketplace.page, params.name))
+
+    async def _market_call[**P, T](
+        self, call: Callable[P, T], *args: P.args, **kwargs: P.kwargs
+    ) -> T:
+        try:
+            return await asyncio.to_thread(call, *args, **kwargs)
+        except MarketplaceError as error:
+            code = NOT_FOUND if "has no item" in str(error) else INVALID_PARAMS
+            raise ProtocolError(code, str(error)) from error
+
+    async def _market_changed(self, kind: MarketKind, name: str) -> None:
+        """What an install, an update or a removal changed reaches the running Atlas at once: a
+        plugin is loaded again (it arrives off; one updated may need consent again), and
+        `mcp.json` is read again (a skill may have brought a server along)."""
+        if kind in (MarketKind.PLUGIN, MarketKind.EXECUTOR):
+            await self.reload_plugins({name})
+        else:
+            await self.assistant.reload_mcp()
+        self._marketplace_changed(name)
+
+    def _marketplace_changed(self, name: str) -> None:
+        frame = self._event_frame("marketplace.changed", MarketplaceChanged(name))
+        for connection in self._connections:
+            connection.put(frame)
+
+    def _stored_names(self) -> list[str]:
+        try:
+            return self._vault.names()
+        except SecretsError:
+            return []
+
+    async def _watch_mcp_file(self) -> None:
+        """Read `mcp.json` again once it changed (step 16s): the marketplace wrote it, or the user
+        did, and its servers follow without a restart."""
+        try:
+            status = self._home.mcp_file.stat()
+            stamp = (status.st_mtime_ns, status.st_size)
+        except FileNotFoundError:
+            stamp = (0, 0)
+        if self._mcp_stamp is None:
+            self._mcp_stamp = stamp
+        elif stamp != self._mcp_stamp:
+            self._mcp_stamp = stamp
+            await self.assistant.reload_mcp()
 
     async def _plugin_call[**P, T](
         self, call: Callable[P, T], *args: P.args, **kwargs: P.kwargs
@@ -2961,4 +3097,40 @@ def _update_ended(ended: HandedOff) -> UpdateEnded:
         log=ended.log,
         ended_at=ended.ended_at,
         reopen=ended.reopen,
+    )
+
+
+def _market_row(row: MarketRow) -> MarketplaceRow:
+    return MarketplaceRow(
+        name=row.name,
+        kind=row.kind.value,
+        title=row.title,
+        summary=row.summary,
+        author=row.author,
+        license=row.license,
+        tier=row.tier.value,
+        version=row.version,
+        state=row.state.value,
+        shipped=row.shipped,
+        update=row.update,
+        image=row.image,
+        source_url=row.source_url,
+        problem=row.problem,
+    )
+
+
+def _market_page(page: MarketPage) -> MarketplacePage:
+    return MarketplacePage(
+        item=_market_row(page.row),
+        readme=page.readme,
+        picture_base=page.picture_base,
+        link_base=page.link_base,
+        needs=[MarketplaceNeed(need.kind, need.name, need.state) for need in page.needs],
+        secrets=[
+            MarketplaceSecretRow(secret.name, secret.description, secret.url, secret.stored)
+            for secret in page.secrets
+        ],
+        screenshots=page.screenshots,
+        homepage=page.homepage,
+        entry=page.entry,
     )

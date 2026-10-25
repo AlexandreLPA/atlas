@@ -42,6 +42,7 @@ src/atlas/
   home/        ATLAS_HOME and its boundary, settings, database and migrations, logs, UTC time
   hooks/       plugins' hooks at the loop's events, in Claude Code's events and JSON
   plugins/     plugin loader and the public SDK; the plugins Atlas ships in bundled/
+  marketplace/ the marketplace: its items read and checked, installed, updated and retired
   installation/ the checkout the user runs every day: its app built and opened, its update
 apps/desktop/  Electron app (TypeScript)
 tests/<subject>/
@@ -2166,7 +2167,8 @@ Step 16, in `atlas.plugins`; the first plugin is Telegram, the proof the user ch
   consent is kept as the declaration's fingerprint. An update that declares anything else, not
   only a new capability, turns it off until the user consents again.
 - **The agent cannot consent for the user** (found on 14/10/2026, before the step closed): the
-  gate treats `atlas plugins enable|disable|secret|set`, `atlas pairing approve|forget` and any
+  gate treats `atlas plugins enable|disable|secret|set`, `atlas pairing approve|forget`,
+  `atlas marketplace install|update|remove` (step 16s) and any
   command that touches the home's `plugins/`, `plugin-data/` or `atlas.db` as an outward action,
   asked of the user every time, past the guardian and "Auto", in every spelling and inside the
   scripts a command runs; the file tools refuse to write in those folders. Without it, a model
@@ -2531,6 +2533,89 @@ Step 16n. Researched on 21/10/2026 with Claude Code's plugin docs (`/reload-plug
   screen, a broken save and its fix, and a plugin turned off and on from the terminal; and end to
   end in the real app, a page that changes in place when its author saves both halves.
   **Found while testing it:** loading a screen again took its page off the screen.
+
+### The marketplace — decided 2026-10-25
+
+Step 16s, asked for by the user on 24/10/2026: a place in the app to find and install what other
+people made for Atlas, a tab per kind, the Atlas team's items marked, a page per item. In the code,
+`atlas.marketplace`; `store` already names the plugins' state and the app's screen state.
+
+- **No server of Atlas's** (decided by the user): the marketplace is a public repository on GitHub,
+  `marqueskaio/atlas-marketplace`, with no download counts and no ratings yet. **The user reviews
+  every item** that enters, by its pull request; more reviewers and more automation come later.
+- **The repository:** `marketplace.yaml` says its format (a newer one is refused whole, with the
+  advice to update Atlas); `items/<name>.yaml`, one file per item, so two pull requests open at once
+  never change the same line; and `removed.yaml`, the items retired for safety.
+- **Four kinds, apart** (decided by the user: whoever wants a skill gets the skill, not a plugin
+  that brings skills):
+  - a **skill**: one folder with a `SKILL.md`. Into the home's library through `SkillLibrary.put`,
+    which keeps a version before every write. It says what it needs under `metadata.requires`
+    (`Needs`, in `atlas.skills`): programs (`bins`), checked and said, the skill installing anyway;
+    MCP servers (`mcp`), installed along with it, each the item it is; systems (`os`), outside which
+    it is refused. A script's libraries travel in the script (Python's inline metadata, run with
+    `uv run`; npm's `npx` at an exact version), never onto the machine. A skill brings no secret:
+    the commands the model runs never see the vault (Secrets), so what needs a key is an MCP server,
+    which receives it, or a plugin;
+  - an **MCP server**: its `mcp.json` entry, written into the home's file with the rest left as it
+    was; a server of the same name there refuses it, and a file that cannot be read is never
+    written over. What it runs is pinned: a package at one exact version (`npx name@1.2.3`, `uvx
+    name==1.2.3`, which the registries never let change), an image by its digest, or an `https`
+    address; `oauth`, `headersHelper` and `cwd` are refused, and each `${NAME}` it reads is declared,
+    and stored from its page;
+  - a **plugin**: the bundle (skills with its own MCP server, hooks, a screen, Python). Checked as
+    Atlas reads a plugin and put in place by `atlas.plugins.install.place`, off: turning it on is the
+    consent of the Plugins screen. Recorded as `marketplace:<name>`, so `atlas plugins update`
+    sends the user to the marketplace;
+  - an **executor**: a plugin that registers one, listed apart.
+- **Pinned to what was reviewed:** a skill, a plugin or an executor names a GitHub repository, its
+  folder and a whole commit; a new version is a new pull request moving the commit, and the reviewer
+  reads what changed. Atlas fetches GitHub's archive of that commit over HTTPS, unpacked with the
+  standard library's data filter, so no git is needed (the container has none) and no file lands
+  outside its folder. Compiled files are refused (by their first bytes and their names), and so is
+  an item whose code is not the kind it says. Its pictures are files of its own repository at its
+  commit, so the page shows what was reviewed too.
+- **Reading it:** the repository's archive at its branch, one request; the index read from it is
+  kept in the home's `marketplace/index.json` and stands in when GitHub cannot be reached, which
+  the listing says. A read older than an hour is read again when the listing is asked for. The
+  addresses are `[marketplace]` settings, for a mirror and for the tests.
+- **What came from it** is `marketplace/installed.json`: each item's revision and, for a skill or
+  an MCP entry, a digest of what the home held right after. An **update** takes the new revision;
+  one changed in the home since (by the user, or a skill by the review, which improves it as it
+  improves the user's) waits for the user's word (`force`), the skill's versions keeping what it
+  was. The curator never archives a skill from the marketplace. **Removing** archives a skill,
+  drops an MCP entry (refused while a skill that brought it is installed) and takes a plugin away,
+  its data kept.
+- **Retiring:** when the marketplace lists an installed item in `removed.yaml`, by name or by
+  repository, it stops as removing stops it, and stays listed as retired, with the reason.
+- **Official:** an item by the Atlas team, marked by the maintainer alone. What Atlas ships is
+  listed as official (its executors, its plugins and its skills), turned on rather than installed;
+  a shipped skill the user deleted installs back as Atlas ships it.
+- **The server installs,** never the app: the home may be on another machine. It reads
+  `mcp.json` again once it changes (`McpClient.reload_file`), by the marketplace or by hand: new
+  servers connect, those gone or changed stop, the others stay. Every client hears
+  `marketplace.changed`. The terminal has the same: `atlas marketplace list|show|install|update|
+  remove`. From the agent, `install`, `update` and `remove` are the user's decision, asked every
+  time as `atlas plugins enable` is: an MCP server connects as it is installed, and a skill changes
+  what the model reads.
+- **The marketplace's own CI** runs `atlas marketplace check --load` on each pull request: every
+  item read by these rules, its code fetched at its commit and checked for its kind, and a plugin's
+  Python loaded in a home thrown away after (only there: `check` without `--load` runs nothing).
+- **The screen:** a Marketplace entry in the sidebar opens it in the main area: a search, a tab per
+  kind with its count, the Atlas team's items before the community's, a card each, and a page with
+  the README at the commit (a skill's own `SKILL.md`, which is what the model reads; an MCP server's
+  entry as JSON), drawn with its raw HTML skipped and its addresses kept to the item's tree or
+  `https`; what the item needs here; and its secrets, stored from the page and never shown again.
+  "Turn on" opens the Plugins screen over it, and a plugin turned on or off there reads the list
+  again, so its card follows.
+- **Left for later:** download counts and ratings, on a service of the user's own; MCP servers that
+  sign in with OAuth; repositories outside GitHub; other people's marketplaces; updating on its
+  own; and isolating a plugin's screen, studied again if review alone is not enough.
+- **Proved** by tests against a fake GitHub over real HTTP serving real git repositories made in
+  the test (each kind installed, a skill bringing its server, updates kept and forced, removal,
+  retiring by name and by repository, the last read standing in), the MCP client reading a changed
+  file against real servers, the server's methods with two clients, the app's screens, and end to
+  end in the real app, as far as the model receiving the marketplace's skill and a plugin's. The
+  end-to-end MCP item asks for two secrets and gets one, so `npx` never fetches a package there.
 
 ### Voice — decided 2026-10-24
 

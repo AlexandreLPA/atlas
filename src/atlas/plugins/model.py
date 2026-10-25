@@ -178,6 +178,8 @@ class Dependency:
 @dataclass(frozen=True, slots=True)
 class Manifest:
     name: str
+    #: Its name for people (`displayName`), where the marketplace and the screens show it.
+    display_name: str = ""
     version: str = ""
     description: str = ""
     author: str = ""
@@ -543,6 +545,7 @@ def parse_manifest(
     author = data.get("author")
     return Manifest(
         name=name,
+        display_name=_text(data, "displayName"),
         version=_text(data, "version"),
         description=_text(data, "description"),
         author=_text(author, "name") if isinstance(author, dict) else "",  # pyright: ignore[reportUnknownArgumentType]

@@ -1,5 +1,6 @@
 {
   "name": "telegram",
+  "displayName": "Telegram",
   "version": "0.1.0",
   "description": "Talk to Atlas from Telegram, through a bot of your own: replies, questions and approvals in the chat.",
   "author": { "name": "the Atlas contributors" },

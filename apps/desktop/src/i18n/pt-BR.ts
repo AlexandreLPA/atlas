@@ -287,6 +287,70 @@ export const ptBR: Override<Messages> = {
     status: (status: string) => STATUSES[status] ?? status,
     title: 'Rotinas'
   },
+  marketplace: {
+    back: 'Todos os itens',
+    brought: (names: string) => `Também instalado, porque ele precisa: ${names}.`,
+    by: (author: string) => `de ${author}`,
+    cancel: 'Cancelar',
+    community: 'Comunidade',
+    confirmRemove: 'Remover?',
+    empty: 'Nada aqui ainda.',
+    entry: 'O que entra no seu mcp.json',
+    homepage: 'Página',
+    install: 'Instalar',
+    installed: 'Instalado',
+    installing: 'Instalando…',
+    intro:
+      'Skills, servidores MCP, plugins e executores feitos para o Atlas. Cada um foi revisado, e instala exatamente como foi revisado.',
+    kinds: { executor: 'Executor', mcp: 'Servidor MCP', plugin: 'Plugin', skill: 'Skill' },
+    license: (license: string) => `Licença ${license}`,
+    localChanges: (name: string) =>
+      `${name} foi mudado aqui depois que veio. Atualizar mesmo assim? O que ele tem agora fica guardado como uma versão que dá para trazer de volta.`,
+    loadingPage: 'Lendo a página…',
+    need: {
+      program: (name: string, state: string) =>
+        state === 'met' ? `${name}: está neste computador` : `${name}: não está neste computador (instala mesmo assim)`,
+      server: (name: string, state: string) =>
+        state === 'met'
+          ? `Servidor MCP ${name}: já está aqui`
+          : state === 'brought'
+            ? `Servidor MCP ${name}: vem junto`
+            : `Servidor MCP ${name}: falta, e a loja não tem`,
+      system: (names: string, state: string) =>
+        state === 'met' ? `Funciona aqui (${names})` : `Só funciona em ${names}`
+    },
+    needs: 'Do que precisa',
+    noMatch: 'Nada combina com a busca.',
+    official: 'Da equipe Atlas',
+    officialBadge: 'Oficial',
+    on: 'Ligado',
+    paste: 'Cole o valor',
+    reading: 'Lendo a loja…',
+    refresh: 'Ler de novo',
+    remove: 'Remover',
+    removing: 'Removendo…',
+    retired: 'Retirado',
+    save: 'Guardar',
+    screenshots: 'Capturas',
+    search: 'Buscar',
+    secretMissing: 'Não guardado',
+    secretStored: 'Guardado',
+    secrets: 'Segredos que ele lê',
+    shipped: 'Vem com o Atlas',
+    source: 'Código-fonte',
+    stale: (problem: string, when: string) =>
+      `Não deu para ler a loja agora (${problem}). Ela estava assim em ${when}.`,
+    tabs: { executor: 'Executores', mcp: 'MCPs', plugin: 'Plugins', skill: 'Skills' },
+    title: 'Loja',
+    turnOn: 'Ligar',
+    turnOnHint: 'Plugins chegam desligados. Ligar mostra o que ele declara, para o seu consentimento.',
+    unavailable: 'Indisponível',
+    unread: (problem: string) => `Não deu para ler a loja: ${problem}`,
+    update: 'Atualizar',
+    updateAnyway: 'Atualizar mesmo assim',
+    updating: 'Atualizando…',
+    version: (version: string) => `Versão ${version}`
+  },
   soul: {
     blank: 'Em branco, vale o padrão do Atlas:',
     intro:

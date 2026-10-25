@@ -14,8 +14,10 @@ waits for consent again, its fingerprint changed. Removing takes away only a plu
 address: one the user wrote in the folder is theirs to delete. Its data folder stays (Atlas's
 own choice, marked).
 
-**Not Claude Code's marketplaces yet:** they name plugins in a catalog, which Atlas has not opened.
-So a dependency missing is said, not installed: there is no catalog to find it in.
+**From the marketplace** (step 16s): the marketplace fetches a plugin at its pinned commit itself
+and hands the folder to `place`, which records it under `marketplace:<name>`; such a plugin is
+updated through the marketplace, never from its address. A dependency missing is still said, not
+installed.
 """
 
 import json
@@ -42,6 +44,9 @@ INSTALLED_FILE = ".install-metadata.json"
 _STAGING = ".installing"
 #: How long a clone may take.
 GIT_SECONDS = 300.0
+#: What the record of a plugin installed from the marketplace says it came from, before the
+#: item's name.
+MARKETPLACE_SOURCE = "marketplace:"
 
 _COMMIT = re.compile(r"^[0-9a-f]{7,40}$")
 _GITHUB_TREE = re.compile(
@@ -161,12 +166,30 @@ def update(plugins: Plugins, name: str, *, git: str = "git") -> tuple[Found, boo
         raise PluginError(
             f"{name} was not installed by address, so there is nowhere to update it from."
         )
+    if record.source.startswith(MARKETPLACE_SOURCE):
+        raise PluginError(
+            f"{name} came from the marketplace: update it there, or with "
+            f"`atlas marketplace update {name}`."
+        )
     address = Address(record.url, record.subdir, record.ref, folder=not record.revision)
     found, revision = _fetch(plugins, address, git, replacing=name, force=True)
     changed = address.folder or revision != record.revision
     _record(plugins.folder, name, Installed(record.source, record.url, record.subdir, record.ref,
             revision, record.installed_at))  # fmt: skip
     return found, changed
+
+
+def place(
+    plugins: Plugins, folder: Path, record: Installed, *, replacing: str | None = None
+) -> Found:
+    """Put a plugin fetched elsewhere (the marketplace's, at its commit) in the home's plugins
+    folder, checked as Atlas loads it, recorded as `record` says it came; it arrives off.
+    `replacing` names the installed plugin it updates. Raises `PluginError`."""
+    address = Address(str(folder), folder=True)
+    found, _ = _fetch(plugins, address, "git", replacing=replacing, force=bool(replacing))
+    _record(plugins.folder, found.name, record)
+    _logger.info("A plugin was put in place.", extra={"plugin": found.name})
+    return found
 
 
 def remove(plugins: Plugins, name: str) -> Path:

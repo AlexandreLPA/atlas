@@ -104,6 +104,16 @@ from atlas.instances import (
 )
 from atlas.jobs import SCHEMA as JOBS_SCHEMA
 from atlas.jobs import JobsError, Routine, Routines, RoutineStore
+from atlas.marketplace import (
+    Kind,
+    Marketplace,
+    MarketplaceError,
+    MarketplaceStore,
+    Row,
+    State,
+    shipped_names,
+)
+from atlas.marketplace import check as check_marketplace
 from atlas.memory import SCHEMA as MEMORY_SCHEMA
 from atlas.memory import Action, MemoryFiles, Operation, Proposals, ProposalStore
 from atlas.models import SCHEMA as MODELS_SCHEMA
@@ -507,6 +517,59 @@ def build_parser() -> argparse.ArgumentParser:
     )
     plugin_remove.add_argument("name")
 
+    market = commands.add_parser(
+        "marketplace",
+        help="The marketplace: skills, MCP servers, plugins and executors made for Atlas, each "
+        "reviewed and pinned to a commit.",
+    )
+    market_actions = market.add_subparsers(dest="action", required=True)
+    market_list = market_actions.add_parser(
+        "list", help="What the marketplace offers, what Atlas ships, and what came from it."
+    )
+    market_list.add_argument("--kind", choices=[kind.value for kind in Kind])
+    market_list.add_argument("--refresh", action="store_true", help="Read the marketplace now.")
+    market_show = market_actions.add_parser(
+        "show", help="An item's page: its README, and what it needs here."
+    )
+    market_show.add_argument("name")
+    market_install = market_actions.add_parser(
+        "install", help="Install an item, with the MCP servers a skill needs; a plugin arrives off."
+    )
+    market_install.add_argument("name")
+    market_update = market_actions.add_parser(
+        "update", help="Bring an installed item to the marketplace's version."
+    )
+    market_update.add_argument("name")
+    market_update.add_argument(
+        "--force",
+        action="store_true",
+        help="Update a skill or a server changed here since it came; a skill keeps what it held.",
+    )
+    market_remove = market_actions.add_parser(
+        "remove", help="Take away an item installed from the marketplace."
+    )
+    market_remove.add_argument("name")
+    market_check = market_actions.add_parser(
+        "check",
+        help="Check item files as the marketplace's CI does: each by its rules, its code fetched "
+        "at its commit.",
+    )
+    market_check.add_argument(
+        "items",
+        nargs="*",
+        type=Path,
+        help="Item files; by default every one in the folder's items.",
+    )
+    market_check.add_argument(
+        "--root", type=Path, default=Path(), help="The marketplace's folder; by default this one."
+    )
+    market_check.add_argument(
+        "--load",
+        action="store_true",
+        help="Also load each plugin's Python, in a home thrown away after: only where foreign "
+        "code may run, as the marketplace's CI.",
+    )
+
     pairing = commands.add_parser("pairing", help="Who may talk to Atlas through a channel.")
     pairing_actions = pairing.add_subparsers(dest="action", required=True)
     pairing_actions.add_parser("list", help="The people let in, and those waiting with a code.")
@@ -613,8 +676,17 @@ def main(
             return _server(args, home, loaded.settings, vault)
         if args.command in ("plugins", "pairing"):
             return _plugins(args, home, vault, reader)
+        if args.command == "marketplace":
+            return _marketplace(args, home, loaded.settings, vault)
         return _secrets(args, vault, reader)
-    except (SecretsError, HomeError, ModelsError, PluginError, InstancesError) as error:
+    except (
+        SecretsError,
+        HomeError,
+        ModelsError,
+        PluginError,
+        InstancesError,
+        MarketplaceError,
+    ) as error:
         sys.stderr.write(f"atlas: {error}\n")
         return 1
 
@@ -1690,6 +1762,111 @@ def _plugin_validate(folder: Path) -> int:
         sys.stdout.write(f"  problem: {problem}\n")
     sys.stdout.write("It loads as Atlas loads it.\n" if found.ok else "It does not load.\n")
     return 0 if found.ok else 1
+
+
+_KIND_TITLES = {
+    Kind.SKILL: "Skills",
+    Kind.MCP: "MCP servers",
+    Kind.PLUGIN: "Plugins",
+    Kind.EXECUTOR: "Executors",
+}
+
+
+def _marketplace(args: argparse.Namespace, home: Home, settings: Settings, vault: Vault) -> int:
+    """`atlas marketplace` (step 16s). A server serving the home sees what changes: a plugin
+    within a second, `mcp.json` within a few, a skill at the next turn."""
+    action: str = args.action
+    store = MarketplaceStore(home.marketplace_folder, settings.marketplace)
+    if action == "check":
+        root: Path = args.root
+        items: list[Path] = args.items or sorted((root / "items").glob("*.yaml"))
+        problems = check_marketplace(
+            items, store, root=root, shipped=shipped_names(), load=args.load
+        )
+        lines = [line for problem in problems for line in problem.splitlines()]
+        for line in lines:
+            sys.stdout.write(f"{line}\n")
+        checked = f"{len(items)} {'item' if len(items) == 1 else 'items'} checked"
+        found = f"{len(lines)} {'problem' if len(lines) == 1 else 'problems'}"
+        if lines:
+            sys.stdout.write(f"{checked}: {found}.\n")
+        elif items:
+            sys.stdout.write(f"{checked}: each may enter.\n")
+        else:
+            sys.stdout.write("No items yet: the marketplace's own files read well.\n")
+        return 1 if lines else 0
+    database = _migrate(home)
+    market = Marketplace(
+        home,
+        store,
+        Plugins(home, database, vault),
+        SkillLibrary(home.skills_folder, SkillUsage(database)),
+        stored=vault.names,
+    )
+    if action == "list":
+        listing = market.listing(refresh=args.refresh)
+        if listing.problem:
+            sys.stdout.write(f"The marketplace could not be read now: {listing.problem}\n")
+        for kind in Kind:
+            if args.kind and kind.value != args.kind:
+                continue
+            rows = [row for row in listing.rows if row.kind is kind]
+            if rows:
+                sys.stdout.write(f"{_KIND_TITLES[kind]}\n")
+            for row in rows:
+                sys.stdout.write(_market_line(row))
+        return 0
+    name: str = args.name
+    if action == "show":
+        page = market.page(name)
+        row = page.row
+        sys.stdout.write(_market_line(row))
+        if row.source_url:
+            sys.stdout.write(f"  {row.source_url}\n")
+        for need in page.needs:
+            sys.stdout.write(f"  needs the {need.kind} {need.name}: {need.state}\n")
+        for secret in page.secrets:
+            stored = "stored" if secret.stored else "not stored"
+            sys.stdout.write(f"  secret {secret.name}: {stored}. {secret.description}\n")
+        sys.stdout.write(f"\n{page.readme.strip()}\n")
+        return 0
+    if action == "remove":
+        market.remove(name)
+        sys.stdout.write(f"{name} was removed.\n")
+        return 0
+    done = market.install(name) if action == "install" else market.update(name, force=args.force)
+    if done.local_changes:
+        sys.stdout.write(
+            f"{name} was changed here since it came. Run again with --force to update it; a "
+            "skill keeps what it holds now as a version.\n"
+        )
+        return 1
+    if not done.changed:
+        sys.stdout.write(f"{name} is up to date.\n")
+        return 0
+    for brought in done.changed[:-1]:
+        sys.stdout.write(f"{brought} came along, since {name} needs it.\n")
+    sys.stdout.write(f"{name} is {'installed' if action == 'install' else 'updated'}.\n")
+    if done.row.state is State.OFF:
+        sys.stdout.write(f"Turn it on with `atlas plugins enable {name}`, or in the app.\n")
+    if done.row.problem:
+        sys.stdout.write(f"{done.row.problem}\n")
+    return 0
+
+
+def _market_line(row: Row) -> str:
+    marks = [row.state.value]
+    if row.tier.value == "official":
+        marks.append("official")
+    if row.update:
+        marks.append("update")
+    version = f" {row.version}" if row.version else ""
+    line = f"  {row.name}{version}  {row.title} by {row.author}  ({', '.join(marks)})\n"
+    if row.summary:
+        line += f"    {row.summary}\n"
+    if row.problem:
+        line += f"    {row.problem}\n"
+    return line
 
 
 def _bots(args: argparse.Namespace, home: Home, stdin: TextIO) -> int:

@@ -415,6 +415,11 @@ def test_an_installed_programs_files_are_not_read_as_scripts(tmp_path: Path) -> 
         "atlas plugins new my-plugin",
         "atlas pairing approve ABCD2345",
         "atlas pairing forget telegram 100",
+        # An MCP server from the marketplace connects as it is installed (step 16s).
+        "atlas marketplace install docs",
+        "atlas marketplace update pdf --force",
+        "atlas marketplace remove video",
+        "uv run atlas marketplace install docs",
         "atlas --home work pairing approve ABCD2345",
         "atlas --home=work plugins enable telegram",
         "python -m atlas plugins enable telegram --yes",
@@ -438,6 +443,10 @@ def test_atlas_s_own_decisions_are_the_users_whatever_the_spelling(command: str)
         # It loads the plugin in a home of its own, thrown away after.
         "atlas plugins validate ./my-plugin",
         "atlas pairing list",
+        "atlas marketplace list --refresh",
+        "atlas marketplace show docs",
+        # The marketplace's CI: a plugin's Python loaded in a home thrown away after.
+        "atlas marketplace check items/video.yaml --load",
         "atlas update",
         "ls ~/.atlas/skills",
         "cat ~/.atlas/plugins-notes.txt",

@@ -55,7 +55,7 @@ class SyncResult:
     failed: list[str] = field(default_factory=lambda: [])
 
 
-def _files(folder: Path) -> dict[PurePosixPath, bytes]:
+def skill_files(folder: Path) -> dict[PurePosixPath, bytes]:
     """A skill's files, without what running its scripts left behind."""
     files: dict[PurePosixPath, bytes] = {}
     for path in sorted(folder.rglob("*")):
@@ -65,7 +65,7 @@ def _files(folder: Path) -> dict[PurePosixPath, bytes]:
     return files
 
 
-def _hash(files: dict[PurePosixPath, bytes]) -> str:
+def files_digest(files: dict[PurePosixPath, bytes]) -> str:
     digest = hashlib.sha256()
     for relative, data in sorted(files.items()):
         digest.update(str(relative).encode("utf-8") + b"\0")
@@ -110,7 +110,7 @@ def changed(library: SkillLibrary, name: str, manifest: dict[str, str]) -> bool 
     folder = library.folder / name
     if digest is None or not folder.is_dir():
         return None
-    return _hash(_files(folder)) != digest
+    return files_digest(skill_files(folder)) != digest
 
 
 def sync_bundled(library: SkillLibrary, source: Path = BUNDLED_FOLDER) -> SyncResult:
@@ -119,14 +119,14 @@ def sync_bundled(library: SkillLibrary, source: Path = BUNDLED_FOLDER) -> SyncRe
     shipped = bundled_skills(source)
     manifest = read_manifest(library.folder)
     for name, folder in shipped.items():
-        files = _files(folder)
-        digest = _hash(files)
+        files = skill_files(folder)
+        digest = files_digest(files)
         dest = library.folder / name
         try:
             if name not in manifest:
                 if dest.exists():
                     result.taken.append(name)
-                    if _hash(_files(dest)) == digest:
+                    if files_digest(skill_files(dest)) == digest:
                         manifest[name] = digest
                     continue
                 library.put(name, files)
@@ -134,7 +134,7 @@ def sync_bundled(library: SkillLibrary, source: Path = BUNDLED_FOLDER) -> SyncRe
                 result.copied.append(name)
             elif not dest.exists() or manifest[name] == digest:
                 continue  # deleted by the user, or unchanged in the repository
-            elif _hash(_files(dest)) != manifest[name]:
+            elif files_digest(skill_files(dest)) != manifest[name]:
                 result.kept.append(name)
             else:
                 library.put(name, files)
@@ -157,8 +157,8 @@ def reset_bundled(library: SkillLibrary, name: str, source: Path = BUNDLED_FOLDE
     folder = bundled_skills(source).get(name)
     if folder is None:
         raise SkillChangeError(f"'{name}' is not a skill Atlas ships.")
-    files = _files(folder)
+    files = skill_files(folder)
     library.put(name, files)
     manifest = read_manifest(library.folder)
-    manifest[name] = _hash(files)
+    manifest[name] = files_digest(files)
     _write_manifest(library.folder, manifest)

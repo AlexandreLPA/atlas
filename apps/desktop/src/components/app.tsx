@@ -30,6 +30,7 @@ import { BotEmpty, BotHeader } from './bot-header'
 import { Composer } from './composer'
 import { HomeDialogHost } from './home-dialog'
 import { KeyBand, KeyScreen } from './key-screen'
+import { MarketplaceView } from './marketplace-view'
 import { PreviewLinks } from './preview-links'
 import { ProposalCard } from './proposal-card'
 import { approvedHere, ProposalsView } from './proposals-view'
@@ -125,6 +126,8 @@ export function App() {
           <ProposalsView />
         ) : view === 'routines' ? (
           <RoutinesView />
+        ) : view === 'marketplace' ? (
+          <MarketplaceView />
         ) : view === 'plugin' ? (
           <PluginPage />
         ) : view === 'session' ? (

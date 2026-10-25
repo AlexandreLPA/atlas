@@ -92,6 +92,12 @@ becomes an identifier. Portuguese is listed because the roadmap is written in Po
 | `global shortcut` | atalho global | A key a plugin's screen registers with the system, heard while another program has the focus (screen version 3) |
 | `live conversation` | conversa por voz | The voice plugin's spoken conversation: OpenAI's full-duplex voice model talks with the user and hands each real request to Atlas |
 | `spoken turn` | turno falado | A turn the live conversation handed over: the user's last words as the message, and a note of Atlas's saying it is speech and will be spoken |
+| `marketplace` | loja | The public repository of what people made for Atlas, each item entered by a pull request the maintainer reviewed and pinned to a commit, and its screen in the app (step 16s). `store` already names the plugins' state and the app's screen state, so the code says `marketplace` |
+| `marketplace item` | item da loja | One file of the marketplace's `items/`: a skill, an MCP server, a plugin or an executor, with its repository, its folder and its commit (an MCP server: its `mcp.json` entry, pinned to a version) |
+| `item kind` | tipo do item | Which of the four an item is: `skill`, `mcp`, `plugin` or `executor`. A plugin is the bundle; the marketplace's CI checks that an item brings what its kind says |
+| `official item` | item oficial | An item by the Atlas team, marked so by the maintainer alone; what Atlas ships is listed as official |
+| `retired item` | item retirado | An item the marketplace pulled for safety (`removed.yaml`): refused, and stopped where it was installed (a plugin taken away, a skill archived, an MCP entry dropped) |
+| `skill needs` | do que a skill precisa | What a skill says it needs under `metadata.requires` in its `SKILL.md`: programs (`bins`), MCP servers (`mcp`) and systems (`os`) (`Needs`) |
 | `turn` | turno | One user message and everything the agent does until it answers |
 | `instructions` | instruções | The system prompt of a conversation, built by Atlas: what the agent is (its soul), how to use its memory, and the memory snapshot |
 | `agent loop` | laço do agente | The code that runs a turn: it calls the model, runs the tools the model asks for, and calls it again until it answers |

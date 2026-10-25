@@ -43,6 +43,7 @@ import type {
   InstanceActivityPayload,
   InstanceRow,
   KeyProvider,
+  MarketplaceChanged,
   MemoryEdit,
   MemoryEntries,
   MemoryEntriesParams,
@@ -75,6 +76,7 @@ import type {
 
 import { applyCommand } from './commands'
 import { guarded } from './guarded'
+import { EMPTY_MARKET, type Market, type MarketKind, withRow } from './marketplace'
 import { closePreview, openPreview, targetOf } from './previews'
 import { applyActivity, caughtUp, fromTranscript, type SessionNote, turnEnded, withNotes } from './session'
 import { ended, instanceKey, type Mark } from './status'
@@ -162,7 +164,7 @@ export function folderKey(executor: string, folder: string): string {
 
 /** The bot dialog on screen: a new bot, or one being edited, with its definition as read. */
 export type BotDialog = { definition: BotDefinition | null; mode: 'create' | 'edit' }
-type View = 'conversation' | 'plugin' | 'proposals' | 'routines' | 'session'
+type View = 'conversation' | 'marketplace' | 'plugin' | 'proposals' | 'routines' | 'session'
 
 /**
  * What the user chose for a session open in another program (decided with the user on 15/10/2026):
@@ -271,6 +273,8 @@ export class HomeSession {
   readonly $view = atom<View>('conversation')
   /** The home's routines, read when the home connects and when they change. */
   readonly $routines = atom<RoutineRow[]>([])
+  /** The marketplace's screen (step 16s): read when it opens and when an item changes. */
+  readonly $market = atom<Market>(EMPTY_MARKET)
   /** The home's plugins and the people their channels let in or who wait with a code. */
   readonly $plugins = atom<PluginRow[]>([])
   /** The screens of its plugins that are on (step 16m), which the app loads while it is on screen. */
@@ -1487,6 +1491,91 @@ export class HomeSession {
     this.$routines.set(routines)
   }
 
+  /** Change the marketplace's screen state. */
+  market(change: Partial<Market>): void {
+    this.$market.set({ ...this.$market.get(), ...change })
+  }
+
+  /** Read the marketplace (step 16s); `refresh` reads it from GitHub now, not only once the last
+   * read is an hour old. What was read stays on screen meanwhile. */
+  async refreshMarketplace(refresh = false): Promise<void> {
+    this.market({ error: null, reading: true })
+
+    try {
+      const list = await this.client.call('marketplace.list', { refresh })
+      this.market({ list, page: withRow(this.$market.get().page, list), reading: false })
+    } catch (error) {
+      this.market({ error: error instanceof Error ? error.message : String(error), reading: false })
+    }
+  }
+
+  /** Open an item's page: its README at its commit, and what it needs here. */
+  async openMarketItem(name: string): Promise<void> {
+    this.market({ brought: [], confirming: null, failed: null, open: name, page: null, pageError: null })
+    await this.readMarketPage(name)
+  }
+
+  async readMarketPage(name: string): Promise<void> {
+    try {
+      const page = await this.client.call('marketplace.page', { name })
+
+      if (this.$market.get().open === name) {
+        this.market({ page, pageError: null })
+      }
+    } catch (error) {
+      if (this.$market.get().open === name) {
+        this.market({ pageError: error instanceof Error ? error.message : String(error) })
+      }
+    }
+  }
+
+  /** Install, update or remove an item; the list and its page are read again after. An update the
+   * home changed since waits for the user's word (`confirming`), then comes again with `force`. */
+  async actOnMarket(action: 'install' | 'remove' | 'update', name: string, force = false): Promise<void> {
+    this.market({ brought: [], busy: name, confirming: null, failed: null })
+
+    try {
+      if (action === 'remove') {
+        await this.client.call('marketplace.remove', { name })
+      } else {
+        const done =
+          action === 'install'
+            ? await this.client.call('marketplace.install', { name })
+            : await this.client.call('marketplace.update', { force, name })
+        this.market({
+          brought: done.changed.filter(changed => changed !== name),
+          confirming: done.local_changes ? name : null
+        })
+      }
+    } catch (error) {
+      this.market({ failed: error instanceof Error ? error.message : String(error) })
+    } finally {
+      this.market({ busy: null })
+    }
+
+    await this.refreshMarketplace()
+
+    if (this.$market.get().open === name) {
+      await this.readMarketPage(name)
+    }
+  }
+
+  /** Store a secret an MCP server of the marketplace reads; its value is never read back. */
+  async storeMarketSecret(name: string, secret: string, value: string): Promise<boolean> {
+    try {
+      const page = await this.client.call('marketplace.secret', { name, secret, value })
+      this.market({ failed: null, page })
+    } catch (error) {
+      this.market({ failed: error instanceof Error ? error.message : String(error) })
+
+      return false
+    }
+
+    await this.refreshMarketplace()
+
+    return true
+  }
+
   async refreshPlugins(): Promise<void> {
     const [{ plugins }, { pairings }] = await Promise.all([
       this.client.call('plugin.list', {}),
@@ -1832,11 +1921,32 @@ export class HomeSession {
       // the instances are kept by their own events.
       void this.refreshExecutors().catch(() => undefined)
 
+      // And what the marketplace's card says of it, when the Plugins screen opened over that card.
+      if (this.$view.get() === 'marketplace') {
+        void this.refreshMarketplace()
+      }
+
       return
     }
 
     if (event.type === 'routines.changed') {
       void this.refreshRoutines().catch(() => undefined)
+
+      return
+    }
+
+    if (event.type === 'marketplace.changed') {
+      // Read again only by a screen that read it once; another client or the terminal acted.
+      const changed = event.payload as MarketplaceChanged
+      const { list, open } = this.$market.get()
+
+      if (list !== null) {
+        void this.refreshMarketplace()
+      }
+
+      if (open !== null && (changed.name === '' || changed.name === open)) {
+        void this.readMarketPage(open)
+      }
 
       return
     }
@@ -2024,6 +2134,7 @@ export const $proposals = atom<ProposalRow[]>([])
 export const $approved = map<Record<string, Approved | undefined>>({})
 export const $view = atom<View>('conversation')
 export const $routines = atom<RoutineRow[]>([])
+export const $market = atom<Market>(EMPTY_MARKET)
 export const $plugins = atom<PluginRow[]>([])
 /** The screens of the home on screen's plugins that are on (step 16m). */
 export const $screens = atom<PluginScreenRow[]>([])
@@ -2107,6 +2218,7 @@ const MIRRORS: Mirror[] = [
   mirror($approved, s => s.$approved),
   mirror($view, s => s.$view),
   mirror($routines, s => s.$routines),
+  mirror($market, s => s.$market),
   mirror($plugins, s => s.$plugins),
   mirror($screens, s => s.$screens),
   mirror($pairings, s => s.$pairings),
@@ -2401,6 +2513,48 @@ export function showRoutines(): void {
   const session = current()
   session.$view.set('routines')
   void session.refreshRoutines().catch(() => undefined)
+}
+
+/** Open the marketplace (step 16s) on its list, read again. */
+export function showMarketplace(): void {
+  const session = current()
+  session.$view.set('marketplace')
+  session.market({ confirming: null, failed: null, open: null, page: null })
+  void session.refreshMarketplace()
+}
+
+/** Read the marketplace from GitHub now. */
+export function refreshMarketplace(): void {
+  void current().refreshMarketplace(true)
+}
+
+export function setMarketKind(kind: MarketKind): void {
+  current().market({ kind })
+}
+
+export function setMarketQuery(query: string): void {
+  current().market({ query })
+}
+
+export function openMarketItem(name: string): void {
+  void current().openMarketItem(name)
+}
+
+/** Back from an item's page to the list. */
+export function closeMarketItem(): void {
+  current().market({ brought: [], confirming: null, failed: null, open: null, page: null, pageError: null })
+}
+
+export function actOnMarket(action: 'install' | 'remove' | 'update', name: string, force = false): void {
+  void current().actOnMarket(action, name, force)
+}
+
+export function cancelMarketUpdate(): void {
+  current().market({ confirming: null })
+}
+
+export function storeMarketSecret(name: string, secret: string, value: string): Promise<boolean> {
+  return current().storeMarketSecret(name, secret, value)
 }
 
 /** The main agent's soul, `SOUL.md`, as the open home's server reads it. */

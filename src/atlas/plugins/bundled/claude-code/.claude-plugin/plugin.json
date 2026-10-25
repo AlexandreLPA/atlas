@@ -1,5 +1,6 @@
 {
   "name": "claude-code",
+  "displayName": "Claude Code",
   "version": "0.1.0",
   "description": "Claude Code on Atlas's workbench: the Claude Code installed on this computer, with your own login, working in your folders for you or for Atlas; what it asks reaches you through Atlas.",
   "author": { "name": "the Atlas contributors" },

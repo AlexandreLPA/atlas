@@ -1,5 +1,6 @@
 {
   "name": "deepseek",
+  "displayName": "DeepSeek",
   "version": "0.1.0",
   "description": "DeepSeek's harness (dsh) on Atlas's workbench: the dsh installed on this computer working in your folders for you or for Atlas, on a DeepSeek API key; what it asks reaches you through Atlas. dsh sends DeepSeek its session logs (messages, tools, paths) by default: in the sessions Atlas opens they are off unless the session_logs setting turns them on. It reads your balance from DeepSeek with the key.",
   "author": { "name": "the Atlas contributors" },

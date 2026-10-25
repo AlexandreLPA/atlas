@@ -473,6 +473,94 @@ export interface PluginCallParams {
 export interface PluginCallResult {
   result: unknown
 }
+export interface MarketplaceListParams {
+  /** Read the marketplace again now, not only once the last read is an hour old. */
+  refresh?: boolean
+}
+export interface MarketplaceList {
+  name: string
+  description: string
+  items: MarketplaceRow[]
+  /** When the marketplace was last read well, in UTC; `null` when it never was. */
+  read_at: string | null
+  /** Why it could not be read now: the last read stands in, or nothing does. */
+  problem: string | null
+}
+/** An item as the marketplace's screen lists it (step 16s). */
+export interface MarketplaceRow {
+  name: string
+  kind: 'skill' | 'mcp' | 'plugin' | 'executor'
+  title: string
+  summary: string
+  /** The GitHub account that made it; `Atlas` for what Atlas ships. */
+  author: string
+  license: string
+  /** `official`: made by the Atlas team. */
+  tier: 'official' | 'community'
+  version: string
+  state: 'available' | 'installed' | 'off' | 'on' | 'retired'
+  /** Atlas ships it: it is turned on, never installed. */
+  shipped: boolean
+  /** The marketplace has another version than the one installed. */
+  update: boolean
+  /** Its picture, from its own repository at its commit; empty for none. */
+  image: string
+  /** Where its code is read, at its commit; an MCP server's page. */
+  source_url: string
+  /** What keeps it from installing or running, or why it was retired. */
+  problem: string | null
+}
+export interface MarketplaceRef {
+  name: string
+}
+/** An item's page: its README at its commit (a skill's own `SKILL.md`), and what it needs. */
+export interface MarketplacePage {
+  item: MarketplaceRow
+  /** Markdown, from the item's repository: raw HTML is not to be rendered. */
+  readme: string
+  /** Where its relative pictures are read, and its relative links lead; empty for none. */
+  picture_base: string
+  link_base: string
+  needs: MarketplaceNeed[]
+  secrets: MarketplaceSecretRow[]
+  screenshots: string[]
+  homepage: string
+  /** An MCP server's entry as JSON, exactly as it goes into `mcp.json`; empty for the others. */
+  entry: string
+}
+/** Something a skill says it needs: a program, an MCP server, or the systems it works on. */
+export interface MarketplaceNeed {
+  kind: 'program' | 'server' | 'system'
+  name: string
+  /** `brought`: a server the marketplace installs along with the skill. */
+  state: 'met' | 'brought' | 'missing'
+}
+export interface MarketplaceSecretRow {
+  name: string
+  description: string
+  url: string
+  /** The vault holds it. Its value is never sent. */
+  stored: boolean
+}
+export interface MarketplaceDone {
+  item: MarketplaceRow
+  /** The items installed or updated, those brought along first. */
+  changed: string[]
+  /** Not updated: it was changed here since it came, so it waits for `force`. */
+  local_changes: boolean
+}
+export interface MarketplaceUpdateParams {
+  name: string
+  /** Update a skill or a server changed in the home since it came; a skill keeps it as a version. */
+  force?: boolean
+}
+export interface MarketplaceSecretParams {
+  /** The item, an MCP server, that reads the secret. */
+  name: string
+  secret: string
+  /** The value the user pasted. It is never sent back. */
+  value: string
+}
 export interface PairingList {
   pairings: PairingRow[]
 }
@@ -1424,6 +1512,10 @@ export interface PluginsChanged {
   /** How many people wait with a code. */
   waiting: number
 }
+export interface MarketplaceChanged {
+  /** What was installed, updated, removed or retired; empty when the marketplace was read again. */
+  name: string
+}
 export interface InstanceActivityPayload {
   instance_id: string
   /** `said`, `thought`, `called` (`text` is the tool and its input), `returned`, `prompted`, `steered` (a prompt that entered the turn running), `answered` (Atlas answered for the user), `compacted` (the harness compacted its session, `text` says how much), `account` (at a plan's limit it went on on the account `text` names) or `route` (at a plan's limit it went on, by its session's route, on the executor and account `text` names); a `failed` `account` or `route` says why it could not. */
@@ -1541,6 +1633,18 @@ export interface RpcMethods {
   'home.picture': { params: Empty; result: HomePicture }
   /** Keep a square PNG as the home's picture, or take it away with `null`; a backup carries it. */
   'home.set_picture': { params: HomePicture; result: HomePicture }
+  /** Install an item, with the MCP servers a skill needs; a plugin arrives off, for the consent of plugin.enable. */
+  'marketplace.install': { params: MarketplaceRef; result: MarketplaceDone }
+  /** The marketplace (step 16s): what it offers, what Atlas ships and what came from it, read again when the last read is an hour old or when asked. */
+  'marketplace.list': { params: MarketplaceListParams; result: MarketplaceList }
+  /** An item's page: its README at its commit, and what it needs in this home. */
+  'marketplace.page': { params: MarketplaceRef; result: MarketplacePage }
+  /** Take away an item installed from the marketplace: a skill is archived, a plugin's data stays. */
+  'marketplace.remove': { params: MarketplaceRef; result: MarketplaceRow }
+  /** Store a secret an MCP server of the marketplace reads, and try the server again. The value is never sent back. */
+  'marketplace.secret': { params: MarketplaceSecretParams; result: MarketplacePage }
+  /** Bring an installed item to the marketplace's version; one changed here waits for force. */
+  'marketplace.update': { params: MarketplaceUpdateParams; result: MarketplaceDone }
   /** Apply a memory proposal, only if the entries it changes are as they were; it stays when it cannot apply. */
   'memory.approve': { params: ProposalRef; result: ProposalApproved }
   /** Drop a memory proposal without applying it. */
@@ -1711,6 +1815,12 @@ export const RPC_METHODS = [
   'home.list',
   'home.picture',
   'home.set_picture',
+  'marketplace.install',
+  'marketplace.list',
+  'marketplace.page',
+  'marketplace.remove',
+  'marketplace.secret',
+  'marketplace.update',
   'memory.approve',
   'memory.discard',
   'memory.edit',
@@ -1807,6 +1917,8 @@ export interface EventMap {
   'executor.accounts': AccountsChanged
   /** An executor's plan usage changed: read with executor.usage, or told by its harness as one of its instances worked. */
   'executor.usage': ExecutorUsageRow
+  /** An item was installed, updated, removed or retired, from any client or the terminal; read marketplace.list. */
+  'marketplace.changed': MarketplaceChanged
   /** The turn ended: its text and outcome. */
   'message.complete': MessageComplete
   /** A piece of the reply's text. */
@@ -1869,6 +1981,7 @@ export const EVENT_NAMES = [
   'conversations.changed',
   'executor.accounts',
   'executor.usage',
+  'marketplace.changed',
   'message.complete',
   'message.delta',
   'message.file',

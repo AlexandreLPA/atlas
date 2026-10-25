@@ -802,6 +802,12 @@ class Assistant:
         if shared.mcp is not None:
             await shared.mcp.reload_plugins()
 
+    async def reload_mcp(self) -> None:
+        """The home's `mcp.json` changed (the marketplace wrote it, or the user did): its new
+        servers connect and the ones gone or changed stop, the others left connected."""
+        if self._shared.mcp is not None:
+            await self._shared.mcp.reload_file()
+
     # -- the process ------------------------------------------------------------------------------
 
     def start(self) -> None:

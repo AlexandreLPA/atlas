@@ -7,6 +7,7 @@ Plugins): YAML frontmatter, then the instructions. What Atlas reads, as Claude C
 - `name`, by default the folder's name; `description`, by default the body's first line of prose;
   `when_to_use`, added to the description. Fields Atlas does not read are ignored, not refused.
 - `disable-model-invocation: true` keeps the skill out of the model's reach: unlisted and refused.
+- `metadata.requires` says what the skill needs: `bins`, `mcp` and `os` (`Needs`, step 16s).
 - **The listing** names every skill; descriptions fill a budget of 1% of the model's context window
   and each is cut at 60 characters (decided 2026-10-09, so skill_manage fits the always-on
   budget). Past the budget a skill is listed by name only.
@@ -56,6 +57,21 @@ NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 PLUGIN_SKILL = re.compile(r"^[a-z0-9][a-z0-9-]*:[A-Za-z0-9][A-Za-z0-9._-]*$")
 _TRUE = frozenset({"true", "yes", "on", "1"})
 _FALSE = frozenset({"false", "no", "off", "0"})
+#: The systems a skill may say it works on, and the other names it may give them.
+SYSTEMS = ("windows", "macos", "linux")
+_SYSTEM_NAMES = {"win32": "windows", "darwin": "macos"}
+
+
+@dataclass(frozen=True, slots=True)
+class Needs:
+    """What a skill says it needs, under `metadata.requires` in its frontmatter (step 16s): the
+    programs it runs (`bins`), the MCP servers it calls (`mcp`) and the systems it works on
+    (`os`). The marketplace checks them before it installs a skill; a skill that misses one still
+    loads, and the model may ask for what is missing."""
+
+    programs: tuple[str, ...] = ()
+    servers: tuple[str, ...] = ()
+    systems: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +89,7 @@ class Skill:
     #: A plugin's command (`commands/<name>.md`), one file where a skill is a folder: its
     #: folder holds the plugin's other commands, which are not its files.
     command: bool = False
+    needs: Needs = Needs()
 
 
 def parse_command(text: str, file: Path) -> Skill:
@@ -117,7 +134,31 @@ def parse_skill(text: str, folder: Path) -> Skill:
         folder=folder,
         model_invocable=str(fields.get("disable-model-invocation", "")).lower() not in _TRUE,
         user_invocable=str(fields.get("user-invocable", "true")).lower() not in _FALSE,
+        needs=_needs(fields),
     )
+
+
+def _needs(fields: Mapping[str, Any]) -> Needs:
+    metadata: object = fields.get("metadata")
+    requires: object = (
+        cast("Mapping[str, object]", metadata).get("requires")
+        if isinstance(metadata, Mapping)
+        else None
+    )
+    if not isinstance(requires, Mapping):
+        return Needs()
+    declared = cast("Mapping[str, object]", requires)
+
+    def names(key: str) -> tuple[str, ...]:
+        value = declared.get(key)
+        listed = [value] if isinstance(value, str) else value
+        if not isinstance(listed, list):
+            return ()
+        clean = (str(item).strip() for item in cast("list[object]", listed))
+        return tuple(dict.fromkeys(item for item in clean if item))
+
+    systems = (_SYSTEM_NAMES.get(name.lower(), name.lower()) for name in names("os"))
+    return Needs(names("bins"), names("mcp"), tuple(dict.fromkeys(systems)))
 
 
 def _split(text: str, folder: Path) -> tuple[dict[str, Any], str]:

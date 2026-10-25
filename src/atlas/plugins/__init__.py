@@ -3,8 +3,9 @@ and the SDK their Python is written against (`atlas.plugins.sdk`), whose types t
 reaches here."""
 
 from atlas.plugins.authoring import Validation, new_plugin, validate
-from atlas.plugins.install import Installed, installed
+from atlas.plugins.install import MARKETPLACE_SOURCE, Installed, installed
 from atlas.plugins.install import install as install_plugin
+from atlas.plugins.install import place as place_plugin
 from atlas.plugins.install import remove as remove_plugin
 from atlas.plugins.install import update as update_plugin
 from atlas.plugins.model import (
@@ -79,12 +80,13 @@ from atlas.plugins.service import (
     PluginScreen,
     PluginView,
 )
-from atlas.plugins.store import BUNDLED_FOLDER, SCHEMA
+from atlas.plugins.store import BUNDLED_FOLDER, SCHEMA, Found, read_plugin
 
 __all__ = [
     "API_VERSION",
     "BUNDLED_FOLDER",
     "MANIFEST",
+    "MARKETPLACE_SOURCE",
     "SCHEMA",
     "Account",
     "Admission",
@@ -107,6 +109,7 @@ __all__ = [
     "ExecutorSpec",
     "FileChannel",
     "Finished",
+    "Found",
     "HookRun",
     "Inbound",
     "InboundFile",
@@ -155,6 +158,8 @@ __all__ = [
     "install_plugin",
     "installed",
     "new_plugin",
+    "place_plugin",
+    "read_plugin",
     "remove_plugin",
     "update_plugin",
     "validate",

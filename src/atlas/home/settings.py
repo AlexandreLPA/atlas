@@ -36,14 +36,18 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from atlas.home.errors import SettingsError
 from atlas.home.files import replace_file
 from atlas.home.model import (
+    ARCHIVE_URL,
     CONFIG_FILE,
     DEFAULT_HOST,
     DEFAULT_PORT,
     LOG_LEVELS,
+    MARKETPLACE_REPOSITORY,
+    RAW_URL,
     BrowserSettings,
     Home,
     LogLevel,
     LogSettings,
+    MarketplaceSettings,
     ModelSettings,
     SecretText,
     ServerSettings,
@@ -134,6 +138,12 @@ def _settings(home: Path, source: "_Source") -> LoadedSettings:
         workspace=WorkspaceSettings(folder=source.path("workspace", "folder")),
         time=TimeSettings(zone=source.zone("time", "zone")),
         browser=BrowserSettings(chrome=source.text_list("browser", "chrome")),
+        marketplace=MarketplaceSettings(
+            repository=source.text("marketplace", "repository", MARKETPLACE_REPOSITORY),
+            branch=source.text("marketplace", "branch", "main"),
+            archive_url=source.text("marketplace", "archive_url", ARCHIVE_URL),
+            raw_url=source.text("marketplace", "raw_url", RAW_URL),
+        ),
     )
     moved = source.refuse_unknown_keys()
     return LoadedSettings(settings, source.unknown_variables(), moved, source.variables())

@@ -14,6 +14,7 @@ import pytest
 
 from atlas.agent import Tool
 from atlas.skills import (
+    Needs,
     Skill,
     SkillCatalog,
     listing,
@@ -286,3 +287,19 @@ def test_a_skills_support_files_are_named_once_for_both_ways_in(skills: Path) ->
     assert support_files(folder, 5) == "Files: data.csv, scripts/fetch.py, template.md."
     assert support_files(skills / "notes", 5) == ""
     assert support_files(skills / "missing", 5) == ""
+
+
+def test_what_a_skill_needs_is_read_from_its_frontmatter(tmp_path: Path) -> None:
+    """Step 16s: `metadata.requires`, as the skills Atlas ships for gws already write it."""
+    text = (
+        "---\nname: video\ndescription: Cut videos.\nmetadata:\n  requires:\n"
+        "    bins: [ffmpeg, ffmpeg, ' magick ']\n    mcp: docs\n    os: [Darwin, linux, win32]\n"
+        "---\nCut it.\n"
+    )
+    needs = parse_skill(text, tmp_path / "video").needs
+    assert needs.programs == ("ffmpeg", "magick")
+    assert needs.servers == ("docs",)
+    assert needs.systems == ("macos", "linux", "windows")
+    assert parse_skill("---\nname: plain\n---\nBody.\n", tmp_path / "plain").needs == Needs()
+    odd = "---\nname: odd\nmetadata: just text\n---\nBody.\n"
+    assert parse_skill(odd, tmp_path / "odd").needs == Needs()

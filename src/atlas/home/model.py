@@ -49,6 +49,8 @@ LOGS_FOLDER = "logs"
 PLUGINS_FOLDER = "plugins"
 #: Each plugin's own data, kept across its updates (Claude Code's `${CLAUDE_PLUGIN_DATA}`).
 PLUGIN_DATA_FOLDER = "plugin-data"
+#: What was installed from the marketplace, and the marketplace as last read (step 16s).
+MARKETPLACE_FOLDER = "marketplace"
 #: The system home folder of the user Atlas runs as, when it lives in the home: the container's
 #: `HOME=/data/home`, so what the agent makes outlives a new image (ARCHITECTURE.md, Container).
 USER_HOME_FOLDER = "home"
@@ -120,6 +122,13 @@ LAYOUT: tuple[Entry, ...] = (
         True,
         EntryClass.USER,
         "each plugin's own data, one folder each, kept across its updates",
+    ),
+    Entry(
+        MARKETPLACE_FOLDER,
+        True,
+        EntryClass.USER,
+        "what was installed from the marketplace, so it can be updated, and the marketplace as "
+        "last read",
     ),
     Entry(
         BOTS_FOLDER,
@@ -284,6 +293,10 @@ class Home:
         return self.root / PLUGIN_DATA_FOLDER
 
     @property
+    def marketplace_folder(self) -> Path:
+        return self.root / MARKETPLACE_FOLDER
+
+    @property
     def documents_folder(self) -> Path:
         return self.root / DOCUMENTS_FOLDER
 
@@ -414,6 +427,26 @@ class BrowserSettings:
     chrome: tuple[str, ...] = ()
 
 
+#: The marketplace Atlas reads (step 16s), and where GitHub serves a repository's archive and one
+#: of its files at a commit or a branch.
+MARKETPLACE_REPOSITORY = "marqueskaio/atlas-marketplace"
+ARCHIVE_URL = "https://codeload.github.com/{repo}/tar.gz/{ref}"
+RAW_URL = "https://raw.githubusercontent.com/{repo}/{ref}/{path}"
+
+
+@dataclass(frozen=True, slots=True)
+class MarketplaceSettings:
+    #: The marketplace's repository on GitHub, `owner/name`.
+    repository: str = MARKETPLACE_REPOSITORY
+    #: The branch Atlas reads it from.
+    branch: str = "main"
+    #: Where a repository's archive is fetched, with `{repo}` and `{ref}`: a mirror's address, or
+    #: a test's.
+    archive_url: str = ARCHIVE_URL
+    #: Where one file of a repository is read, with `{repo}`, `{ref}` and `{path}`.
+    raw_url: str = RAW_URL
+
+
 @dataclass(frozen=True, slots=True)
 class Settings:
     """Every setting, read once at startup and passed to whoever needs it."""
@@ -427,6 +460,7 @@ class Settings:
     workspace: WorkspaceSettings = field(default_factory=WorkspaceSettings)
     time: TimeSettings = field(default_factory=TimeSettings)
     browser: BrowserSettings = field(default_factory=BrowserSettings)
+    marketplace: MarketplaceSettings = field(default_factory=MarketplaceSettings)
 
 
 # -- migrations ----------------------------------------------------------------------------------

@@ -127,6 +127,7 @@ def test_the_vault_never_travels_and_the_database_does() -> None:
         "picture.png": EntryClass.USER,
         "plugins": EntryClass.USER,
         "plugin-data": EntryClass.USER,
+        "marketplace": EntryClass.USER,
         "bots": EntryClass.USER,
         "attachments": EntryClass.USER,
         "documents": EntryClass.MACHINE,

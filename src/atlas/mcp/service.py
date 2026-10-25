@@ -71,6 +71,8 @@ class McpClient:
         self._connections: dict[str, McpConnection] = {}
         #: The plugins' servers connected or tried, as they were declared then.
         self._plugin_servers: dict[str, ServerConfig] = {}
+        #: The file's servers connected or tried, as they were declared then.
+        self._file_declared: dict[str, ServerConfig] = {}
         #: Why a server, or some of its tools, were left out, by server name.
         self.problems: dict[str, str] = {}
         self._refreshes: set[asyncio.Task[None]] = set()
@@ -89,10 +91,45 @@ class McpClient:
         """Connect every declared server, the file's and the plugins', together. A server that
         fails is left out."""
         servers = self._file_servers(report=True)
+        self._file_declared = {server.name: server for server in servers}
         plugins = self._declared_plugins()
         self._plugin_servers = {server.name: server for server in plugins}
         await asyncio.gather(*(self._connect(server) for server in (*servers, *plugins)))
         self._changed()
+
+    async def reload_file(self) -> None:
+        """The file changed (the marketplace wrote it, or the user): connect its new servers and
+        stop those gone or declared otherwise now; the others stay connected. A file that cannot
+        be read changes nothing, and is said."""
+        try:
+            text = self._file.read_text(encoding="utf-8") if self._file.exists() else ""
+            declared = parse_config(text, str(self._file)) if text.strip() else []
+        except (OSError, McpError) as error:
+            self.problems["mcp.json"] = str(error)
+            _logger.warning("%s", error)
+            return
+        self.problems.pop("mcp.json", None)
+        wanted = {server.name: server for server in declared}
+        gone = [name for name, server in self._file_declared.items() if wanted.get(name) != server]
+        for name in gone:
+            self._file_declared.pop(name, None)
+            await self._disconnect(name)
+        new = [server for name, server in wanted.items() if name not in self._file_declared]
+        self._file_declared.update((server.name, server) for server in new)
+        if gone or new:
+            # A plugin's server of a name the file now holds stops first, and one of a name it
+            # no longer holds connects.
+            await self.reload_plugins()
+        await asyncio.gather(*(self._connect(server) for server in new))
+        if gone or new:
+            self._changed()
+
+    async def _disconnect(self, name: str) -> None:
+        self.problems.pop(name, None)
+        connection = self._connections.pop(name, None)
+        if connection is not None:
+            self._toolset.replace(connection.server.source, [])
+            await connection.close()
 
     def _file_servers(self, *, report: bool = False) -> list[ServerConfig]:
         if not self._file.exists():
@@ -124,11 +161,7 @@ class McpClient:
         gone = [name for name, server in self._plugin_servers.items() if wanted.get(name) != server]
         for name in gone:
             self._plugin_servers.pop(name, None)
-            self.problems.pop(name, None)
-            connection = self._connections.pop(name, None)
-            if connection is not None:
-                self._toolset.replace(connection.server.source, [])
-                await connection.close()
+            await self._disconnect(name)
         new = [server for name, server in wanted.items() if name not in self._plugin_servers]
         self._plugin_servers.update((server.name, server) for server in new)
         await asyncio.gather(*(self._connect(server) for server in new))

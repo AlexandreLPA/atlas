@@ -544,3 +544,36 @@ def test_headers_helper_and_sse_as_in_claude_code(tmp_path: Path) -> None:
     assert _run(scenario) == ("added note 1", "added note 1")
     assert seen
     assert all(header == "Bearer from-helper" for header in seen)
+
+
+def test_the_file_read_again_connects_new_servers_and_stops_gone_ones_only(tmp_path: Path) -> None:
+    """Step 16s: the marketplace writes mcp.json while Atlas serves, and the client follows it."""
+    file = _write(tmp_path, {"notes": _notes()})
+    toolset = Toolset()
+
+    async def scenario() -> tuple[set[str], set[str], set[str], dict[str, str]]:
+        client = McpClient(file, {}.get, toolset)
+        await client.start()
+        first = {tool.name for tool in toolset.deferred}
+        _write(tmp_path, {"notes": _notes(), "more": _notes()})
+        await client.reload_file()
+        both = {tool.name for tool in toolset.deferred}
+        file.write_text("{ broken", encoding="utf-8")
+        await client.reload_file()
+        kept = {tool.name for tool in toolset.deferred}
+        problems = dict(client.problems)
+        _write(tmp_path, {"more": _notes()})
+        await client.reload_file()
+        after = {tool.name for tool in toolset.deferred}
+        await client.close()
+        assert kept == both, "a file that cannot be read changes nothing"
+        return first, both, after, problems
+
+    first, both, after, problems = _run(scenario)
+
+    assert "mcp__notes__add_note" in first
+    assert "mcp__more__add_note" not in first
+    assert {"mcp__notes__add_note", "mcp__more__add_note"} <= both
+    assert "mcp.json" in problems
+    assert "mcp__notes__add_note" not in after
+    assert "mcp__more__add_note" in after

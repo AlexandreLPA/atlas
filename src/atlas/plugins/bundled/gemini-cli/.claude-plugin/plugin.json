@@ -1,5 +1,6 @@
 {
   "name": "gemini-cli",
+  "displayName": "Gemini CLI",
   "version": "0.1.0",
   "description": "The Gemini CLI on Atlas's workbench: the Gemini CLI installed on this computer working in your folders for you or for Atlas; what it asks reaches you through Atlas. A personal Google account logs in with a Gemini API key, kept in Atlas's vault and handed to the sessions it opens. With a company's Google login it reads that account's quota from Google with the login the Gemini CLI keeps. The Gemini CLI sends usage statistics to Google unless its own settings turn them off.",
   "author": {

@@ -1,0 +1,107 @@
+import { describe, expect, it } from 'vitest'
+
+import type { MarketplaceList, MarketplacePage, MarketplaceRow } from '@/protocol/protocol.generated'
+
+import { actionOf, counts, resolved, shown, withRow } from './marketplace'
+
+function row(name: string, change: Partial<MarketplaceRow> = {}): MarketplaceRow {
+  return {
+    author: 'someone',
+    image: '',
+    kind: 'skill',
+    license: 'MIT',
+    name,
+    problem: null,
+    shipped: false,
+    source_url: '',
+    state: 'available',
+    summary: `The ${name} item.`,
+    tier: 'community',
+    title: name,
+    update: false,
+    version: '',
+    ...change
+  }
+}
+
+function list(items: MarketplaceRow[], change: Partial<MarketplaceList> = {}): MarketplaceList {
+  return { description: '', items, name: 'Test', problem: null, read_at: '2026-10-25T12:00:00Z', ...change }
+}
+
+describe("an item's button says what a click does", () => {
+  it('by where the item stands in the home', () => {
+    expect(actionOf(row('a'))).toBe('install')
+    expect(actionOf(row('a', { problem: 'You have a skill named a already.' }))).toBe('unavailable')
+    expect(actionOf(row('a', { state: 'installed' }))).toBe('installed')
+    expect(actionOf(row('a', { state: 'installed', update: true }))).toBe('update')
+    expect(actionOf(row('a', { kind: 'plugin', state: 'off' }))).toBe('turn-on')
+    expect(actionOf(row('a', { kind: 'plugin', state: 'on' }))).toBe('on')
+    expect(actionOf(row('a', { state: 'retired', update: true }))).toBe('retired')
+  })
+})
+
+describe('a tab shows its kind, the Atlas team first', () => {
+  const listing = list([
+    row('zip', { title: 'Zip' }),
+    row('github', { tier: 'official', title: 'GitHub' }),
+    row('pdf', { summary: 'Read PDF files.', title: 'PDF' }),
+    row('docs', { kind: 'mcp', title: 'Docs' })
+  ])
+
+  it('splits official from community, each by title', () => {
+    const { community, official } = shown(listing, 'skill', '')
+    expect(official.map(found => found.name)).toEqual(['github'])
+    expect(community.map(found => found.name)).toEqual(['pdf', 'zip'])
+  })
+
+  it('keeps what every word of the search finds in its name, title, summary or author', () => {
+    expect(shown(listing, 'skill', 'read files').community.map(found => found.name)).toEqual(['pdf'])
+    expect(shown(listing, 'skill', 'nothing').community).toEqual([])
+    expect(shown(listing, 'mcp', '').community.map(found => found.name)).toEqual(['docs'])
+  })
+
+  it('counts each kind for its tab', () => {
+    expect(counts(listing)).toEqual({ executor: 0, mcp: 1, plugin: 0, skill: 3 })
+    expect(counts(null)).toEqual({ executor: 0, mcp: 0, plugin: 0, skill: 0 })
+  })
+})
+
+describe("a README's addresses stay in the item's tree", () => {
+  const base = 'https://raw.githubusercontent.com/someone/tools/abc/pdf/'
+
+  it('resolves a relative one at the commit and keeps an https one', () => {
+    expect(resolved('docs/shot.png', base)).toBe(`${base}docs/shot.png`)
+    expect(resolved('./shot.png', base)).toBe(`${base}shot.png`)
+    expect(resolved('https://example.com/a', base)).toBe('https://example.com/a')
+  })
+
+  it('drops whatever else a stranger could write', () => {
+    expect(resolved('javascript:alert(1)', base)).toBeNull()
+    expect(resolved('http://example.com/a', base)).toBeNull()
+    expect(resolved('file:///etc/passwd', base)).toBeNull()
+    expect(resolved('data:text/html,hi', base)).toBeNull()
+    expect(resolved('//example.com/a', base)).toBeNull()
+    expect(resolved('shot.png', '')).toBeNull()
+  })
+})
+
+describe("an open page follows the list's latest row", () => {
+  it('takes the row the list read again', () => {
+    const page: MarketplacePage = {
+      entry: '',
+      homepage: '',
+      item: row('pdf'),
+      link_base: '',
+      needs: [],
+      picture_base: '',
+      readme: 'Read PDFs.',
+      screenshots: [],
+      secrets: []
+    }
+    const updated = withRow(page, list([row('pdf', { state: 'installed' })]))
+    expect(updated?.item.state).toBe('installed')
+    expect(updated?.readme).toBe('Read PDFs.')
+    expect(withRow(page, list([]))).toBe(page)
+    expect(withRow(null, list([]))).toBeNull()
+  })
+})
