@@ -82,16 +82,30 @@ describe('what a site may ask of the machine', () => {
 
 describe("the window's commands", () => {
   it('reads each command with its arguments', () => {
-    expect(parseCommand({ command: 'open' })).toEqual({ command: 'open' })
+    expect(parseCommand({ command: 'open', home: 'work', owner: 'c-1' })).toEqual({
+      command: 'open',
+      home: 'work',
+      owner: 'c-1'
+    })
+    expect(parseCommand({ command: 'adopt', from: '', home: 'work', to: 'c-1' })).toEqual({
+      command: 'adopt',
+      from: '',
+      home: 'work',
+      to: 'c-1'
+    })
     expect(parseCommand({ command: 'back', id: 'b1' })).toEqual({ command: 'back', id: 'b1' })
-    expect(parseCommand({ command: 'go', id: null, text: 'example.com' })).toEqual({
+    expect(parseCommand({ command: 'go', home: 'work', id: null, owner: '', text: 'example.com' })).toEqual({
       command: 'go',
+      home: 'work',
       id: null,
+      owner: '',
       text: 'example.com'
     })
-    expect(parseCommand({ command: 'go', text: 'example.com' })).toEqual({
+    expect(parseCommand({ command: 'go', home: 'work', owner: 'c-1', text: 'example.com' })).toEqual({
       command: 'go',
+      home: 'work',
       id: null,
+      owner: 'c-1',
       text: 'example.com'
     })
     expect(parseCommand({ command: 'show', rect: null })).toEqual({ command: 'show', rect: null })
@@ -110,9 +124,17 @@ describe("the window's commands", () => {
       { command: 'eval', code: 'process.exit()' },
       { command: 'back' },
       { command: 'close', id: 7 },
-      { command: 'go', text: 7 },
-      { command: 'go', id: 3, text: 'x' },
-      { command: 'go', text: 'x'.repeat(5000) },
+      { command: 'open' },
+      { command: 'open', home: 'work' },
+      { command: 'open', home: 'work', owner: 'x'.repeat(300) },
+      { command: 'open', home: 'x'.repeat(300), owner: '' },
+      { command: 'adopt', from: '', to: 'c-1' },
+      { command: 'adopt', from: 3, home: 'work', to: 'c-1' },
+      { command: 'go', home: 'work', owner: '', text: 7 },
+      { command: 'go', home: 'work', id: 3, owner: '', text: 'x' },
+      { command: 'go', home: 'work', owner: '', text: 'x'.repeat(5000) },
+      { command: 'go', owner: '', text: 'x' },
+      { command: 'go', home: 'work', text: 'x' },
       { command: 'show' },
       { command: 'show', rect: { height: 5, width: 4, x: 3 } },
       { command: 'show', rect: { height: 5, width: Number.NaN, x: 3, y: 2 } },

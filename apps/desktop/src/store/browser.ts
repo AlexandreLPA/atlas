@@ -4,8 +4,11 @@
  * native views the main process lays over the panel; this holds only what the toolbar and the tabs
  * show.
  *
- * Today the tabs are one list for the whole app. A later step ties them to conversations, as the
- * previews' are (store/previews.ts), by filtering this list by owner.
+ * The main process keeps every tab of every conversation and home; the window shows the ones of the
+ * conversation and the home on screen, as the previews' are (store/previews.ts), and the main process
+ * lets the agent of a conversation drive all of that conversation's. What the window shows is chosen
+ * here (`tabsOf`), and kept on a tab that is there (`settledSelection`); the agent never takes the
+ * selection (`surfaceTarget` decides what its first page of a conversation does to the screen).
  */
 import { atom, computed } from 'nanostores'
 
@@ -77,6 +80,34 @@ export function toggleBrowser(): void {
   } else {
     openBrowser()
   }
+}
+
+/** The tabs of a conversation and a home: what the panel shows. */
+export function tabsOf(state: BrowserState, owner: string, home: string): BrowserTab[] {
+  return state.tabs.filter(tab => tab.owner === owner && tab.home === home)
+}
+
+/** The tab to select so that one of the shown ones is, or `null` when one is or none can be: the
+ * last of the conversation's, as when a tab closes. */
+export function settledSelection(state: BrowserState, owner: string, home: string): null | string {
+  const shown = tabsOf(state, owner, home)
+
+  if (shown.length === 0 || shown.some(tab => tab.id === state.selected)) {
+    return null
+  }
+
+  return shown.at(-1)?.id ?? null
+}
+
+/** The tab a page the agent opened (or asked for) brings forward: only when its conversation and
+ * home are the ones on screen; another conversation's is never selected, nor opens the panel. */
+export function surfaceTarget(surface: BrowserSurface, owner: string, home: string): null | string {
+  return surface.owner === owner && surface.home === home ? surface.id : null
+}
+
+/** A conversation just made takes the tabs the draft had (`''`), those of the home on screen. */
+export function adoptDraft(conversationId: string, home: string): void {
+  void browserCommand({ command: 'adopt', from: '', home, to: conversationId })
 }
 
 /** The ports where a web server answers on this machine, the common ones and `extra`. */

@@ -4,8 +4,23 @@
  * browser. `app-browser.ts` applies them to the views; nothing here touches Electron.
  */
 
-/** The partition of every browser tab: its cookies and logins are its own, not the window's. */
-export const BROWSER_PARTITION = 'persist:atlas-browser'
+import { createHash } from 'node:crypto'
+
+import { browserHome } from '../src/browser-home'
+
+/**
+ * The partition of a home's browser tabs: its cookies and logins are its own, not the window's, and
+ * not another home's. The key is a hash of the machine and the home's name, so the name the user
+ * chose (it may hold anything) never becomes a folder's name and no path enters it.
+ */
+export function partitionOf(machine: string, home: string): string {
+  return partitionOfKey(browserHome(machine, home))
+}
+
+/** The partition of a home named as `browserHome` writes it. */
+export function partitionOfKey(key: string): string {
+  return `persist:atlas-browser-${createHash('sha256').update(key).digest('hex').slice(0, 16)}`
+}
 
 /** What a site may ask for and be given. Everything else (camera, microphone, location,
  * notifications, MIDI, USB, full screen…) is refused: the user never asked a site for them here. */
@@ -62,12 +77,14 @@ export function normalizeAddress(typed: string): null | string {
   }
 }
 
-/** What the window asks of the browser. */
+/** What the window asks of the browser. `owner` is what the panel shows tabs of (the conversation
+ * on screen, `''` for a new one not made yet) and `home` the home on screen. */
 export type BrowserCommand =
+  | { command: 'adopt'; from: string; home: string; to: string }
   | { command: 'back' | 'forward' | 'reload' | 'stop'; id: string }
   | { command: 'close' | 'select'; id: string }
-  | { command: 'go'; id: null | string; text: string }
-  | { command: 'open' }
+  | { command: 'go'; home: string; id: null | string; owner: string; text: string }
+  | { command: 'open'; home: string; owner: string }
   | { command: 'show'; rect: null | Rect }
 
 /** Where the browser's view is, in the window's coordinates. */
@@ -83,6 +100,12 @@ const COMMANDS_WITH_ID = new Set(['back', 'close', 'forward', 'reload', 'select'
 const MAX_TEXT = 4096
 /** A window larger than this does not exist; a bigger number is a bug or a lie. */
 const MAX_PIXELS = 20_000
+/** A conversation's id or a home's name is short; a longer one is a bug or a lie. */
+const MAX_NAME = 256
+
+function isName(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= MAX_NAME
+}
 
 function isRect(value: unknown): value is Rect {
   if (typeof value !== 'object' || value === null) {
@@ -117,17 +140,29 @@ export function parseCommand(value: unknown): BrowserCommand | null {
   }
 
   if (command === 'open') {
-    return { command }
+    return isName(given.owner) && isName(given.home) ? { command, home: given.home, owner: given.owner } : null
+  }
+
+  if (command === 'adopt') {
+    return isName(given.from) && isName(given.to) && isName(given.home)
+      ? { command, from: given.from, home: given.home, to: given.to }
+      : null
   }
 
   if (command === 'go') {
     const id = given.id === null || given.id === undefined ? null : given.id
 
-    if (typeof given.text !== 'string' || given.text.length > MAX_TEXT || (id !== null && typeof id !== 'string')) {
+    if (
+      typeof given.text !== 'string' ||
+      given.text.length > MAX_TEXT ||
+      (id !== null && typeof id !== 'string') ||
+      !isName(given.owner) ||
+      !isName(given.home)
+    ) {
       return null
     }
 
-    return { command, id, text: given.text }
+    return { command, home: given.home, id, owner: given.owner, text: given.text }
   }
 
   if (command === 'show') {
@@ -139,4 +174,141 @@ export function parseCommand(value: unknown): BrowserCommand | null {
   }
 
   return null
+}
+
+// -- what the agent may do through the server (the browser host) ------------------------------------
+
+/** The DevTools domains a page may be driven through. What is not here (`Target`, `Browser`,
+ * `Storage`, `IO`, tracing, profiling…) reaches past the page. The server keeps the same list
+ * (`atlas/browser/model.py`), and both tests hold the same table. */
+const CDP_DOMAINS = new Set([
+  'Accessibility',
+  'Animation',
+  'Audits',
+  'CSS',
+  'CacheStorage',
+  'Console',
+  'DOM',
+  'DOMDebugger',
+  'DOMSnapshot',
+  'DOMStorage',
+  'Debugger',
+  'Emulation',
+  'Fetch',
+  'IndexedDB',
+  'Input',
+  'Inspector',
+  'Log',
+  'Network',
+  'Overlay',
+  'Page',
+  'Performance',
+  'Runtime',
+  'Security'
+])
+/** Methods of an allowed domain that stay refused: one writes files wherever it likes, the other
+ * closes the view behind the browser's back (a tab closes through the browser's own command). */
+const CDP_REFUSED = new Set(['Page.setDownloadBehavior', 'Page.close'])
+
+/** Whether a DevTools command may reach a page's debugger. */
+export function cdpAllowed(method: string): boolean {
+  const domain = method.split('.', 1)[0] ?? ''
+
+  return method.includes('.') && CDP_DOMAINS.has(domain) && !CDP_REFUSED.has(method)
+}
+
+const METADATA_HOSTS = new Set(['metadata.google.internal', 'metadata.goog', '100.100.100.200', '[fd00:ec2::254]'])
+
+/**
+ * Whether a request of a page goes to a cloud metadata address or to the link-local range, by name
+ * or by number: refused whatever started it (a click, a redirect, the page's own script, or the
+ * agent). The URL's own parser has written numbers in their usual form by then.
+ */
+export function blockedRequest(url: string): boolean {
+  let host: string
+
+  try {
+    host = new URL(url).hostname.toLowerCase().replace(/\.$/, '')
+  } catch {
+    return false
+  }
+
+  if (METADATA_HOSTS.has(host)) {
+    return true
+  }
+
+  if (/^169\.254\.\d{1,3}\.\d{1,3}$/.test(host)) {
+    return true
+  }
+
+  // An IPv4 address written as IPv6 (`::ffff:a9fe:a9fe`), which the parser keeps in hex.
+  const mapped = /^\[::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})\]$/.exec(host)
+
+  return mapped !== null && Number.parseInt(mapped[1] ?? '', 16) === 0xa9fe
+}
+
+/** What the server asks of the browser, once its shape is checked. */
+export type HostRequest =
+  | { id: string; kind: 'attach' | 'close' | 'detach' | 'show' }
+  | { id: string; kind: 'cdp'; method: string; params: Record<string, unknown> }
+  | { background: boolean; kind: 'open'; owner: string; url: string }
+  | { kind: 'tabs' }
+
+/** What the server asked, as a request, or `null` when it is not one the browser knows. The server
+ * is trusted no further than its arguments' shape. */
+export function parseHostRequest(method: string, value: unknown): HostRequest | null {
+  const given = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>
+  const id = given.id
+
+  switch (method) {
+    case 'browser.tabs': {
+      return { kind: 'tabs' }
+    }
+
+    case 'browser.attach':
+    case 'browser.close':
+    case 'browser.detach':
+    case 'browser.show': {
+      return typeof id === 'string' && id
+        ? { id, kind: method.slice('browser.'.length) as 'attach' | 'close' | 'detach' | 'show' }
+        : null
+    }
+
+    case 'browser.open': {
+      return isName(given.owner) && typeof given.url === 'string' && given.url.length <= MAX_TEXT
+        ? { background: given.background !== false, kind: 'open', owner: given.owner, url: given.url }
+        : null
+    }
+
+    case 'browser.cdp': {
+      const params: unknown = given.params ?? {}
+
+      return typeof id === 'string' &&
+        id &&
+        typeof given.method === 'string' &&
+        typeof params === 'object' &&
+        params !== null &&
+        !Array.isArray(params)
+        ? { id, kind: 'cdp', method: given.method, params: params as Record<string, unknown> }
+        : null
+    }
+
+    default: {
+      return null
+    }
+  }
+}
+
+/** Whether this is the first page of the agent's in a conversation (of a home) since the app
+ * opened: the one that brings the panel forward. `seen` is the app's own record. */
+export function firstAgentPage(seen: Set<string>, home: string, owner: string): boolean {
+  const key = JSON.stringify([home, owner])
+
+  if (seen.has(key)) {
+    return false
+  }
+
+  seen.add(key)
+
+  return true
 }

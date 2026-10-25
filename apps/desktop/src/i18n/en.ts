@@ -1292,6 +1292,7 @@ export const en = {
     invalid: 'That is not a web address.',
     name: 'Browser',
     newTab: 'New tab',
+    openedByAtlas: 'Opened by Atlas',
     placeholder: 'Type a web address',
     reload: 'Reload',
     stop: 'Stop loading',

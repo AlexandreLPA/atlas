@@ -28,6 +28,17 @@ contextBridge.exposeInMainWorld('atlas', {
         ipcRenderer.removeListener('atlas:browser:changed', handler)
       }
     },
+    /** A page the agent opened or asked to bring forward: whether the panel shows it is for the window to decide. */
+    onSurface: (listener: (surface: unknown) => void): (() => void) => {
+      const handler = (_event: unknown, surface: unknown) => {
+        listener(surface)
+      }
+      ipcRenderer.on('atlas:browser:surface', handler)
+
+      return () => {
+        ipcRenderer.removeListener('atlas:browser:surface', handler)
+      }
+    },
     /** The ports, of the common ones and these, where a web server answers on this machine. */
     servers: (extra: number[]): Promise<unknown> => ipcRenderer.invoke('atlas:browser:servers', extra),
     state: (): Promise<unknown> => ipcRenderer.invoke('atlas:browser:state')

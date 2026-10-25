@@ -53,14 +53,28 @@ interface TabsBridge {
 
 /** A browser tab, as the main process tells it (electron/app-browser.ts, `BrowserTabState`). */
 interface BrowserTab {
+  /** Opened by the agent. */
+  agent: boolean
   canGoBack: boolean
   canGoForward: boolean
   /** Why the page did not load, or `''`. */
   error: string
+  /** The home it belongs to, as `browserHome` (store/browser.ts) writes it. */
+  home: string
   id: string
   loading: boolean
+  /** The conversation it belongs to (`currentOwner()`). */
+  owner: string
   title: string
   url: string
+}
+
+/** The agent opened a page, or asked for a tab to come forward (electron/app-browser.ts, `Surface`). */
+interface BrowserSurface {
+  home: string
+  id: string
+  owner: string
+  reason: 'activate' | 'page'
 }
 
 interface BrowserState {
@@ -72,14 +86,16 @@ interface BrowserState {
 type BrowserAnswer = { id?: string; ok: true } | { ok: false; reason: 'address' | 'closed' | 'invalid' | 'unknown' }
 
 type BrowserCommand =
+  | { command: 'adopt'; from: string; home: string; to: string }
   | { command: 'back' | 'close' | 'forward' | 'reload' | 'select' | 'stop'; id: string }
-  | { command: 'go'; id: null | string; text: string }
-  | { command: 'open' }
+  | { command: 'go'; home: string; id: null | string; owner: string; text: string }
+  | { command: 'open'; home: string; owner: string }
   | { command: 'show'; rect: null | { height: number; width: number; x: number; y: number } }
 
 interface BrowserBridge {
   command: (command: BrowserCommand) => Promise<BrowserAnswer>
   onChange: (listener: (state: BrowserState) => void) => () => void
+  onSurface: (listener: (surface: BrowserSurface) => void) => () => void
   /** The ports where a web server answers on this machine: the common ones and `extra`. */
   servers: (extra: number[]) => Promise<number[]>
   state: () => Promise<BrowserState>

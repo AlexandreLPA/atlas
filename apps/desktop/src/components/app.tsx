@@ -27,7 +27,8 @@ import {
   DRAFT,
   keyScreenShown
 } from '@/store/app'
-import { $browserExpanded, browserHost, toggleBrowser } from '@/store/browser'
+import { $browserExpanded, browserHost, followBrowser, toggleBrowser } from '@/store/browser'
+import { followScreen } from '@/store/browser-screen'
 import { $panelWidth, $sidebarWidth, toggleSidebar } from '@/store/layout'
 import { $firstRun, firstRunOf } from '@/store/setup'
 import { $terminals, openTerminal, refreshTerminalAvailable, terminalAvailable, togglePanel } from '@/store/terminals'
@@ -129,6 +130,17 @@ export function App() {
     '--panel-width': `${String(panelWidth)}px`,
     '--sidebar-width': `${String(sidebarWidth)}px`
   } as CSSProperties
+
+  // The browser's tabs and the pages the agent opens, for as long as the app is open: the panel need not show it.
+  useEffect(() => {
+    const stops = [followBrowser(), followScreen()]
+
+    return () => {
+      for (const stop of stops) {
+        stop()
+      }
+    }
+  }, [])
 
   // Whether the server's machine opens terminals, asked each time a connection opens (another
   // machine's may not); Ctrl+` shows or hides it, Ctrl+B the sidebar.

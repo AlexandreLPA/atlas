@@ -1280,6 +1280,7 @@ export const ptBR: Override<Messages> = {
     invalid: 'Isso não é um endereço da web.',
     name: 'Navegador',
     newTab: 'Nova aba',
+    openedByAtlas: 'Aberta pelo Atlas',
     placeholder: 'Digite um endereço da web',
     reload: 'Recarregar',
     stop: 'Parar de carregar',

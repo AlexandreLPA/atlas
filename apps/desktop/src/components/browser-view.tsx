@@ -3,19 +3,13 @@ import { type SyntheticEvent, useEffect, useRef, useState } from 'react'
 
 import { t } from '@/i18n'
 import { $machine, $selected, $threads } from '@/store/app'
-import {
-  $browser,
-  $browserExpanded,
-  browserCommand,
-  followBrowser,
-  lookForServers,
-  toggleBrowserExpanded
-} from '@/store/browser'
+import { $browserExpanded, browserCommand, lookForServers, toggleBrowserExpanded } from '@/store/browser'
+import { $shownTab, $shownTabs, openTab, where } from '@/store/browser-screen'
 import { conversationPorts, type LocalServer, mergeLocalServers } from '@/store/local-servers'
 import { previewables } from '@/store/previews'
 import { togglePanel } from '@/store/terminals'
 
-import { ArrowLeft, ArrowRight, Close, Collapse, Expand, Plus, Radar, Refresh, Stop, Web } from './ui/icons'
+import { ArrowLeft, ArrowRight, Close, Collapse, Expand, Plus, Radar, Refresh, Robot, Stop, Web } from './ui/icons'
 import { IconButton } from './ui/tip'
 
 /** What lies over the panel, which a native view would cover: a dialog or a menu. A tooltip does not
@@ -66,17 +60,16 @@ function tabName(tab: BrowserTab): string {
  * native view is always above the app's own page.
  */
 export function BrowserView() {
-  const { selected, tabs } = useStore($browser)
+  const tabs = useStore($shownTabs)
+  const tab = useStore($shownTab)
+  const selected = tab?.id
   const expanded = useStore($browserExpanded)
-  const tab = tabs.find(each => each.id === selected)
   const box = useRef<HTMLDivElement>(null)
   const address = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState<null | string>(null)
   const [invalid, setInvalid] = useState(false)
   const obscured = useObscured()
   const showsPage = tab !== undefined && tab.url !== ''
-
-  useEffect(() => followBrowser(), [])
 
   useEffect(() => {
     const element = box.current
@@ -103,7 +96,7 @@ export function BrowserView() {
   }, [obscured, showsPage])
 
   const go = (text: string) =>
-    browserCommand({ command: 'go', id: tab?.id ?? null, text }).then(answer => {
+    browserCommand({ command: 'go', id: tab?.id ?? null, text, ...where() }).then(answer => {
       if (answer && !answer.ok && answer.reason === 'address') {
         setInvalid(true)
 
@@ -157,7 +150,13 @@ export function BrowserView() {
                   title={each.url}
                   type="button"
                 >
-                  <Web aria-hidden className="shrink-0" size={12} stroke={1.75} />
+                  {each.agent ? (
+                    <span className="shrink-0" data-testid="browser-agent-mark" title={t.browser.openedByAtlas}>
+                      <Robot aria-label={t.browser.openedByAtlas} role="img" size={12} stroke={1.75} />
+                    </span>
+                  ) : (
+                    <Web aria-hidden className="shrink-0" size={12} stroke={1.75} />
+                  )}
                   <span className="truncate">{tabName(each)}</span>
                 </button>
                 <button
@@ -177,7 +176,7 @@ export function BrowserView() {
             icon={Plus}
             label={t.browser.newTab}
             onClick={() => {
-              void browserCommand({ command: 'open' }).then(() => {
+              void openTab().then(() => {
                 address.current?.focus()
               })
             }}
