@@ -23,8 +23,10 @@ from atlas.home import Home, Parent, locked, serving
 from atlas.installation import (
     BUILD_COMMAND,
     BUILD_STAMP,
+    LINUX_ICON,
     PACKAGES_STAMP,
     SYNC_COMMAND,
+    WINDOWS_ICON,
     Checkout,
     HandedOff,
     InstallationBusyError,
@@ -149,11 +151,22 @@ def _with_electron(checkout: Checkout) -> Path:
 
 def test_the_linux_entry_opens_the_built_app() -> None:
     text = desktop_entry(
-        '"/opt/atlas/electron" "/opt/atlas/apps/desktop"', "/opt/atlas/apps/desktop"
+        '"/opt/atlas/electron" "/opt/atlas/apps/desktop"',
+        "/opt/atlas/apps/desktop",
+        "/opt/atlas/apps/desktop/resources/icon.png",
     )
     assert "Name=Atlas\n" in text
     assert 'Exec="/opt/atlas/electron" "/opt/atlas/apps/desktop"\n' in text
+    assert "Icon=/opt/atlas/apps/desktop/resources/icon.png\n" in text
     assert "Terminal=false\n" in text
+
+
+def test_the_launchers_icons_are_the_apps() -> None:
+    """The icons the launchers name are the ones the app ships: an .ico and a PNG."""
+    desktop = Path(__file__).parents[2] / "apps" / "desktop"
+
+    assert (desktop / WINDOWS_ICON).read_bytes()[:4] == b"\x00\x00\x01\x00"
+    assert (desktop / LINUX_ICON).read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
 
 
 @pytest.mark.skipif(not sys.platform.startswith("linux"), reason="the app grid entry is Linux's")
@@ -168,7 +181,9 @@ def test_on_linux_the_launcher_is_an_app_grid_entry(
 
     assert written == tmp_path / "data" / "applications" / "atlas.desktop"
     assert written is not None
-    assert f'Exec="{electron}" "{checkout.desktop}"' in written.read_text(encoding="utf-8")
+    text = written.read_text(encoding="utf-8")
+    assert f'Exec="{electron}" "{checkout.desktop}"' in text
+    assert f"Icon={checkout.desktop / LINUX_ICON}\n" in text
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="the Start Menu shortcut is Windows's")
@@ -183,14 +198,16 @@ def test_on_windows_the_launcher_is_a_start_menu_shortcut(
     written = write_launcher(checkout, tmp_path)
 
     assert written == tmp_path / "roaming/Microsoft/Windows/Start Menu/Programs/Atlas.lnk"
-    read = f"(New-Object -ComObject WScript.Shell).CreateShortcut('{written}').TargetPath"
-    target = subprocess.run(  # noqa: S603 - fixed tools, no user text
+    link = f"$link = (New-Object -ComObject WScript.Shell).CreateShortcut('{written}')"
+    read = f"{link}; $link.TargetPath; $link.IconLocation"
+    target, icon = subprocess.run(  # noqa: S603 - fixed tools, no user text
         ["powershell", "-NoProfile", "-Command", read],  # noqa: S607
         capture_output=True,
         text=True,
         check=True,
-    ).stdout.strip()
+    ).stdout.splitlines()[:2]
     assert Path(target) == electron
+    assert icon == f"{checkout.desktop / WINDOWS_ICON},0"
 
 
 def test_without_the_app_packages_the_launcher_says_how_to_install_them(tmp_path: Path) -> None:

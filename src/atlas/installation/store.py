@@ -19,8 +19,10 @@ from atlas.installation.model import (
     APP_NAME,
     BUILD_INPUTS,
     HOST_SOCKET,
+    LINUX_ICON,
     TOOLCHAIN_FILE,
     TOOLS_FOLDER,
+    WINDOWS_ICON,
     desktop_entry,
     parse_toolchain,
 )
@@ -268,7 +270,7 @@ def _windows_shortcut(electron: Path, desktop: Path) -> Path:
         f"$link.TargetPath = {quoted(str(electron))}; "
         f"$link.Arguments = {quoted(chr(34) + str(desktop) + chr(34))}; "
         f"$link.WorkingDirectory = {quoted(str(desktop))}; "
-        f"$link.IconLocation = {quoted(str(electron) + ',0')}; "
+        f"$link.IconLocation = {quoted(str(desktop / WINDOWS_ICON) + ',0')}; "
         f"$link.Description = {quoted(APP_NAME)}; "
         "$link.Save()"
     )
@@ -288,7 +290,7 @@ def _linux_entry(electron: Path, desktop: Path, home_folder: Path) -> Path:
     data = Path(os.environ.get("XDG_DATA_HOME") or home_folder / ".local" / "share")
     entry = data / "applications" / "atlas.desktop"
     entry.parent.mkdir(parents=True, exist_ok=True)
-    text = desktop_entry(f'"{electron}" "{desktop}"', str(desktop))
+    text = desktop_entry(f'"{electron}" "{desktop}"', str(desktop), str(desktop / LINUX_ICON))
     if not entry.is_file() or entry.read_text(encoding="utf-8") != text:
         entry.write_text(text, encoding="utf-8")
     return entry

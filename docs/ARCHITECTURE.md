@@ -1409,7 +1409,9 @@ Step 11, the first switch: the user moves to Atlas for every day.
   installs the app's packages when `package-lock.json` changed, builds the app when its sources
   changed (a content stamp), and starts it detached from the
   terminal. Each run writes the shortcut: a Start Menu link on Windows,
-  a `.desktop` entry on Linux, opening the built app directly. The packaged app is step 18b.
+  a `.desktop` entry on Linux, opening the built app directly. Both show the app's icon, which the
+  window, the taskbar and the Dock show too: `apps/desktop/resources/`, drawn from `icon.svg` by
+  `npm run icons`, with bolder lines at the small sizes. The packaged app is step 18b.
 - **`atlas update`**: `git pull --ff-only` of `main`, `uv sync` of the
   dependencies only (reinstalling Atlas would replace the `atlas.exe` the update runs from, which
   Windows refuses; Atlas is installed editable, and the app's next server reinstalls it), never

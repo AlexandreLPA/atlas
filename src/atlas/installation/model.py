@@ -37,9 +37,13 @@ PACKAGES_STAMP = "node_modules/.atlas-packages-stamp"
 BUILD_LOCK = ".atlas-build.lock"
 #: The launcher's name in the Start Menu and the app grid.
 APP_NAME = "Atlas"
+#: The launcher's icon, under `apps/desktop`, as the app's `npm run icons` draws it: the Start
+#: Menu's on Windows, the app grid's on Linux.
+WINDOWS_ICON = "resources/icon.ico"
+LINUX_ICON = "resources/icon.png"
 
 
-def desktop_entry(exec_command: str, working_folder: str) -> str:
+def desktop_entry(exec_command: str, working_folder: str, icon: str) -> str:
     """The Linux app grid's entry."""
     return (
         "[Desktop Entry]\n"
@@ -48,6 +52,7 @@ def desktop_entry(exec_command: str, working_folder: str) -> str:
         "Comment=Launch the Atlas app\n"
         f"Exec={exec_command}\n"
         f"Path={working_folder}\n"
+        f"Icon={icon}\n"
         "Terminal=false\n"
         "Categories=Utility;\n"
         "StartupNotify=true\n"

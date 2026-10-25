@@ -68,6 +68,9 @@ import {
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const appRoot = path.resolve(here, '..')
+/** The app's icon (`npm run icons` draws it): the window's and the taskbar's, and the Dock's on macOS.
+ * On Windows the .ico, whose small sizes are drawn for them rather than scaled down. */
+const icon = path.join(appRoot, 'resources', process.platform === 'win32' ? 'icon.ico' : 'icon.png')
 const devServer = process.env.ATLAS_DESKTOP_DEV_SERVER
 /** Started by the end-to-end tests: the window may drop its own connection, and the tests read the
  * servers' PIDs from this process, and name the stand-in of the update's Python
@@ -253,6 +256,7 @@ function openOutside(url: string): void {
 function createWindow(): void {
   window = new BrowserWindow({
     height: 820,
+    icon,
     minHeight: 480,
     minWidth: 720,
     show: false,
@@ -570,6 +574,9 @@ if (!app.requestSingleInstanceLock()) {
     app.quit()
   })
   void app.whenReady().then(() => {
+    // Opened from the checkout, macOS shows Electron's own icon in the Dock until told otherwise.
+    app.dock?.setIcon(icon)
+
     if (updateRunning(updates)) {
       // The update replaces what this app runs from: it starts no server, and waits it out.
       void waitOutUpdate()
