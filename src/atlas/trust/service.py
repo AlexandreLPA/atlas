@@ -43,7 +43,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from atlas.agent import Tool
+from atlas.agent import Tool, Unanswered
 from atlas.home import TrustSettings, inside, utc_now
 from atlas.models import (
     ModelClient,
@@ -231,7 +231,7 @@ class ApprovalGate:
                 self._keep(reason, answer.choice)
             return None
         # The breaker counts the guardian's denials, not the user's.
-        return refused_message(answer, command=True)[:-1] + breaker(self._denials) + "]"
+        return _refused(answer, command=True, more=breaker(self._denials))
 
     def _floor(self, command: str) -> str | None:
         hardline, why = detect_hardline_command(command)
@@ -287,7 +287,7 @@ class ApprovalGate:
             if self._store is not None and recipients:
                 self._store.remember(recipients, self._clock())
             return None
-        return refused_message(answer, command=True)
+        return _refused(answer, command=True)
 
     async def ask_first(self, tool: str, target: str, reason: str) -> str | None:
         """Ask the user before something Atlas may do only when they say so (step 16c: steering
@@ -306,7 +306,7 @@ class ApprovalGate:
         if answer.outcome is Outcome.ANSWERED and answer.choice not in (None, Choice.DENY):
             _logger.info("The user approved what only they may ask for: %s", reason)
             return None
-        return refused_message(answer, command=False)
+        return _refused(answer, command=False)
 
     def use_settings(self, settings: TrustSettings) -> None:
         """The user's rules changed on the settings screen (step 15b): they apply from the
@@ -397,7 +397,7 @@ class ApprovalGate:
         if answer.outcome is Outcome.ANSWERED and answer.choice not in (None, Choice.DENY):
             self._keep(key, answer.choice)
             return None
-        return refused_message(answer, command=False)
+        return _refused(answer, command=False)
 
     # -- the user's answers -----------------------------------------------------------------------
 
@@ -434,6 +434,15 @@ def guardian_effort(info: ModelInfo | None) -> tuple[str | None, int]:
     if NO_REASONING in info.efforts:
         return NO_REASONING, GUARDIAN_TOKENS
     return (info.efforts[0] if info.efforts else None), GUARDIAN_THINKING_TOKENS
+
+
+def _refused(answer: ApprovalAnswer, *, command: bool, more: str = "") -> str:
+    """What the model is told when the user did not approve, with `more` at its end; marked
+    `Unanswered` when nobody answered in time, so the call ends `unanswered`, not `denied`."""
+    text = refused_message(answer, command=command)
+    if more:
+        text = text[:-1] + more + "]"
+    return Unanswered(text) if answer.outcome is Outcome.TIMED_OUT else text
 
 
 def _target(arguments: dict[str, Any]) -> str:

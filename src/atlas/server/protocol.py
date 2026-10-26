@@ -43,7 +43,7 @@ from typing import (
 PROTOCOL = "atlas.v2"
 
 #: How a tool call ended (`atlas.models.ToolStatus`).
-type ToolStatus = Literal["completed", "failed", "denied", "cancelled"]
+type ToolStatus = Literal["completed", "failed", "denied", "cancelled", "unanswered"]
 
 #: Any JSON value, for payloads whose shape another part owns (a tool's progress).
 type Json = object
@@ -2668,7 +2668,7 @@ class ToolComplete:
     #: What the model received.
     result_text: str
     #: `completed`; `failed` (it raised, or said it failed); `denied` (refused at approval);
-    #: `cancelled` (the turn stopped first).
+    #: `cancelled` (the turn stopped first); `unanswered` (its approval was not answered in time).
     status: ToolStatus
     #: How long the call took; 0 for one that never ran.
     duration_s: float

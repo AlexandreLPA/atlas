@@ -3698,6 +3698,23 @@ confiança. **Sem redesenho:** polimento, fluidez, percepção de velocidade e i
   Fiscais: 2.690 testes do Python com 91,46% de cobertura, o `npm run check` (422 do Vitest) e os
   73 do e2e; um deles falhou uma vez só ao apagar a pasta temporária, que o Gemini CLI desta
   máquina ainda escrevia, e passou nas três vezes seguintes.
+- **Entrega 5, os cartões que pedem o usuário (26/10):** os cinco cartões que esperam o usuário
+  (a aprovação, a pergunta e a chave do Atlas, e a permissão e a pergunta de um executor) tinham
+  três desenhos; agora têm uma moldura só (`card-frame.tsx`): âmbar, a pergunta em palavras no
+  título ("Rodar este comando?", "Claude Code quer rodar um comando"; uma ferramenta sem palavras é
+  nomeada), exatamente o que vai rodar ou mudar, e as escolhas numa ordem só, a que segue primeiro e
+  a que recusa por último, com o campo do motivo embaixo. Com o teclado no cartão, os números
+  escolhem, e cada escolha mostra o seu, claro; um clique no cartão dá o teclado a ele, e nenhum
+  cartão o toma sozinho: o campo da chave só pega o foco quando nada mais o tem, e o que se
+  digitava para uma mensagem não cai mais na chave. A pergunta de um executor ficou como as do
+  Atlas ("Outro" abre o campo), e "Dispensar" virou "Pular". A aprovação que ninguém responde no
+  `[trust] approval_timeout` termina num estado novo da chamada, `unanswered`: a trilha diz "sem
+  resposta a tempo", não "recusada", e o modelo lê o mesmo texto; o portão marca essa recusa
+  (`Unanswered`) e o laço lê a marca. Provado no pytest (só o silêncio é marcado, e o laço termina
+  essa chamada sem resposta), no Vitest (os títulos, a ordem e as teclas, o teclado deixado onde o
+  usuário digita) e no e2e (o 1 permite uma vez; a aprovação deixada sozinha some depois dos seus
+  10 segundos, e a chamada diz "sem resposta a tempo", com a pasta ainda lá). Fiscais: 2.692 testes
+  do Python com 91,46% de cobertura, o `npm run check` (430 do Vitest) e os 74 do e2e.
 
 ## Assuntos de desenho ainda abertos
 

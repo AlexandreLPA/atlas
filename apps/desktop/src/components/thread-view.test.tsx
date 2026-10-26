@@ -144,7 +144,7 @@ describe('a tool', () => {
   it('never titles a call that did not run as one that did', () => {
     const command = '{"command":"rm -r build"}'
 
-    for (const shown of ['waiting', 'denied', 'cancelled'] as const) {
+    for (const shown of ['waiting', 'denied', 'cancelled', 'unanswered'] as const) {
       expect(toolTitle('run_command', command, shown)?.action).toBe(t.tool.titles.run_command.plain)
     }
   })
@@ -203,14 +203,15 @@ describe('a tool', () => {
     expect(screen.getByRole('button', { name: t.tool.copyAll })).toBeTruthy()
   })
 
-  it('says how it ended: a failure with its time, a refusal without one, success only its time', () => {
+  it('says how it ended: a failure with its time, a refusal or no answer without one, success only its time', () => {
     render(
       <ThreadView
         thread={{
           items: [
             tool({ key: 'a', seconds: 2, status: 'completed' }),
             tool({ key: 'b', seconds: 1, status: 'failed', toolId: 't2' }),
-            tool({ key: 'c', status: 'denied', toolId: 't3' })
+            tool({ key: 'c', status: 'denied', toolId: 't3' }),
+            tool({ key: 'd', status: 'unanswered', toolId: 't4' })
           ],
           running: false
         }}
@@ -220,7 +221,8 @@ describe('a tool', () => {
     expect(screen.getAllByTestId('tool-state').map(state => state.textContent)).toEqual([
       t.duration(2),
       `${t.tool.failed} · ${t.duration(1)}`,
-      t.tool.denied
+      t.tool.denied,
+      t.tool.unanswered
     ])
   })
 })

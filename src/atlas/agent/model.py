@@ -61,10 +61,18 @@ class Tool:
 
 
 #: The check every call passes before its tool runs, with the parsed arguments. It returns `None`
-#: to let the call run, or what the model receives instead of a result. Approvals plug in here
-#: (step 7 of the roadmap); a call reached through tool search passes it like any other, because
-#: in Atlas V3 a tool moved behind `mcp_call` silently lost its approval.
+#: to let the call run, or what the model receives instead of a result: the call ends `denied`, or
+#: `unanswered` when that text is `Unanswered`. Approvals plug in here (step 7 of the roadmap); a
+#: call reached through tool search passes it like any other, because in Atlas V3 a tool moved
+#: behind `mcp_call` silently lost its approval.
 type ToolGate = Callable[[Tool, dict[str, Any]], Awaitable[str | None]]
+
+
+class Unanswered(str):
+    """A gate's refusal because nobody answered its approval in time: the text the model reads,
+    marked so the call ends `unanswered`, since nobody refused it."""
+
+    __slots__ = ()
 
 
 @dataclass(frozen=True, slots=True)

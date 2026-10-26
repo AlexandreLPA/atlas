@@ -105,7 +105,7 @@ describe('a turn as it arrives', () => {
     })
   })
 
-  it.each(['failed', 'denied', 'cancelled'])('keeps a %s call as the server said', status => {
+  it.each(['failed', 'denied', 'cancelled', 'unanswered'])('keeps a %s call as the server said', status => {
     const thread = play(
       event('message.start', { text: 'go' }),
       event('tool.start', { args_text: '{}', name: 'find_files', tool_id: 't1' }),

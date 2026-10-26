@@ -132,6 +132,7 @@ const STATE_COLOR: Record<Shown, string> = {
   denied: 'text-muted-foreground',
   failed: 'text-failed-text',
   running: 'text-working',
+  unanswered: 'text-muted-foreground',
   waiting: 'text-waiting-text'
 }
 
@@ -161,6 +162,8 @@ function stateText(
       return t.tool.denied
     case 'cancelled':
       return t.tool.cancelled
+    case 'unanswered':
+      return t.tool.unanswered
   }
 }
 

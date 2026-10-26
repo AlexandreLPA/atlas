@@ -143,6 +143,9 @@ class ToolStatus(StrEnum):
     DENIED = "denied"
     #: The turn stopped before the call finished, or before it ran.
     CANCELLED = "cancelled"
+    #: Not run: its approval waited past `[trust] approval_timeout` with no answer. Nobody
+    #: refused it, so it is not `denied`.
+    UNANSWERED = "unanswered"
 
 
 @dataclass(frozen=True, slots=True)

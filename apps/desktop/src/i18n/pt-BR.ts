@@ -19,6 +19,34 @@ const EFFORTS: Record<string, string> = {
   xhigh: 'Muito alto'
 }
 
+const APPROVALS: Record<string, string> = {
+  cronjob_manage: 'Agendar este comando?',
+  delegate: 'Agir na sua própria sessão?',
+  edit_file: 'Alterar este arquivo?',
+  run_command: 'Rodar este comando?',
+  write_file: 'Alterar este arquivo?'
+}
+
+const EXECUTOR_ACTS: Record<string, string> = {
+  Bash: 'rodar um comando',
+  Edit: 'alterar um arquivo',
+  MultiEdit: 'alterar um arquivo',
+  NotebookEdit: 'alterar um notebook',
+  Read: 'ler um arquivo',
+  WebFetch: 'abrir uma página da web',
+  WebSearch: 'pesquisar na web',
+  Write: 'escrever um arquivo',
+  apply_patch: 'alterar arquivos',
+  delete: 'apagar arquivos',
+  edit: 'alterar arquivos',
+  fetch: 'abrir uma página da web',
+  move: 'mover arquivos',
+  permissions: 'ter mais permissões',
+  read: 'ler arquivos',
+  search: 'pesquisar',
+  shell: 'rodar um comando'
+}
+
 /** The screen in Brazilian Portuguese, over `en`; a key left out falls back to English. */
 export const ptBR: Override<Messages> = {
   approval: {
@@ -28,7 +56,7 @@ export const ptBR: Override<Messages> = {
     guardianDenied: 'O guardião julgou isto perigoso. Você ainda pode permitir, uma vez.',
     once: 'Permitir uma vez',
     reasonPlaceholder: 'Por que não? (opcional, o agente lê)',
-    title: (tool: string) => `Permitir ${tool}?`
+    title: (tool: string) => APPROVALS[tool] ?? `Permitir ${tool}?`
   },
   bots: {
     advanced: 'Avançado',
@@ -460,10 +488,14 @@ export const ptBR: Override<Messages> = {
     answer: 'Responder',
     asks: (name: string) => `${name} pergunta`,
     deny: 'Recusar',
-    dismiss: 'Dispensar',
     other: 'Outro',
-    reason: 'Por quê (opcional, ele lê)',
-    wantsTo: (name: string, tool: string) => `${name} quer usar ${tool}`
+    reason: 'Por que não? (opcional, ele lê)',
+    skip: 'Pular',
+    wantsTo: (name: string, tool: string) => {
+      const act = EXECUTOR_ACTS[tool]
+
+      return act ? `${name} quer ${act}` : `${name} quer usar ${tool}`
+    }
   },
   subagents: {
     button: (agents: number, tasks: number) =>
@@ -802,6 +834,7 @@ export const ptBR: Override<Messages> = {
       run_command: { done: 'Rodou', pending: 'Rodando', plain: 'Rodar' },
       web_search: { done: 'Buscou', pending: 'Buscando', plain: 'Buscar' }
     },
+    unanswered: 'sem resposta a tempo',
     waiting: 'esperando a saída…',
     waitingFor: {
       answer: 'esperando sua resposta',

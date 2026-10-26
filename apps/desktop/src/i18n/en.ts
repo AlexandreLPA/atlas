@@ -16,6 +16,36 @@ const EFFORTS: Record<string, string> = {
   xhigh: 'Extra high'
 }
 
+/** What Atlas's approval asks, by the tool that asks; another tool is named. */
+const APPROVALS: Record<string, string> = {
+  cronjob_manage: 'Schedule this command?',
+  delegate: 'Act on your own session?',
+  edit_file: 'Change this file?',
+  run_command: 'Run this command?',
+  write_file: 'Change this file?'
+}
+
+/** What an executor's tool would do, by its name there; another tool is named. */
+const EXECUTOR_ACTS: Record<string, string> = {
+  Bash: 'run a command',
+  Edit: 'change a file',
+  MultiEdit: 'change a file',
+  NotebookEdit: 'change a notebook',
+  Read: 'read a file',
+  WebFetch: 'open a web page',
+  WebSearch: 'search the web',
+  Write: 'write a file',
+  apply_patch: 'change files',
+  delete: 'delete files',
+  edit: 'change files',
+  fetch: 'open a web page',
+  move: 'move files',
+  permissions: 'get more permissions',
+  read: 'read files',
+  search: 'search',
+  shell: 'run a command'
+}
+
 /** Every text the screen shows, in English. Other languages override it (`catalog.ts`). */
 export const en = {
   approval: {
@@ -25,7 +55,7 @@ export const en = {
     guardianDenied: 'The guardian judged this dangerous. You may still allow it, once.',
     once: 'Allow once',
     reasonPlaceholder: 'Why not? (optional, the agent reads it)',
-    title: (tool: string) => `Allow ${tool}?`
+    title: (tool: string) => APPROVALS[tool] ?? `Allow ${tool}?`
   },
   /** What every card that waits for the user says once answered, until the server has it. */
   card: {
@@ -456,10 +486,14 @@ export const en = {
     answer: 'Answer',
     asks: (name: string) => `${name} asks`,
     deny: 'Deny',
-    dismiss: 'Dismiss',
     other: 'Other',
-    reason: 'Why (optional, it reads it)',
-    wantsTo: (name: string, tool: string) => `${name} wants to use ${tool}`
+    reason: 'Why not? (optional, it reads it)',
+    skip: 'Skip',
+    wantsTo: (name: string, tool: string) => {
+      const act = EXECUTOR_ACTS[tool]
+
+      return act ? `${name} wants to ${act}` : `${name} wants to use ${tool}`
+    }
   },
   subagents: {
     button: (agents: number, tasks: number) =>
@@ -809,6 +843,8 @@ export const en = {
       run_command: { done: 'Ran', pending: 'Running', plain: 'Run' },
       web_search: { done: 'Searched', pending: 'Searching', plain: 'Search' }
     },
+    /** A call that never ran: nobody answered its approval in time. */
+    unanswered: 'not answered in time',
     waiting: 'waiting for its output…',
     /** A call a card holds: what it waits for. */
     waitingFor: {

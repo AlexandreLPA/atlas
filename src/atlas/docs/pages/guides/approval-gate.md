@@ -44,8 +44,14 @@ when the conversation came from there, with the command and why it asks. You can
 the agent reads. Silence is not consent: an approval nobody answers in
 `[trust] approval_timeout` seconds (5 minutes unless you change it) counts as refused.
 
-In the app, the command shows on the conversation as waiting for your approval, in amber, until you
-answer: it has not run. Once allowed it runs, and a denied one stays marked as not run.
+In the app, the card asks what the call would do, such as *Run this command?*, over exactly what
+would run, and its choices come in that order, the one that goes ahead first and **Deny** last. Click
+the card and the number keys pick them: 1 allows once. The card never takes the keyboard from where
+you type.
+
+The command shows on the conversation as waiting for your approval, in amber, until you answer: it
+has not run. Once allowed it runs; a denied one stays marked as not run, and one nobody answered as
+*not answered in time*.
 
 After three denials in a row from the reviewer, the agent is told to stop trying variations of the
 command and to report to you.

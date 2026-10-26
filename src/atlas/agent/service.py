@@ -110,6 +110,7 @@ from atlas.agent.model import (
     TurnHooks,
     TurnLimit,
     TurnOutcome,
+    Unanswered,
 )
 from atlas.agent.store import SpillFolder
 from atlas.models import (
@@ -636,7 +637,9 @@ class AgentLoop:
         if self._gate is not None:
             refusal = await self._gate(tool, parsed)
             if refusal is not None:
-                return ToolFinished(call.id, call.name, refusal, ToolStatus.DENIED)
+                unanswered = isinstance(refusal, Unanswered)
+                status = ToolStatus.UNANSWERED if unanswered else ToolStatus.DENIED
+                return ToolFinished(call.id, call.name, str(refusal), status)
         try:
             output = await tool.run(parsed)
         except Exception as error:  # the tool edge: a tool is foreign code (MCP, plugins), logged

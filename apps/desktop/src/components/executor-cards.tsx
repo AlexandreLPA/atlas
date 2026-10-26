@@ -5,14 +5,15 @@ import type { ExecutorApprovalParams, ExecutorQuestionParams } from '@/protocol/
 import { answerExecutor, type Card } from '@/store/app'
 
 import { CardAnswering } from './card-answering'
+import { AHEAD, CardFrame, Choice, Choices, FIELD, OUT, Target } from './card-frame'
 
 export type ExecutorCard = Extract<Card, { kind: 'executor-approval' | 'executor-question' }>
 
 /**
  * What an executor asks the user, inside its session's conversation as Atlas's own questions and
- * approvals are in Atlas's (step 16f; the cards of step 13, which the workbench of step 16c held).
- * It waits with no deadline. Styled apart from Atlas's: Anthropic's logo is left out, its trademark
- * guidelines asking for approval first, so the card carries the name.
+ * approvals are in Atlas's (step 16f; the cards of step 13, which the workbench of step 16c held),
+ * and drawn as they are. It waits with no deadline. Its title names the executor: Anthropic's logo
+ * is left out, its trademark guidelines asking for approval first.
  */
 export function ExecutorCardView({ card }: { card: ExecutorCard }) {
   if (card.answered) {
@@ -33,121 +34,113 @@ export function ExecutorCardView({ card }: { card: ExecutorCard }) {
   )
 }
 
-const CARD = 'enter space-y-2 rounded-xl border-l-4 border-waiting bg-background p-3 text-sm shadow-md'
-
 function ApprovalCard({ id, params }: { id: string; params: ExecutorApprovalParams }) {
   const [reason, setReason] = useState('')
 
   return (
-    <div className={CARD} data-testid="executor-approval-card">
-      <p className="font-semibold">{t.executor.wantsTo(params.executor_title, params.tool)}</p>
-      <pre className="overflow-x-auto rounded bg-muted px-2 py-1 text-xs whitespace-pre-wrap">{params.summary}</pre>
-      {params.description && <p className="text-xs text-muted-foreground">{params.description}</p>}
+    <CardFrame testId="executor-approval-card" title={t.executor.wantsTo(params.executor_title, params.tool)}>
+      <Target>{params.summary}</Target>
+      {params.description && <p className="text-soft">{params.description}</p>}
+      <Choices>
+        <Choice
+          index={0}
+          label={t.executor.allow}
+          onClick={() => {
+            answerExecutor(id, { allow: true })
+          }}
+          primary
+        />
+        <Choice
+          index={1}
+          label={t.executor.deny}
+          onClick={() => {
+            answerExecutor(id, reason.trim() ? { allow: false, reason: reason.trim() } : { allow: false })
+          }}
+        />
+      </Choices>
       <input
         aria-label={t.executor.reason}
-        className="w-full rounded border border-border-strong px-2 py-1 text-xs bg-raised"
+        className={FIELD}
         onChange={event => {
           setReason(event.target.value)
         }}
         placeholder={t.executor.reason}
         value={reason}
       />
-      <div className="flex gap-2">
-        <button
-          className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
-          onClick={() => {
-            answerExecutor(id, { allow: true })
-          }}
-          type="button"
-        >
-          {t.executor.allow}
-        </button>
-        <button
-          className="rounded border border-border-strong px-3 py-1 text-xs"
-          onClick={() => {
-            answerExecutor(id, reason.trim() ? { allow: false, reason: reason.trim() } : { allow: false })
-          }}
-          type="button"
-        >
-          {t.executor.deny}
-        </button>
-      </div>
-    </div>
+    </CardFrame>
   )
 }
 
+/** Its questions as Atlas's own are asked: each with its choices under their number keys, "Other"
+ * with typed text, several where the question allows; answered once each has an answer. */
 function QuestionCard({ id, params }: { id: string; params: ExecutorQuestionParams }) {
   const [picked, setPicked] = useState<Record<string, string[]>>({})
-  const [other, setOther] = useState<Record<string, string>>({})
+  const [typed, setTyped] = useState<Record<string, string>>({})
 
   const toggle = (question: string, label: string, multi: boolean) => {
-    const current = picked[question] ?? []
-    const next = multi
-      ? current.includes(label)
-        ? current.filter(item => item !== label)
-        : [...current, label]
-      : [label]
-    setPicked({ ...picked, [question]: next })
+    setPicked(current => {
+      const now = current[question] ?? []
+      const next = multi ? (now.includes(label) ? now.filter(item => item !== label) : [...now, label]) : [label]
+
+      return { ...current, [question]: next }
+    })
   }
 
   const answers: Record<string, string | string[]> = {}
 
   for (const question of params.questions) {
-    const typed = other[question.question]?.trim()
-    const chosen = picked[question.question] ?? []
+    const chosen = (picked[question.question] ?? []).filter(label => label !== OTHER)
+    const other = (picked[question.question] ?? []).includes(OTHER) || question.choices.length === 0
+    const text = other ? (typed[question.question] ?? '').trim() : ''
+    const all = text ? [...chosen, text] : chosen
 
-    if (typed) {
-      answers[question.question] = typed
-    } else if (chosen.length) {
-      answers[question.question] = question.multi_select ? chosen : (chosen[0] ?? '')
+    if (all.length) {
+      answers[question.question] = question.multi_select ? all : (all[0] ?? '')
     }
   }
 
   const complete = params.questions.every(question => question.question in answers)
 
   return (
-    <div className={CARD} data-testid="executor-question-card">
-      <p className="font-semibold">{t.executor.asks(params.executor_title)}</p>
+    <CardFrame testId="executor-question-card" title={t.executor.asks(params.executor_title)}>
       {params.questions.map(question => (
-        <div className="space-y-1" key={question.question}>
-          <p>
-            {question.header && <span className="mr-1 text-xs text-waiting-text">{question.header}</span>}
+        <fieldset className="space-y-2" key={question.question}>
+          <legend className="mb-1">
+            {question.header && <span className="mr-1.5 text-xs text-waiting-text">{question.header}</span>}
             {question.question}
-          </p>
-          <div className="flex flex-wrap gap-1">
-            {question.choices.map(choice => (
-              <button
-                aria-pressed={(picked[question.question] ?? []).includes(choice.label)}
-                className={`rounded border px-2 py-0.5 text-xs ${
-                  (picked[question.question] ?? []).includes(choice.label)
-                    ? 'border-waiting bg-waiting/10'
-                    : 'border-border-strong'
-                }`}
-                key={choice.label}
-                onClick={() => {
-                  toggle(question.question, choice.label, question.multi_select)
-                }}
-                title={choice.description}
-                type="button"
-              >
-                {choice.label}
-              </button>
-            ))}
-          </div>
-          <input
-            aria-label={`${t.executor.other}: ${question.question}`}
-            className="w-full rounded border border-border-strong px-2 py-1 text-xs bg-raised"
-            onChange={event => {
-              setOther({ ...other, [question.question]: event.target.value })
-            }}
-            placeholder={t.executor.other}
-            value={other[question.question] ?? ''}
-          />
-        </div>
+          </legend>
+          {question.choices.length > 0 && (
+            <Choices>
+              {[...question.choices, { description: '', label: OTHER }].map((choice, index) => (
+                <Choice
+                  index={index}
+                  key={choice.label}
+                  label={choice.label === OTHER ? t.executor.other : choice.label}
+                  onClick={() => {
+                    toggle(question.question, choice.label, question.multi_select)
+                  }}
+                  pressed={(picked[question.question] ?? []).includes(choice.label)}
+                  title={choice.description || undefined}
+                />
+              ))}
+            </Choices>
+          )}
+          {(question.choices.length === 0 || (picked[question.question] ?? []).includes(OTHER)) && (
+            <input
+              aria-label={`${t.executor.other}: ${question.question}`}
+              className={FIELD}
+              onChange={event => {
+                setTyped(current => ({ ...current, [question.question]: event.target.value }))
+              }}
+              placeholder={t.executor.other}
+              value={typed[question.question] ?? ''}
+            />
+          )}
+        </fieldset>
       ))}
       <div className="flex gap-2">
         <button
-          className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground disabled:opacity-40"
+          className={AHEAD}
           disabled={!complete}
           onClick={() => {
             answerExecutor(id, { answers })
@@ -157,15 +150,18 @@ function QuestionCard({ id, params }: { id: string; params: ExecutorQuestionPara
           {t.executor.answer}
         </button>
         <button
-          className="rounded border border-border-strong px-3 py-1 text-xs"
+          className={OUT}
           onClick={() => {
             answerExecutor(id, {})
           }}
           type="button"
         >
-          {t.executor.dismiss}
+          {t.executor.skip}
         </button>
       </div>
-    </div>
+    </CardFrame>
   )
 }
+
+/** The screen's "Other" choice; never a label the executor wrote, since it is not text. */
+const OTHER = '\u0000other'

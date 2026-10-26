@@ -4,6 +4,7 @@ import { t } from '@/i18n'
 import { answerSecret, type Card } from '@/store/app'
 
 import { CardAnswering } from './card-answering'
+import { AHEAD, CardFrame, FIELD, OUT } from './card-frame'
 
 type SecretCardProps = { card: Extract<Card, { kind: 'secret' }> }
 
@@ -15,9 +16,12 @@ export function SecretCard({ card }: SecretCardProps) {
   const [visible, setVisible] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Focus the field when the card appears; a key paste follows at once.
+  // The field takes the keyboard as the card appears, for the paste that follows, only when
+  // nothing else has it: a key typed for the message box never lands in the key's field.
   useEffect(() => {
-    inputRef.current?.focus()
+    if (document.activeElement === null || document.activeElement === document.body) {
+      inputRef.current?.focus()
+    }
   }, [])
 
   if (card.answered) {
@@ -41,15 +45,8 @@ export function SecretCard({ card }: SecretCardProps) {
   }
 
   return (
-    <section
-      aria-label={t.secret.title(card.params.name)}
-      className="enter space-y-3 rounded-lg border border-waiting/40 bg-waiting/10 p-4"
-      data-testid="secret-card"
-    >
-      <header className="space-y-1">
-        <h2 className="text-sm font-semibold">{t.secret.title(card.params.name)}</h2>
-        <p className="text-sm text-soft">{card.params.reason}</p>
-      </header>
+    <CardFrame testId="secret-card" title={t.secret.title(card.params.name)}>
+      <p className="text-soft">{card.params.reason}</p>
       {card.params.exists && (
         <p className="text-xs text-waiting-text" data-testid="secret-overwrite">
           {t.secret.overwrite(card.params.updated_at)}
@@ -62,7 +59,7 @@ export function SecretCard({ card }: SecretCardProps) {
           aria-label={t.secret.title(card.params.name)}
           autoComplete="off"
           autoCorrect="off"
-          className="flex-1 rounded-md border border-border-strong bg-raised px-3 py-1.5 font-mono text-sm"
+          className={`${FIELD} flex-1 font-mono`}
           data-testid="secret-input"
           onChange={event => {
             setValue(event.target.value)
@@ -81,7 +78,7 @@ export function SecretCard({ card }: SecretCardProps) {
         />
         <button
           aria-label={visible ? t.secret.hide : t.secret.show}
-          className="rounded-md border border-border-strong bg-raised px-3 py-1.5 text-sm"
+          className="rounded-md border border-border-strong bg-raised px-3 py-1.5 hover:bg-muted"
           data-testid="secret-eye"
           onClick={() => {
             setVisible(current => !current)
@@ -93,7 +90,7 @@ export function SecretCard({ card }: SecretCardProps) {
       </div>
       <div className="flex gap-2">
         <button
-          className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className={AHEAD}
           data-testid="secret-save"
           disabled={value.length === 0}
           onClick={submit}
@@ -101,15 +98,10 @@ export function SecretCard({ card }: SecretCardProps) {
         >
           {t.secret.save}
         </button>
-        <button
-          className="rounded-md px-4 py-1.5 text-sm text-soft hover:bg-selected"
-          data-testid="secret-skip"
-          onClick={skip}
-          type="button"
-        >
+        <button className={OUT} data-testid="secret-skip" onClick={skip} type="button">
           {t.secret.skip}
         </button>
       </div>
-    </section>
+    </CardFrame>
   )
 }

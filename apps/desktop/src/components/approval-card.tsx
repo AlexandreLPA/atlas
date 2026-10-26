@@ -5,93 +5,63 @@ import type { ApprovalResult } from '@/protocol/protocol.generated'
 import { answerApproval, type Card } from '@/store/app'
 
 import { CardAnswering } from './card-answering'
+import { CardFrame, Choice, Choices, FIELD, Target } from './card-frame'
 
 type ApprovalCardProps = { card: Extract<Card, { kind: 'approval' }> }
 
 /**
- * The approval: once, this conversation, always, or deny with a reason the model reads, so it can
- * do differently. When the guardian judged the call
- * dangerous, the user may overrule it only for this one call.
+ * The approval, titled by what the call would do (Run this command?) over exactly what would run:
+ * once, this conversation, always, or deny with a reason the model reads, so it can do
+ * differently. When the guardian judged the call dangerous, the user may overrule it only for this
+ * one call.
  */
 export function ApprovalCard({ card }: ApprovalCardProps) {
   const { params } = card
   const [reason, setReason] = useState('')
-  const wider = !params.guardian_denied
+  const title = t.approval.title(params.tool)
 
   if (card.answered) {
-    return <CardAnswering testId="approval-card" title={t.approval.title(params.tool)} />
+    return <CardAnswering testId="approval-card" title={title} />
   }
 
   const choose = (choice: ApprovalResult['choice']) => {
     answerApproval(card.id, choice === 'deny' && reason.trim() ? { choice, reason: reason.trim() } : { choice })
   }
+  const wider = !params.guardian_denied
+  const choices: (readonly [ApprovalResult['choice'], string])[] = [
+    ['once', t.approval.once],
+    ...(wider && params.allow_conversation ? [['conversation', t.approval.conversation] as const] : []),
+    ...(wider && params.allow_always ? [['always', t.approval.always] as const] : []),
+    ['deny', t.approval.deny]
+  ]
 
   return (
-    <section
-      aria-label={t.approval.title(params.tool)}
-      className="enter space-y-3 rounded-lg border border-waiting/40 bg-waiting/10 p-4"
-      data-testid="approval-card"
-    >
-      <h2 className="text-sm font-semibold">{t.approval.title(params.tool)}</h2>
-      <pre className="max-h-48 overflow-auto rounded bg-raised p-2 font-mono text-xs whitespace-pre-wrap">
-        {params.target}
-      </pre>
-      {params.reason && <p className="text-sm text-soft">{params.reason}</p>}
-      {params.guardian_denied && <p className="text-sm font-medium text-failed-text">{t.approval.guardianDenied}</p>}
-      <div className="flex flex-wrap gap-2">
-        <Choice
-          label={t.approval.once}
-          onClick={() => {
-            choose('once')
-          }}
-          primary
-        />
-        {wider && params.allow_conversation && (
+    <CardFrame testId="approval-card" title={title}>
+      <Target>{params.target}</Target>
+      {params.reason && <p className="text-soft">{params.reason}</p>}
+      {params.guardian_denied && <p className="font-medium text-failed-text">{t.approval.guardianDenied}</p>}
+      <Choices>
+        {choices.map(([choice, label], index) => (
           <Choice
-            label={t.approval.conversation}
+            index={index}
+            key={choice}
+            label={label}
             onClick={() => {
-              choose('conversation')
+              choose(choice)
             }}
+            primary={index === 0}
           />
-        )}
-        {wider && params.allow_always && (
-          <Choice
-            label={t.approval.always}
-            onClick={() => {
-              choose('always')
-            }}
-          />
-        )}
-        <Choice
-          label={t.approval.deny}
-          onClick={() => {
-            choose('deny')
-          }}
-        />
-      </div>
+        ))}
+      </Choices>
       <input
         aria-label={t.approval.reasonPlaceholder}
-        className="w-full rounded-md border border-border-strong bg-raised px-3 py-1.5 text-sm"
+        className={FIELD}
         onChange={event => {
           setReason(event.target.value)
         }}
         placeholder={t.approval.reasonPlaceholder}
         value={reason}
       />
-    </section>
-  )
-}
-
-function Choice({ label, onClick, primary = false }: { label: string; onClick: () => void; primary?: boolean }) {
-  return (
-    <button
-      className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-        primary ? 'bg-primary text-primary-foreground' : 'border border-border-strong bg-raised hover:bg-muted'
-      }`}
-      onClick={onClick}
-      type="button"
-    >
-      {label}
-    </button>
+    </CardFrame>
   )
 }

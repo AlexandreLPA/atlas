@@ -46,7 +46,7 @@ test("ask_user's card: the choice clicked is what the model receives", async () 
   expect(JSON.stringify(second?.body?.messages?.at(-1))).toContain('Blue')
 })
 
-test('approval, once: the command runs only after the click', async () => {
+test('approval, once: the command runs only after the choice, made by its number key', async () => {
   const { folder, model, page } = desktop
   const target = build(folder)
   // The turn's call, then the guardian's verdict, then the reply after the command ran.
@@ -62,8 +62,17 @@ test('approval, once: the command runs only after the click', async () => {
   await expect(call).toHaveAttribute('data-status', 'waiting')
   await expect(call.locator('summary')).toContainText('Run rm -r build')
   await expect(call.getByTestId('tool-state')).toHaveText('waiting for your approval')
-  await expect(card.getByRole('button')).toHaveText(['Allow once', 'This conversation', 'Always', 'Deny'])
-  await card.getByRole('button', { name: 'Allow once' }).click()
+  // It asks what the call would do, its choices in order under their number keys.
+  await expect(card).toHaveAccessibleName('Run this command?')
+  const choices = card.getByRole('button')
+  await expect(choices).toHaveCount(4)
+  for (const [index, name] of ['Allow once', 'This conversation', 'Always', 'Deny'].entries()) {
+    await expect(choices.nth(index)).toHaveAccessibleName(name)
+    await expect(choices.nth(index)).toHaveAttribute('aria-keyshortcuts', String(index + 1))
+  }
+  // A click on the card gives it the keyboard, and 1 is the first choice.
+  await card.getByRole('heading').click()
+  await page.keyboard.press('1')
 
   await expect(card).toBeHidden()
   await expect(page.getByTestId('assistant-message')).toContainText('Removed the build folder.')
@@ -91,6 +100,26 @@ test('approval, deny with a reason: the command never runs and the model reads w
   await expect(call).toHaveAttribute('data-status', 'denied')
   await expect(call.locator('summary')).toContainText('Run rm -r build')
   await expect(call.locator('summary')).not.toContainText('Ran')
+})
+
+test('approval nobody answers: the card goes, and the call reads as never run, not denied', async () => {
+  await desktop.close()
+  desktop = await launch({ config: '[trust]\napproval_timeout = 10' })
+  const { folder, model, page } = desktop
+  const target = build(folder)
+  await model.reply(remove, { text: 'ESCALATE' }, { text: 'Nobody answered, so I left it.' })
+  await manual(page)
+  await say(page, 'Delete the build folder')
+
+  const card = page.getByTestId('approval-card')
+  await expect(card).toBeVisible()
+  await expect(card).toBeHidden({ timeout: 20_000 })
+  await expect(page.getByTestId('assistant-message')).toContainText('Nobody answered, so I left it.')
+  expect(existsSync(target)).toBe(true)
+  const call = page.getByTestId('tool-row')
+  await expect(call).toHaveAttribute('data-status', 'unanswered')
+  await expect(call.locator('summary')).toContainText('Run rm -r build')
+  await expect(call.getByTestId('tool-state')).toHaveText('not answered in time')
 })
 
 test('"Auto", on from the start, skips the guardian and the card', async () => {

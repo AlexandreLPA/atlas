@@ -133,7 +133,7 @@ test('a task Atlas delegates opens from its line as a session, marked by Atlas, 
   await expect(page.getByTestId('session-header')).toContainText('someone@example.com')
 
   const approval = page.getByTestId('executor-approval-card')
-  await expect(approval).toContainText('Claude Code wants to use Bash')
+  await expect(approval).toContainText('Claude Code wants to run a command')
   await expect(approval).toContainText('npm test')
   // The call it asks for waits for the user: the session read meanwhile does not cut it short
   // (found by the UI review: it read "cancelled").

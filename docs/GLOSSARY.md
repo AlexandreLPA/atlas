@@ -106,7 +106,7 @@ becomes an identifier. Portuguese is listed because the roadmap is written in Po
 | `turn event` | evento do turno | What the loop reports while a turn runs: text and reasoning as they arrive, each tool starting and finishing, a compaction, the end |
 | `part` | parte | One piece of a turn as the screen shows it, in order: reasoning, text, a tool call, or a part of a kind the app does not know, shown generically |
 | `interim text` | texto do meio | The text of a model call that ends asking for tools: shown lighter on the trail and sent to a channel as a message of its own (`message.interim`) |
-| `tool status` | estado da ferramenta | How a tool call ended: `completed`, `failed`, `denied` (refused at approval) or `cancelled` (the turn stopped first). The stored result keeps it, and the trail colors the call's dot by it |
+| `tool status` | estado da ferramenta | How a tool call ended: `completed`, `failed`, `denied` (refused at approval), `cancelled` (the turn stopped first) or `unanswered` (nobody answered its approval in time, so it never ran and nobody refused it). The stored result keeps it, and the trail colors the call's dot by it |
 | `waiting call` | chamada esperando você | A tool call held by a card the user has not answered: its approval (named by the request's `call_id`), its questions (`ask_user`), its key (`secrets`), or an executor's permission or question. The trail shows it amber with what it waits for, never as running; it comes from the open cards, never stored |
 | `final answer` | resposta final | The text of a turn's last model call, the one that asks for no tool; `message.complete` carries it |
 | `trail` | trilha | A turn drawn as a vertical line with one dot per part, the dot colored by the part's state. The roadmap's timeline plugin is another thing |
@@ -168,7 +168,7 @@ becomes an identifier. Portuguese is listed because the roadmap is written in Po
 | `desktop app` | app desktop | The Electron app in `apps/desktop/`: it starts the server, or reaches a running one, and shows the conversations |
 | `ready line` | linha de pronto | `ATLAS_SERVER_READY port=<n>`, which `atlas serve` writes on standard output once it listens, so whoever started it learns the port |
 | `parent watchdog` | vigia do app | The server's check, every 2 seconds, that the process which started it (`--parent-pid`) is alive; the server stops when it is gone |
-| `card` | cartão | What the screen shows for a server request: `ask_user`'s questions or an approval, taken down on `request.cancel`; answered, it says the answer is on its way until then |
+| `card` | cartão | What the screen shows for a server request: `ask_user`'s questions, an approval, a key, or an executor's permission or question, taken down on `request.cancel`; answered, it says the answer is on its way until then. Every one has the same frame (`CardFrame`): its question as the title, exactly what it is about, its choices in order under their number keys |
 | `composer` | caixa de texto | Where the user writes; while a turn runs, what it sends steers the turn, and a stop puts the unsent messages back in it |
 | `message catalog` | catálogo de textos | Every text the screen shows, by key, typed: `en` whole, other languages as partial overrides |
 | `locale` | idioma | The catalog the screen shows, taken from the system: `pt-BR`, or `en` for anything else |

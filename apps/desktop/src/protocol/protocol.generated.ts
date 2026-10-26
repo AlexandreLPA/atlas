@@ -71,7 +71,7 @@ export interface MessageRow {
   calls: CallRow[]
   /** A tool result's call, and how it ended. */
   call_id: string | null
-  status: 'completed' | 'failed' | 'denied' | 'cancelled' | null
+  status: 'completed' | 'failed' | 'denied' | 'cancelled' | 'unanswered' | null
   /** The files a user message came with (step 16g). */
   attachments: AttachmentRow[]
 }
@@ -1426,8 +1426,8 @@ export interface ToolComplete {
   name: string
   /** What the model received. */
   result_text: string
-  /** `completed`; `failed` (it raised, or said it failed); `denied` (refused at approval); `cancelled` (the turn stopped first). */
-  status: 'completed' | 'failed' | 'denied' | 'cancelled'
+  /** `completed`; `failed` (it raised, or said it failed); `denied` (refused at approval); `cancelled` (the turn stopped first); `unanswered` (its approval was not answered in time). */
+  status: 'completed' | 'failed' | 'denied' | 'cancelled' | 'unanswered'
   /** How long the call took; 0 for one that never ran. */
   duration_s: number
   /** The file that holds the whole result, when it did not fit. */

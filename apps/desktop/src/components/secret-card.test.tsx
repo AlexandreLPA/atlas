@@ -98,4 +98,20 @@ describe('the secret card (step 16d)', () => {
     fireEvent.keyDown(field, { key: 'Enter' })
     expect(answered).toHaveBeenCalledWith('srq-3', { value: 'sk-live-xyz' })
   })
+
+  it('takes the keyboard as it appears when nothing has it, for the paste that follows', () => {
+    render(<SecretCard card={secret()} />)
+
+    expect(document.activeElement).toBe(screen.getByTestId('secret-input'))
+  })
+
+  it('leaves the keyboard where the user types, so their words never land in the key', () => {
+    const box = document.createElement('textarea')
+    document.body.append(box)
+    box.focus()
+    render(<SecretCard card={secret()} />)
+
+    expect(document.activeElement).toBe(box)
+    box.remove()
+  })
 })

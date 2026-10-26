@@ -1,11 +1,18 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { ApprovalParams, AskParams, ProposalRow } from '@/protocol/protocol.generated'
+import type {
+  ApprovalParams,
+  AskParams,
+  ExecutorApprovalParams,
+  ExecutorQuestionParams,
+  ProposalRow
+} from '@/protocol/protocol.generated'
 import * as app from '@/store/app'
 
 import { ApprovalCard } from './approval-card'
 import { AskCard } from './ask-card'
+import { ExecutorCardView } from './executor-cards'
 import { ProposalCard } from './proposal-card'
 
 afterEach(() => {
@@ -36,6 +43,14 @@ const approval = (params: Partial<ApprovalParams> = {}) => ({
     ...params
   }
 })
+
+/** The buttons on screen are these, in this order, each with the number key that picks it. */
+function expectChoices(names: string[]) {
+  expect(screen.getAllByRole('button')).toEqual(names.map(name => screen.getByRole('button', { name })))
+  expect(screen.getAllByRole('button').map(button => button.getAttribute('aria-keyshortcuts'))).toEqual(
+    names.map((_, index) => String(index + 1))
+  )
+}
 
 describe("ask_user's card", () => {
   it('answers each question by its id: a choice, typed text for "Other", several where allowed', () => {
@@ -72,6 +87,26 @@ describe("ask_user's card", () => {
 
     expect(answered).toHaveBeenCalledWith('srq-1', {})
   })
+
+  it("picks by number in the row of choices that holds the keyboard, or else in the card's first", () => {
+    const answered = vi.spyOn(app, 'answerAsk').mockImplementation(() => undefined)
+    render(
+      <AskCard
+        card={ask({
+          questions: [
+            { choices: ['Green', 'Blue'], id: 'q0', multi_select: false, text: 'Which colour?' },
+            { choices: ['A', 'B'], id: 'q1', multi_select: true, text: 'Which letters?' }
+          ]
+        })}
+      />
+    )
+
+    fireEvent.keyDown(screen.getByRole('region', { name: 'The agent asks 2 questions' }), { key: '2' })
+    fireEvent.keyDown(screen.getByRole('button', { name: 'A' }), { key: '2' })
+    fireEvent.click(screen.getByRole('button', { name: 'Answer' }))
+
+    expect(answered).toHaveBeenCalledWith('srq-1', { answers: { q0: 'Blue', q1: ['B'] } })
+  })
 })
 
 describe('the approval card', () => {
@@ -79,12 +114,7 @@ describe('the approval card', () => {
     const answered = vi.spyOn(app, 'answerApproval').mockImplementation(() => undefined)
     render(<ApprovalCard card={approval()} />)
 
-    expect(screen.getAllByRole('button').map(button => button.textContent)).toEqual([
-      'Allow once',
-      'This conversation',
-      'Always',
-      'Deny'
-    ])
+    expectChoices(['Allow once', 'This conversation', 'Always', 'Deny'])
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'use git clean' } })
     fireEvent.click(screen.getByRole('button', { name: 'Deny' }))
 
@@ -94,7 +124,113 @@ describe('the approval card', () => {
   it('offers only once and deny when the guardian judged it dangerous', () => {
     render(<ApprovalCard card={approval({ guardian_denied: true })} />)
 
-    expect(screen.getAllByRole('button').map(button => button.textContent)).toEqual(['Allow once', 'Deny'])
+    expectChoices(['Allow once', 'Deny'])
+  })
+
+  it('asks what the call would do, over exactly what would run, and names a tool it has no words for', () => {
+    render(<ApprovalCard card={approval()} />)
+    expect(screen.getByRole('region', { name: 'Run this command?' })).toBeTruthy()
+    expect(screen.getByTestId('card-target').textContent).toBe('rm -r build')
+    cleanup()
+
+    render(<ApprovalCard card={approval({ target: '{"id": 1}', tool: 'mcp__crm__update' })} />)
+    expect(screen.getByRole('region', { name: 'Allow mcp__crm__update?' })).toBeTruthy()
+  })
+
+  it('answers by its number keys while the keyboard is in it, never from its reason field', () => {
+    const answered = vi.spyOn(app, 'answerApproval').mockImplementation(() => undefined)
+    render(<ApprovalCard card={approval()} />)
+
+    fireEvent.keyDown(screen.getByRole('textbox'), { key: '1' })
+    expect(answered).not.toHaveBeenCalled()
+    fireEvent.keyDown(screen.getByRole('region', { name: 'Run this command?' }), { key: '2' })
+
+    expect(answered).toHaveBeenCalledWith('srq-2', { choice: 'conversation' })
+  })
+})
+
+const executorApproval = (params: Partial<ExecutorApprovalParams> = {}) => ({
+  conversationId: '',
+  id: 'srq-4',
+  kind: 'executor-approval' as const,
+  params: {
+    conversation_id: '',
+    description: '',
+    executor: 'claude-code',
+    executor_title: 'Claude Code',
+    folder: '',
+    instance_id: 'i1',
+    summary: 'npm test',
+    title: '',
+    tool: 'Bash',
+    ...params
+  }
+})
+
+const executorQuestion = (params: Partial<ExecutorQuestionParams> = {}) => ({
+  conversationId: '',
+  id: 'srq-5',
+  kind: 'executor-question' as const,
+  params: {
+    conversation_id: '',
+    executor: 'claude-code',
+    executor_title: 'Claude Code',
+    folder: '',
+    instance_id: 'i1',
+    questions: [],
+    ...params
+  }
+})
+
+describe("an executor's cards", () => {
+  it("say what its tool would do, over exactly what, and answer as Atlas's own do", () => {
+    const answered = vi.spyOn(app, 'answerExecutor').mockImplementation(() => undefined)
+    render(<ExecutorCardView card={executorApproval()} />)
+
+    const card = screen.getByRole('region', { name: 'Claude Code wants to run a command' })
+    expect(screen.getByTestId('card-target').textContent).toBe('npm test')
+    expectChoices(['Allow', 'Deny'])
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'not now' } })
+    fireEvent.keyDown(card, { key: '2' })
+
+    expect(answered).toHaveBeenCalledWith('srq-4', { allow: false, reason: 'not now' })
+    cleanup()
+
+    render(<ExecutorCardView card={executorApproval({ tool: 'Frobnicate' })} />)
+    expect(screen.getByRole('region', { name: 'Claude Code wants to use Frobnicate' })).toBeTruthy()
+  })
+
+  it('asks with "Other" as Atlas\'s questions do, and answers once every question has an answer', () => {
+    const answered = vi.spyOn(app, 'answerExecutor').mockImplementation(() => undefined)
+    render(
+      <ExecutorCardView
+        card={executorQuestion({
+          questions: [
+            {
+              choices: [
+                { description: 'Fast', label: 'Vitest' },
+                { description: '', label: 'Jest' }
+              ],
+              header: 'Runner',
+              multi_select: false,
+              question: 'Which runner?'
+            },
+            { choices: [], header: '', multi_select: false, question: 'Which folder?' }
+          ]
+        })}
+      />
+    )
+
+    const answer = screen.getByRole<HTMLButtonElement>('button', { name: 'Answer' })
+    fireEvent.click(screen.getByRole('button', { name: 'Other' }))
+    fireEvent.change(screen.getByLabelText('Other: Which runner?'), { target: { value: 'Mocha' } })
+    expect(answer.disabled).toBe(true)
+    fireEvent.change(screen.getByLabelText('Other: Which folder?'), { target: { value: 'tests' } })
+    fireEvent.click(answer)
+
+    expect(answered).toHaveBeenCalledWith('srq-5', { answers: { 'Which folder?': 'tests', 'Which runner?': 'Mocha' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Skip' }))
+    expect(answered).toHaveBeenLastCalledWith('srq-5', {})
   })
 })
 

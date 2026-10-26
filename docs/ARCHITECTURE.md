@@ -577,7 +577,8 @@ SPDX header naming the original copyright and license (`SPDX-FileCopyrightText`,
 - **The user answers through an `Approver`** the server gives (step 8), as `ask_user` answers
   through an `Asker`: once, for the conversation, always (kept in the database), or deny, with a
   reason relayed to the model. Silence is not consent: a timeout, a withdrawn prompt and a
-  conversation with nobody to answer all deny.
+  conversation with nobody to answer all deny. Nobody refused the call a timeout stops, so it ends
+  `unanswered`, not `denied`: the gate's refusal text is then an `Unanswered`, which the loop reads.
 - **After 3 guardian denials in a row** the refusal tells the model to stop trying variations and
   report to the user (the denial breaker); an approval resets the count.
 - **Files and MCP:** the file tools refuse system paths and ask before changing the SSH
@@ -1217,6 +1218,16 @@ Cut to what a first screen needs: about 6 runtime packages.
   is on its way until the server's `request.cancel` takes it down, never gone first as if it had
   arrived; a reconnect drops it, and the request, delivered again while it waits, takes an answer
   again.
+- **Every card that waits for the user has one frame** (step 9d; the review found five cards in
+  three looks, an approval titled by the tool's own name, `Allow run_command?`, and the key's card
+  taking the keyboard from the message box). `CardFrame` gives Atlas's cards and an executor's the
+  same look: amber, the question as the title in words (`Run this command?`, `Claude Code wants to
+  run a command`; a tool with no words is named), exactly what would run or change (`Target`), and
+  the choices in one order, the one that goes ahead first and the one that refuses last, with the
+  reason field under them. While the keyboard is in a card, a number key picks the choice it
+  labels, in the row that holds the keyboard or else the card's first. A click on the card gives
+  it the keyboard; no card takes it by itself, and the key's field takes it only when nothing else
+  has it.
 - **Colors with a name and one meaning each, and short movement** (step 9d; the review found green
   meaning "at work" in the list and "done" on the trail, and the Markdown's code blocks drawn in
   black: they paint with color names the app had never defined). The app paints with the colors
@@ -1273,7 +1284,7 @@ full weight; a click on a tool opens what went in and what came out. Roadmap ste
 - **The trail.** One dot per part, linked from the turn's first part to its last; the user's
   message stays off the line. The dot's color is the state: hollow for reasoning, muted for interim
   text, solid for the final answer, green for a completed tool, red for a failed one, muted for a
-  denied or cancelled one, and blue and pulsing for one that runs, as a sidebar row at work, which
+  denied, cancelled or unanswered one, and blue and pulsing for one that runs, as a sidebar row at work, which
   also shows an elapsed timer. Success carries no mark. `tool.complete` carries `duration_s`.
 - **A call a card holds waits; it does not run** (step 9d, found by the UI review on 25/10/2026:
   a command waiting for its approval read "Running"). Its dot is amber and still, as the sidebar's
@@ -1303,8 +1314,10 @@ full weight; a click on a tool opens what went in and what came out. Roadmap ste
   red when it failed, cut at 20,000 characters with a copy-all button; a spilled result
   names its file. `tool.complete`'s `failed` becomes `status`: `completed`, `failed` (it raised,
   or its result says it failed), `denied` (refused at
-  approval) or `cancelled` (the turn stopped, or
-  the loop guard halted it before the call ran). A stop closes the loop's stream, so the
+  approval), `cancelled` (the turn stopped, or
+  the loop guard halted it before the call ran) or `unanswered` (nobody answered its approval in
+  time); an app older than its server shows a status it does not know with no word beside the
+  call. A stop closes the loop's stream, so the
   assistant tells the calls it cut, from the cancelled results the loop leaves. Removing a field,
   the protocol becomes `atlas.v2`: an app and a server of different versions refuse each other
   until both are updated (decided with the user on 2026-10-15; the installed app and its server

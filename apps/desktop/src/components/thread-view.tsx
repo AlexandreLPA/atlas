@@ -304,6 +304,7 @@ function dot(part: Part, waiting: ReadonlyMap<string, Waiting>): Dot {
           return waiting.has(part.toolId) ? 'waiting' : 'running'
         case 'denied':
         case 'cancelled':
+        case 'unanswered':
           return 'denied'
       }
   }

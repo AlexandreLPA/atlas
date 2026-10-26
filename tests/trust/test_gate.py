@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from atlas.agent import AgentLoop, Tool, ToolFinished
+from atlas.agent import AgentLoop, Tool, ToolFinished, Unanswered
 from atlas.home import Database, Home, TrustSettings, migrate
 from atlas.models import SCHEMA as MODELS_SCHEMA
 from atlas.models import CallLedger, ModelInfo, Models, ToolStatus
@@ -168,6 +168,20 @@ def test_a_user_who_never_answers_times_out() -> None:
 
     assert refused is not None
     assert "timed out" in refused
+    # Nobody refused it: the loop ends the call `unanswered`, not `denied`.
+    assert isinstance(refused, Unanswered)
+
+
+def test_only_silence_is_unanswered() -> None:
+    for answer in (
+        ApprovalAnswer(Outcome.ANSWERED, Choice.DENY),
+        ApprovalAnswer(Outcome.CANCELLED),
+        ApprovalAnswer(Outcome.UNDELIVERED),
+    ):
+        refused = _run(ApprovalGate(approver=_User(answer)), RUN, command="git reset --hard")
+
+        assert refused is not None
+        assert not isinstance(refused, Unanswered)
 
 
 def test_with_nobody_to_answer_a_flagged_command_is_refused_and_others_run() -> None:
@@ -383,6 +397,42 @@ def test_the_loop_gives_the_model_the_refusal_in_place_of_the_result(
     assert ran == []
     assert finished.status is ToolStatus.DENIED
     assert "BLOCKED (hardline)" in finished.result
+
+
+def test_a_call_whose_approval_nobody_answered_ends_unanswered(
+    connect: Connect, fake: FakeModelServer
+) -> None:
+    ran: list[str] = []
+
+    async def run(arguments: dict[str, Any]) -> str:
+        ran.append(arguments["command"])
+        return "done"
+
+    async def silent(request: ApprovalRequest) -> ApprovalAnswer:
+        await asyncio.sleep(60)
+        raise AssertionError("not reached")
+
+    command = Tool("run_command", "Runs a command.", {"type": "object", "properties": {}}, run)
+    fake.reply(
+        FakeReply(calls=[FakeCall("run_command", json.dumps({"command": "git reset --hard"}))]),
+        FakeReply(text="Nobody answered, so I left it."),
+    )
+    models = connect(fake, "openrouter")
+    gate = ApprovalGate(approver=silent, settings=TrustSettings(approval_timeout=0))
+    loop = AgentLoop(models.client("openrouter", "openai/gpt-4o-mini"), [command], gate=gate)
+
+    async def work() -> list[ToolFinished]:
+        return [
+            event async for event in loop.run([], "reset it") if isinstance(event, ToolFinished)
+        ]
+
+    (finished,) = _in(models, work)
+
+    assert ran == []
+    assert finished.status is ToolStatus.UNANSWERED
+    assert "Silence is not consent" in finished.result
+    # The model's text is plain text, the mark left with the status.
+    assert type(finished.result) is str
 
 
 def test_the_guardian_asks_a_reasoning_model_not_to_reason() -> None:
