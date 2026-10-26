@@ -44,6 +44,7 @@ import { SessionView } from './session-view'
 import { SettingsView } from './settings-view'
 import { SidePanel } from './side-panel'
 import { Sidebar } from './sidebar'
+import { TabStrip } from './tab-strip'
 import { ThreadView } from './thread-view'
 
 export function App() {
@@ -126,6 +127,7 @@ export function App() {
     <div className="relative flex h-full bg-background text-foreground" data-connection={state} style={widths}>
       <Sidebar />
       <main className="main-pane flex min-w-0 flex-1 flex-col">
+        {!keyScreen && <TabStrip />}
         <ConnectionBand />
         {keyBand && <KeyBand />}
         {keyScreen ? (

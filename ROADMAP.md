@@ -3715,6 +3715,29 @@ confiança. **Sem redesenho:** polimento, fluidez, percepção de velocidade e i
   usuário digita) e no e2e (o 1 permite uma vez; a aprovação deixada sozinha some depois dos seus
   10 segundos, e a chamada diz "sem resposta a tempo", com a pasta ainda lá). Fiscais: 2.692 testes
   do Python com 91,46% de cobertura, o `npm run check` (430 do Vitest) e os 74 do e2e.
+- **Entrega 6, abas (26/10):** as conversas, as dos bots e as sessões dos executores abertas numa
+  casa ganharam abas no topo da área central (`store/tabs.ts`, uma faixa por casa). O clique numa
+  linha abre na aba de passagem, em itálico, que o próximo clique reaproveita; ela fica quando é
+  usada (uma mensagem enviada) ou com um clique duplo, na aba ou na linha, e o que uma primeira
+  mensagem cria abre numa aba própria. A aba na tela é a que guarda o que a tela mostra, nunca um
+  estado à parte: o clique numa notificação ou na linha de uma tarefa delegada mostra a aba dela, e
+  a aba de uma sessão acompanha os ids que o harness dá e a troca de conta. Cada aba tem o ponto do
+  estado e o título em negrito enquanto o fim não foi visto; a conversa nova ainda não criada
+  aparece como aba; à direita, quantos cartões esperam longe da tela, e o clique leva ao primeiro.
+  Ctrl+1 a 8 mostram uma aba e Ctrl+9 a última, Ctrl+Tab a próxima, Ctrl+W fecha a da tela e mostra
+  a seguinte, tudo deixado para o shell dentro do terminal; arrastar muda a ordem, e o clique do
+  meio fecha. A janela guarda as abas de cada casa por máquina e nome, e a casa reabre nelas e na
+  que estava na tela, já lida; a aba fechada não volta, e a de uma conversa apagada fecha ao abrir.
+  A sessão de executor já vista mostra o rastro na hora enquanto é relida, e a primeira mensagem
+  enviada enquanto o usuário foi para outro lugar não o puxa mais de volta. Achado nos fiscais: o
+  "+" das abas e o botão da barra lateral tinham o mesmo nome, "Nova conversa", o que confunde o
+  leitor de tela e quebrava os testes que procuram esse botão; o "+" virou "Nova aba". No Mac, o
+  Cmd+W ainda fecha a janela, pelo menu padrão do Electron: fica para a entrega 9. Provado no Vitest
+  (a aba de passagem, fechar para a seguinte, a sessão seguida ao ganhar id, as abas guardadas por
+  casa e lidas com tolerância, as teclas, a conta do que espera) e no e2e (a linha na aba de
+  passagem e a seguinte tomando o lugar, a mensagem que a fixa, Ctrl+1, Ctrl+Tab, Ctrl+W e o
+  arrasto; e, reaberto, as mesmas abas, a da tela lida, a fechada fora). Fiscais: 2.692 testes do
+  Python com 91,49% de cobertura, o `npm run check` (444 do Vitest), o do site e os 76 do e2e.
 
 ## Assuntos de desenho ainda abertos
 

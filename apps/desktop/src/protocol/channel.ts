@@ -65,6 +65,11 @@ export class RpcError extends Error {
   }
 }
 
+/** The server has no such thing: a conversation or a session deleted since it was named. */
+export function notFound(error: unknown): boolean {
+  return error instanceof RpcError && error.code === ERROR_CODES.NOT_FOUND
+}
+
 export function rpcErrorFromFrame(raw: unknown): RpcError {
   const payload = (raw && typeof raw === 'object' ? raw : {}) as ErrorPayload
   const said = typeof payload.message === 'string' ? payload.message : ''

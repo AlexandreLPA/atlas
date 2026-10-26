@@ -85,10 +85,13 @@ function conversationDots(
   return ids.map(id => conversationDot(live[id] === true, asksIn(cards, id), marks[id]))
 }
 
+/** What tells a session: its id in its harness, and its instance here (a row's, or a tab's). */
+type SessionIds = Pick<SessionRow, 'instance_id' | 'session_id'>
+
 /** A session's dot, from its instance here as its events tell it, not as the list was last read
  * (asked for by the user on 22/10/2026: a session at work showed nothing until its folder was read
  * again, nor one whose instance began after it was). */
-export function useSessionDot(row: SessionRow): Dot {
+export function useSessionDot(row: SessionIds): Dot {
   const live = useSessionInstance(row)
   const marks = useStore($marks)
   const cards = useStore($cards)
@@ -105,7 +108,7 @@ export function useSessionDot(row: SessionRow): Dot {
 
 /** The instance on a session now, not ended: the one its row was read with, or one begun on it
  * since. */
-export function useSessionInstance(row: SessionRow): InstanceRow | undefined {
+export function useSessionInstance(row: SessionIds): InstanceRow | undefined {
   const { instances } = useStore($workbench)
 
   return instances.find(found =>

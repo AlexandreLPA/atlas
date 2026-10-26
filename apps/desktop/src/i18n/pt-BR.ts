@@ -162,6 +162,12 @@ export const ptBR: Override<Messages> = {
     untitled: 'Nova conversa',
     via: (source: string) => `pelo ${source}`
   },
+  tabs: {
+    close: (title: string) => `Fechar ${title}`,
+    label: 'Conversas e sessões abertas',
+    new: 'Nova aba',
+    waiting: (count: number) => (count === 1 ? '1 esperando você' : `${count} esperando você`)
+  },
   homes: {
     backedUp: (path: string, size: string) => `Backup salvo em ${path} (${size}). As chaves nunca vão no backup.`,
     backingUp: 'Fazendo o backup…',

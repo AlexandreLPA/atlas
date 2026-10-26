@@ -12,7 +12,7 @@ import { atom, map, type ReadableAtom, type WritableAtom } from 'nanostores'
 
 import { t } from '@/i18n'
 import { emitPluginEvent } from '@/plugins/events'
-import type { EventParams, ServerRequest } from '@/protocol/channel'
+import { type EventParams, notFound, type ServerRequest } from '@/protocol/channel'
 import type { AtlasClient, ConnectionState } from '@/protocol/client'
 import type {
   AccountSwitchRow,
@@ -82,6 +82,7 @@ import { closePreview, openPreview, targetOf } from './previews'
 import { applyActivity, caughtUp, fromTranscript, type SessionNote, turnEnded, withNotes } from './session'
 import { ended, instanceKey, type Mark } from './status'
 import { applySubagent } from './subagents'
+import { away, named, readTabs, screenPlace, type Tab, type TabPlace, Tabs, writeTabs } from './tabs'
 import { type CommandOutcome, leaveExecutorTab, runCommand, showExecutorTab } from './terminals'
 import { applyEvent, EMPTY_THREAD, fromHistory, terminalText, type Thread } from './thread'
 import {
@@ -203,6 +204,9 @@ export interface OpenSession {
   sessionId: string
   title: string
 }
+
+/** What opening a session needs to know of it: its row in the list, its tab, or its instance. */
+type SessionShown = Pick<SessionRow, 'elsewhere' | 'executor' | 'folder' | 'instance_id' | 'session_id' | 'title'>
 
 /** The switches under a session's box, before an instance runs on it: applied when one starts. The
  * model and the effort are the executor's ids; `null`, its own default. */
@@ -367,6 +371,13 @@ export class HomeSession {
   /** The route of the session on screen (asked for by the user on 21/10/2026), read when its
    * instance opens; `null` before it is read or with no instance. */
   readonly $sessionRoute = atom<null | SessionRouteRow>(null)
+  /** The tabs of the central area (store/tabs.ts). */
+  readonly tabs = new Tabs()
+  /** Where the window keeps them, its machine and name, once the home said its name. */
+  private tabsHome: null | string = null
+  /** The trail of each session shown before, by `sessionOwner`: shown again at once as its tab
+   * comes back, while it is read anew. */
+  private readonly sessionThreads = new Map<string, Thread>()
   /** Each executor's models and their efforts, as its plugin read them: read when one of its
    * sessions opens, and again after its account changes. */
   readonly $executorModels = map<Record<string, ExecutorModel[] | undefined>>({})
@@ -467,6 +478,22 @@ export class HomeSession {
       }),
       atlas.onRequest(request => this.handleRequest(request))
     ]
+    // The window keeps the tabs as they change, and which one is on screen; their titles follow
+    // the lists.
+    const save = () => {
+      this.saveTabs()
+    }
+    const retitle = () => {
+      this.tabs.retitle(place => this.titleOf(place))
+    }
+    this.stops.push(
+      this.tabs.$tabs.listen(save),
+      this.$selected.listen(save),
+      this.$view.listen(save),
+      this.$openSession.listen(save),
+      this.$conversations.listen(retitle),
+      this.$bots.listen(retitle)
+    )
     atlas.start()
   }
 
@@ -506,8 +533,11 @@ export class HomeSession {
     void readHomes(this).catch(() => undefined)
   }
 
-  /** Show a conversation: its stored messages, then its events from the number they were read at. */
+  /** Show a conversation, in its tab or the passing one: its stored messages, then its events from
+   * the number they were read at. */
   async selectConversation(conversationId: string): Promise<void> {
+    const place: TabPlace = { conversationId, kind: 'conversation' }
+    this.tabs.show(place, this.titleOf(place) ?? '')
     this.$selected.set(conversationId)
     this.$marks.setKey(conversationId, undefined)
     this.$view.set('conversation')
@@ -525,6 +555,118 @@ export class HomeSession {
     void this.readModel(conversationId).catch(() => undefined)
     void this.readSubagents(conversationId).catch(() => undefined)
     void this.readCommands(conversationId).catch(() => undefined)
+  }
+
+  // -- tabs ---------------------------------------------------------------------------------------
+
+  /** What the screen shows that a tab holds (store/tabs.ts). */
+  place(): null | TabPlace {
+    return screenPlace(this.$view.get(), this.$selected.get(), this.$openSession.get())
+  }
+
+  /** The tab on screen; `null` for a new conversation, a new session or a page. */
+  activeTab(): null | Tab {
+    return this.tabs.find(this.place())
+  }
+
+  /** What the lists call a tab's conversation, a bot's, or its session now. */
+  titleOf(place: TabPlace): string | undefined {
+    if (place.kind === 'session') {
+      return place.session.title || undefined
+    }
+
+    const { conversationId } = place
+
+    return this.botOf(conversationId)?.title ?? this.$conversations.get().find(row => row.id === conversationId)?.title
+  }
+
+  /** Show what a tab holds; a tab whose conversation was deleted since closes. */
+  async showTab(id: string): Promise<void> {
+    const tab = this.tabs.$tabs.get().find(open => open.id === id)
+
+    if (!tab) {
+      return
+    }
+
+    try {
+      if (tab.place.kind === 'conversation') {
+        await this.selectConversation(tab.place.conversationId)
+      } else {
+        const { session } = tab.place
+        await this.openSession({
+          elsewhere: session.elsewhere,
+          executor: session.executor,
+          folder: session.folder,
+          instance_id: session.instanceId,
+          session_id: session.sessionId,
+          title: session.title
+        })
+      }
+    } catch (error) {
+      if (!notFound(error)) {
+        throw error
+      }
+
+      this.closeTab(id)
+    }
+  }
+
+  /** Close a tab: the one on screen gives way to the next tab, else the one before, else a new
+   * conversation. */
+  closeTab(id: string): void {
+    const shown = this.activeTab()
+    const next = this.tabs.close(id)
+
+    if (shown?.id === id) {
+      if (next) {
+        void this.showTab(next.id).catch(() => undefined)
+      } else {
+        this.newConversation()
+      }
+    }
+  }
+
+  /** The passing tab stays: a double click on it. */
+  keepTab(id: string): void {
+    const tab = this.tabs.$tabs.get().find(open => open.id === id)
+
+    if (tab) {
+      this.tabs.keep(tab.place)
+    }
+  }
+
+  /** Show where the first card away from the screen waits. */
+  async openWaiting(): Promise<void> {
+    const [card] = away(this.$cards.get(), this.$view.get(), this.$selected.get(), this.$openSession.get())
+
+    if (card?.kind === 'executor-approval' || card?.kind === 'executor-question') {
+      this.openInstance(card.params.instance_id)
+    } else if (card) {
+      await this.selectConversation(card.conversationId)
+    }
+  }
+
+  /** Once the home said its name, its tabs come back as the window kept them, and the one that was
+   * on screen shows again, unless the user already chose what to see. */
+  restoreTabs(): void {
+    if (this.tabsHome !== null || this.name === null) {
+      return
+    }
+
+    this.tabsHome = `${machineOf(this.key) ?? 'here'}/${this.name}`
+    const shown = this.tabs.restore(readTabs(this.tabsHome))
+
+    if (shown && this.$view.get() === 'conversation' && this.$selected.get() === null) {
+      void this.showTab(shown.id).catch(() => undefined)
+    }
+
+    this.saveTabs()
+  }
+
+  private saveTabs(): void {
+    if (this.tabsHome !== null) {
+      writeTabs(this.tabsHome, this.tabs.saved(this.place()))
+    }
   }
 
   async readCommands(conversationId: string): Promise<void> {
@@ -783,7 +925,7 @@ export class HomeSession {
       const found = sessions.find(row => row.session_id === open.sessionId)
 
       if (found) {
-        this.$openSession.set({
+        this.followOpen({
           ...open,
           elsewhere: open.instanceId ? '' : found.elsewhere,
           instanceId: open.instanceId || found.instance_id,
@@ -793,15 +935,29 @@ export class HomeSession {
     }
   }
 
-  /** Show a session: what its harness kept, read by its plugin; nothing is copied into Atlas. */
-  async openSession(row: SessionRow): Promise<void> {
+  /** The session on screen learned more of itself (its ids as they come, its title, another
+   * account): its tab follows it. */
+  private followOpen(next: OpenSession): void {
+    const before = this.$openSession.get()
+
+    if (before) {
+      this.tabs.follow(before, next)
+    }
+
+    this.$openSession.set(next)
+  }
+
+  /** Show a session, in its tab or the passing one: what its harness kept, read by its plugin;
+   * nothing is copied into Atlas. One shown before shows its trail at once, while it is read anew. */
+  async openSession(row: SessionShown): Promise<void> {
     const live = row.instance_id && this.instance(row.instance_id) ? row.instance_id : ''
 
     if (row.instance_id) {
       this.$marks.setKey(instanceKey(row.instance_id), undefined)
     }
 
-    this.$openSession.set({
+    const before = this.$openSession.get()
+    const next: OpenSession = {
       choice: null,
       elsewhere: live ? '' : row.elsewhere,
       executor: row.executor,
@@ -810,10 +966,20 @@ export class HomeSession {
       instanceId: live,
       sessionId: row.session_id,
       title: row.title
-    })
+    }
+
+    if (before && named(before)) {
+      this.sessionThreads.set(sessionOwner(before), this.$sessionThread.get())
+    }
+
+    if (named(next)) {
+      this.tabs.show({ kind: 'session', session: next }, next.title)
+    }
+
+    this.$openSession.set(next)
     this.$sessionError.set(null)
     this.$sessionSettings.set(NO_SESSION_SETTINGS)
-    this.$sessionThread.set(EMPTY_THREAD)
+    this.$sessionThread.set((named(next) ? this.sessionThreads.get(sessionOwner(next)) : undefined) ?? EMPTY_THREAD)
     this.$view.set('session')
     // Its folder opens in the list, so the session on screen shows where it belongs.
     this.openFolder(row.executor, row.folder)
@@ -1061,7 +1227,21 @@ export class HomeSession {
     )
 
     if (done) {
-      if (this.$openSession.get()?.sessionId === row.session_id) {
+      const tab = this.tabs.$tabs
+        .get()
+        .find(
+          ({ place }) =>
+            place.kind === 'session' &&
+            place.session.executor === row.executor &&
+            place.session.sessionId === row.session_id
+        )
+
+      // Its tab closes, the next one showing; a session on screen with no tab leaves it.
+      if (tab) {
+        this.closeTab(tab.id)
+      }
+
+      if (this.$view.get() === 'session' && this.$openSession.get()?.sessionId === row.session_id) {
         this.newSession(row.executor, row.folder)
       }
 
@@ -1080,19 +1260,7 @@ export class HomeSession {
 
   /** A new session of `executor` in `folder`, not started yet: its first prompt starts it. */
   newSession(executor: string, folder: string): void {
-    void this.openSession({
-      by_atlas: false,
-      elsewhere: '',
-      executor,
-      folder,
-      instance_id: '',
-      session_id: '',
-      started_at: '',
-      state: '',
-      title: '',
-      updated_at: '',
-      waiting: 0
-    })
+    void this.openSession({ elsewhere: '', executor, folder, instance_id: '', session_id: '', title: '' })
   }
 
   /** Read the session on screen again, as its harness keeps it now. As its turn ends (`ended`), the
@@ -1136,7 +1304,7 @@ export class HomeSession {
       this.$sessionThread.set(withNotes(fromTranscript(read.entries, working), notes))
 
       if (read.expired) {
-        this.$openSession.set({ ...now, expired: true })
+        this.followOpen({ ...now, expired: true })
       }
 
       return
@@ -1148,7 +1316,7 @@ export class HomeSession {
     const open = this.$openSession.get()
 
     if (open) {
-      this.$openSession.set({ ...open, choice })
+      this.followOpen({ ...open, choice })
     }
   }
 
@@ -1182,7 +1350,7 @@ export class HomeSession {
         instanceId = started.instance_id
         this.applyInstance(started)
         const now = this.$openSession.get() ?? open
-        this.$openSession.set({ ...now, elsewhere: '', instanceId })
+        this.followOpen({ ...now, elsewhere: '', instanceId })
 
         if (started.problem) {
           this.$sessionError.set(started.problem)
@@ -1201,6 +1369,12 @@ export class HomeSession {
         text: trimmed
       })
       this.used(open.executor, open.folder, instanceId)
+      // Used, its tab stays.
+      const shown = this.$openSession.get()
+
+      if (shown) {
+        this.tabs.keep({ kind: 'session', session: shown })
+      }
 
       return true
     } catch (error) {
@@ -1377,7 +1551,7 @@ export class HomeSession {
     if (open && mine) {
       // A switch of account moves it to that account's executor (step 16h).
       const sessionId = row.session_id || (row.executor === open.executor ? open.sessionId : '')
-      this.$openSession.set({ ...open, elsewhere: '', executor: row.executor, instanceId: row.instance_id, sessionId })
+      this.followOpen({ ...open, elsewhere: '', executor: row.executor, instanceId: row.instance_id, sessionId })
       const ended = before?.state === 'working' && row.state !== 'working'
 
       if (row.state === 'working' && !this.$sessionThread.get().running) {
@@ -1527,10 +1701,15 @@ export class HomeSession {
     }
   }
 
-  /** Delete a bot; its conversation leaves the screen with it. */
+  /** Delete a bot; its conversation leaves the screen with it, and its tab closes. */
   async deleteBot(name: string): Promise<void> {
     const fixed = this.$bots.get().find(bot => bot.name === name)?.conversation_id
     await this.client.call('bot.delete', { name })
+    const tab = fixed ? this.tabs.find({ conversationId: fixed, kind: 'conversation' }) : null
+
+    if (tab) {
+      this.closeTab(tab.id)
+    }
 
     if (fixed && this.$selected.get() === fixed) {
       this.newConversation()
@@ -1776,8 +1955,12 @@ export class HomeSession {
       }
     }
 
-    this.$selected.set(conversationId)
-    this.$view.set('conversation')
+    // A tab of its own, on screen unless the user went to another meanwhile.
+    this.tabs.made({ conversationId, kind: 'conversation' }, '')
+
+    if (this.$view.get() === 'conversation' && this.$selected.get() === null) {
+      this.$selected.set(conversationId)
+    }
 
     return conversationId
   }
@@ -1828,6 +2011,8 @@ export class HomeSession {
 
     try {
       const conversationId = selected ?? (await this.makeConversation())
+      // Used, its tab stays.
+      this.tabs.keep({ conversationId, kind: 'conversation' })
 
       if (conversationId !== owner) {
         this.dropSending(owner, sending.key)
@@ -2305,6 +2490,7 @@ export const $executorAccounts = map<Record<string, ExecutorAccounts | undefined
 export const $slashCommands = map<Record<string, SlashCommandRow[] | undefined>>({})
 export const $commandReads = map<Record<string, CommandsRead | undefined>>({})
 export const $atlasCommands = map<Record<string, SlashCommandRow[] | undefined>>({})
+export const $tabs = atom<Tab[]>([])
 /** The sidebar's list on screen, and the bot dialog when one is open. */
 export const $sidebarTab = atom<SidebarTab>('conversations')
 export const $botDialog = atom<BotDialog | null>(null)
@@ -2390,7 +2576,8 @@ const MIRRORS: Mirror[] = [
   mirror($executorAccounts, s => s.$executorAccounts),
   mirror($slashCommands, s => s.$slashCommands),
   mirror($commandReads, s => s.$commandReads),
-  mirror($atlasCommands, s => s.$atlasCommands)
+  mirror($atlasCommands, s => s.$atlasCommands),
+  mirror($tabs, s => s.tabs.$tabs)
 ]
 
 const sessions: HomeSession[] = []
@@ -2585,6 +2772,8 @@ export function refreshHomes(): Promise<void> {
 async function readHomes(session: HomeSession): Promise<void> {
   const listed = await session.client.call('home.list', {})
   session.name = listed.current
+  // Named, the home's tabs come back.
+  session.restoreTabs()
 
   if ($session.get() === session) {
     $home.set(listed.current)
@@ -3114,6 +3303,39 @@ export function dismissKeyNotice(): void {
 
 export function showConversation(): void {
   current().$view.set('conversation')
+}
+
+/** Show what a tab holds (store/tabs.ts). */
+export function showTab(id: string): Promise<void> {
+  return current().showTab(id)
+}
+
+export function closeTab(id: string): void {
+  current().closeTab(id)
+}
+
+/** The passing tab stays (a double click). */
+export function keepTab(id: string): void {
+  current().keepTab(id)
+}
+
+/** A conversation's passing tab stays (a double click on its row). */
+export function keepConversation(conversationId: string): void {
+  current().tabs.keep({ conversationId, kind: 'conversation' })
+}
+
+export function moveTab(id: string, to: number): void {
+  current().tabs.move(id, to)
+}
+
+/** The tab on screen; `null` for a new conversation, a new session or a page. */
+export function activeTab(): null | Tab {
+  return current().activeTab()
+}
+
+/** Show where the first card away from the screen waits. */
+export function openWaiting(): Promise<void> {
+  return current().openWaiting()
 }
 
 export function approveProposal(proposal: ProposalRow): Promise<void> {

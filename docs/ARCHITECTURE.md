@@ -1228,6 +1228,22 @@ Cut to what a first screen needs: about 6 runtime packages.
   labels, in the row that holds the keyboard or else the card's first. A click on the card gives
   it the keyboard; no card takes it by itself, and the key's field takes it only when nothing else
   has it.
+- **Tabs above the central area** (step 9d, decided with the user on 25/10/2026): the
+  conversations, the bots' and the executors' sessions open in one home (`Tabs`, store/tabs.ts, one
+  per `HomeSession`). A click on a row opens it in the passing tab, in italics, which the next click
+  reuses; it stays once used (a message sent there) or double-clicked, and what a first message
+  makes opens in a tab of its own. The tab on screen is the one holding what the screen shows
+  (`screenPlace`: the conversation open, or the session once it has an id), never kept apart, so
+  whatever opens a conversation or a session, a notification's click included, shows its tab; a
+  session's tab follows its ids as they come and its account as it changes. Ctrl+1 to 8 show a tab
+  and Ctrl+9 the last, Ctrl+Tab the next, Ctrl+W closes the one on screen (to the next, else the
+  one before, else a new conversation), all left to the shell inside the terminal; a tab is
+  dragged to another place, and a middle click closes it. Beside them, how many cards wait away
+  from the screen, a click going to the first. The window keeps each home's tabs by machine and
+  name (`atlas.tabs`), and the home reopens on them and on the one it showed, read as it opens: a
+  restored tab is never blank, a closed one never comes back, and one whose conversation was
+  deleted closes as it opens (`NOT_FOUND`). An executor's session shown before shows its trail at
+  once while it is read anew.
 - **Colors with a name and one meaning each, and short movement** (step 9d; the review found green
   meaning "at work" in the list and "done" on the trail, and the Markdown's code blocks drawn in
   black: they paint with color names the app had never defined). The app paints with the colors

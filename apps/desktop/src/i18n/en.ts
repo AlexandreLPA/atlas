@@ -164,6 +164,14 @@ export const en = {
     untitled: 'New conversation',
     via: (source: string) => `via ${source}`
   },
+  /** The tabs above the central area. */
+  tabs: {
+    close: (title: string) => `Close ${title}`,
+    label: 'Open conversations and sessions',
+    /** The button after the tabs: a new conversation, in a tab of its own once it is made. */
+    new: 'New tab',
+    waiting: (count: number) => (count === 1 ? '1 waiting for you' : `${count} waiting for you`)
+  },
   homes: {
     backedUp: (path: string, size: string) => `Backed up to ${path} (${size}). Keys are never in a backup.`,
     backingUp: 'Backing up…',

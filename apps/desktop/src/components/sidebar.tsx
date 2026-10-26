@@ -19,6 +19,7 @@ import {
   $used,
   $view,
   $workbench,
+  keepConversation,
   newConversation,
   selectConversation,
   showMarketplace,
@@ -342,6 +343,10 @@ function Conversation({ current, row }: { current: boolean; row: ConversationRow
       data-testid="conversation-row"
       data-unread={dot === 'unread' || undefined}
       onClick={() => void selectConversation(row.id)}
+      // A click opens it in the passing tab; a double click keeps that tab.
+      onDoubleClick={() => {
+        keepConversation(row.id)
+      }}
       title={row.title}
       type="button"
     >
