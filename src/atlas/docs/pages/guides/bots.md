@@ -2,7 +2,7 @@
 title: "Bots"
 description: "Make a bot and talk to it: what its definition holds, and what it shares with the home."
 sidebar:
-  order: 5
+  order: 6
 ---
 
 How to make a bot and talk to it, what its definition holds, and

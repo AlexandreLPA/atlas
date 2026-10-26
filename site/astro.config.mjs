@@ -15,7 +15,7 @@ export default defineConfig({
     starlight({
       title: 'Atlas',
       description:
-        'Atlas is an open-source personal agent, and one app for every coding agent you use: Claude Code, Codex, the Gemini CLI and DeepSeek, on every account and every machine.',
+        'The documentation of Atlas, the open-source desktop app that runs Claude Code, Codex, the Gemini CLI and DeepSeek on every account and machine.',
       logo: { src: './src/assets/atlas-mark.svg', alt: 'Atlas' },
       favicon: '/favicon.svg',
       social: [{ icon: 'github', label: 'GitHub', href: REPOSITORY }],
@@ -52,7 +52,9 @@ export default defineConfig({
           }
         }
       },
-      sidebar: SIDEBAR
+      sidebar: SIDEBAR,
+      // Each page's title tag in the words people search with (src/lib/seo-titles.ts).
+      routeMiddleware: './src/routeData.ts'
     })
   ]
 })

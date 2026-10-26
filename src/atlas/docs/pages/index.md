@@ -27,8 +27,30 @@ Everything about you lives in one folder, `ATLAS_HOME` (`~/.atlas` unless you ch
 
 Atlas is free and open source, under the MIT license. You bring an API key from a model provider (OpenAI, Anthropic, Google Gemini or OpenRouter) or a local model through Ollama or vLLM, and you pay that provider for what you use. Your coding agents run on the plans you already have.
 
-## Next
+## Find your way
 
-[Install Atlas](/docs/install/): one line on Windows, macOS or Linux, or a container.
+**New to Atlas?** [Install it](/docs/install/) with one line on Windows, macOS or Linux, or in a
+container, then [choose a model](/docs/guides/models/) and turn on your coding agents.
+
+| To... | Read |
+|---|---|
+| Run Claude Code, Codex, the Gemini CLI or DeepSeek on several accounts, with a route at a plan's limit | [Coding agents and accounts](/docs/guides/coding-agents/) |
+| Open Atlas on a home lab, a VPS or the office PC from your laptop | [Several machines](/docs/guides/machines/) |
+| Choose the model, add keys, use a local model, see what it spends | [Models and keys](/docs/guides/models/) |
+| See and change what Atlas remembers | [Memory](/docs/guides/memory/) and [The background review](/docs/guides/background-review/) |
+| Make agents with a mission of their own | [Bots](/docs/guides/bots/) |
+| Run a prompt or a command on a schedule | [Routines](/docs/guides/routines/) |
+| Talk to Atlas from your phone | [Telegram](/docs/guides/telegram/) |
+| Dictate anywhere, send audio, talk live | [Voice and dictation](/docs/guides/voice/) |
+| Let Atlas use a browser | [The browser](/docs/guides/browser/) |
+| Install skills, MCP servers and plugins others made | [Skills and the marketplace](/docs/guides/marketplace/) |
+| Know which commands run and which ask you | [The approval gate](/docs/guides/approval-gate/) |
+| Know what stays on your machine and what leaves it | [Privacy and your data](/docs/guides/privacy/) |
+| Back up, restore, keep separate homes, update | [Backups, updates and homes](/docs/guides/backups/) |
+| Look up a command, a setting or a tool | [Commands](/docs/reference/commands/), [Settings](/docs/reference/settings/), [Tools](/docs/reference/tools/) |
+| Add skills, tools, channels or a coding agent of your own | [Writing a plugin](/docs/extending/plugins/) |
+
+Something not working? [Troubleshooting](/docs/troubleshooting/) gathers the common problems, and
+[Questions and answers](/docs/faq/) the common questions.
 
 Once it is installed, this documentation is also on your machine, as your version ships it: `atlas docs` lists the pages, `atlas docs install` prints one, and `atlas docs --search WORDS` finds a subject. Atlas reads it there too, before it answers a question about itself.

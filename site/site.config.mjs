@@ -51,7 +51,9 @@ export const SIDEBAR = [
     label: 'Start here',
     items: [
       { label: 'What Atlas is', slug: 'docs' },
-      { label: 'Install', slug: 'docs/install' }
+      { label: 'Install', slug: 'docs/install' },
+      { label: 'Troubleshooting', slug: 'docs/troubleshooting' },
+      { label: 'Questions and answers', slug: 'docs/faq' }
     ]
   },
   { label: 'Guides', items: folder('guides') },

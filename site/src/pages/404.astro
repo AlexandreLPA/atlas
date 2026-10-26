@@ -2,7 +2,7 @@
 import Site from '../layouts/Site.astro'
 ---
 
-<Site title="Not found: Atlas" description="This page is not on the Atlas site.">
+<Site title="Not found: Atlas" description="This page is not on the Atlas site." noindex>
   <div class="page missing">
     <h1>This page is not here</h1>
     <p>It may have moved when the documentation was reorganised. These are the places to look:</p>
@@ -12,6 +12,9 @@ import Site from '../layouts/Site.astro'
       </li>
       <li>
         <a href="/docs/">The documentation</a>
+      </li>
+      <li>
+        <a href="/docs/troubleshooting/">Troubleshooting</a>
       </li>
       <li>
         <a href="/changelog/">The changelog</a>

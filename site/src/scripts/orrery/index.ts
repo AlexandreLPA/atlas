@@ -100,6 +100,10 @@ function makeParticles(count: number): Particle[] {
 const STATUS: Record<string, string> = { limit: 'limit reached', running: 'running', idle: '' }
 
 export function startOrrery(root: HTMLElement): void {
+  void begin(root)
+}
+
+async function begin(root: HTMLElement): Promise<void> {
   const canvas = root.querySelector<HTMLCanvasElement>('[data-orrery-canvas]')
   const stage = root.querySelector<HTMLElement>('[data-orrery-scene]')
   const layer = root.querySelector<HTMLElement>('[data-orrery-labels]')
@@ -115,7 +119,7 @@ export function startOrrery(root: HTMLElement): void {
 
   let renderer: Renderer
   try {
-    renderer = new Renderer(canvas, makeStars(520))
+    renderer = await Renderer.create(canvas, makeStars(520))
   } catch {
     // The page reads the same without the scene: the drawn sphere stays, the meters still move.
     startMetersOnly(meters, reduce.matches)

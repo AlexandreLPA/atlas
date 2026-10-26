@@ -6,7 +6,7 @@ import { REPOSITORY, SIDEBAR } from '../../site.config.mjs'
 import { CONTENT_SIGNAL } from '../../worker/routing'
 
 import type { Change } from './changelog'
-import { catalogue, chapters, gate, hero, install, memory, route } from './home'
+import { catalogue, chapters, compare, faq, gate, hero, install, memory, proof, route } from './home'
 import { installWays } from './install'
 
 export interface DocPage {
@@ -63,7 +63,16 @@ export function docMarkdown(page: DocPage, site: URL): string {
 
 export function homeMarkdown(site: URL): string {
   const link = (path: string) => new URL(path, site).toString()
-  const lines: string[] = [`# Atlas: ${hero.title.toLowerCase()}`, '', `> ${hero.lede}`, '', hero.note, '']
+  const lines: string[] = [
+    '# Atlas',
+    '',
+    `> ${hero.lede}`,
+    '',
+    hero.title,
+    '',
+    ...proof.map(item => `- **${item.label}.** ${item.detail}.`),
+    ''
+  ]
   for (const chapter of chapters) {
     lines.push(`## ${chapter.title}`, '', ...chapter.body.flatMap(text => [text, '']))
     if (chapter.id === 'route') {
@@ -78,10 +87,21 @@ export function homeMarkdown(site: URL): string {
       lines.push(...memory.entries.map(entry => `- ${entry.kind}: ${entry.text}`), '', memory.caption, '')
     }
   }
+  lines.push(`## ${compare.title}`, '', compare.body, '')
+  lines.push(
+    ...compare.rows.map(row => `- **${row.moment}.** ${compare.alone}: ${row.alone} ${compare.atlas}: ${row.atlas}`),
+    ''
+  )
   lines.push(`## ${gate.title}`, '', gate.body, '')
   lines.push(...gate.commands.map(item => `- \`${item.command}\`: ${item.verdict}. ${item.detail}`), '')
   lines.push(`## ${catalogue.title}`, '')
-  lines.push(...catalogue.items.map(item => `- **${item.name}.** ${item.text}`), '')
+  lines.push(catalogue.body, '')
+  lines.push(
+    ...catalogue.items.map(
+      item => `- **[${item.name}](${link(twinOf(item.href.replace(/^\/|\/$/g, '')))})**: ${item.text}`
+    ),
+    ''
+  )
   lines.push(`## ${install.title}`, '')
   for (const way of installWays) {
     lines.push(`${way.label}, ${way.where.toLowerCase()}:`, '', '```', ...way.lines, '```', '')
@@ -90,6 +110,11 @@ export function homeMarkdown(site: URL): string {
     }
   }
   lines.push(...install.steps.map((step, k) => `${String(k + 1)}. ${step}`), '', install.update, '')
+  lines.push(install.needs, '')
+  lines.push(`## ${faq.title}`, '')
+  for (const item of faq.items) {
+    lines.push(`### ${item.question}`, '', item.answer, '')
+  }
   lines.push(
     '## More',
     '',

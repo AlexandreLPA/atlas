@@ -41,7 +41,7 @@ describe('the sidebar', () => {
     expect(slugs('Guides').slice(0, 3)).toEqual([
       'docs/guides/coding-agents',
       'docs/guides/machines',
-      'docs/guides/memory'
+      'docs/guides/models'
     ])
     expect(slugs('Reference')).toEqual(['docs/reference/commands', 'docs/reference/settings', 'docs/reference/tools'])
   })

@@ -3,10 +3,12 @@ import { getCollection } from 'astro:content'
 
 import InstallTabs from '../components/InstallTabs.astro'
 import SphereDrawing from '../components/SphereDrawing.astro'
+import { REPOSITORY } from '../../site.config.mjs'
 import Site from '../layouts/Site.astro'
 import { changes, formatDay } from '../lib/changelog'
-import { catalogue, chapters, gate, hero, install, memory, route } from '../lib/home'
+import { catalogue, chapters, compare, faq, gate, hero, install, memory, proof, route, seo } from '../lib/home'
 import { installWays, quickWays } from '../lib/install'
+import { application, faqPage } from '../lib/seo'
 
 const chapter = (id: string) => {
   const found = chapters.find(c => c.id === id)
@@ -22,9 +24,11 @@ const memoryChapter = chapter('memory')
 const close = chapter('close')
 const latest = changes(4)
 const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3)
+const site = Astro.site ?? new URL(Astro.url.origin)
+const schema = [application(site), faqPage(site)]
 ---
 
-<Site title="Atlas: one app for every coding agent you use" description={hero.lede} markdown="/index.md" current="home">
+<Site title={seo.title} description={seo.description} markdown="/index.md" current="home" schema={schema}>
   <div class="orrery" data-orrery>
     <div class="track" aria-hidden="true">
       <div class="stage" data-orrery-stage>
@@ -42,12 +46,33 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
 
     <section class="chapter chapter--hero" data-chapter="hero" aria-labelledby="hero-title">
       <div class="chapter-body" data-text-column>
+        <p class="eyebrow rise" style="--rise: 0">
+          <span class="pulse" aria-hidden="true"></span>
+          {hero.eyebrow}
+        </p>
         <h1 id="hero-title">{hero.title}</h1>
-        <p class="lede">{hero.lede}</p>
-        <InstallTabs ways={quickWays} id="quick" compact />
-        <p class="note">
+        <p class="lede rise" style="--rise: 1">
+          {hero.lede}
+        </p>
+        <div class="rise" style="--rise: 2">
+          <InstallTabs ways={quickWays} id="quick" compact />
+        </div>
+        <p class="note rise" style="--rise: 3">
           {hero.note} <a href="/docs/">Read the docs</a>
         </p>
+        <ul class="proof rise" style="--rise: 4" aria-label="In short">
+          {proof.map(item => (
+            <li>
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M3.5 8.5l3 3 6-7" />
+              </svg>
+              <span>
+                <strong>{item.label}</strong>
+                <span class="proof-detail">{item.detail}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
 
@@ -141,16 +166,63 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
     </section>
   </div>
 
+  <section class="section compare" aria-labelledby="compare-title">
+    <div class="page">
+      <div class="section-head reveal">
+        <h2 id="compare-title">{compare.title}</h2>
+        <p>{compare.body}</p>
+      </div>
+      <div class="compare-table reveal" role="table" aria-label={compare.title}>
+        <div class="compare-row compare-row--head" role="row">
+          <span role="columnheader">
+            <span class="visually-hidden">When</span>
+          </span>
+          <span role="columnheader">{compare.alone}</span>
+          <span role="columnheader" class="compare-atlas">
+            {compare.atlas}
+          </span>
+        </div>
+        {compare.rows.map((row, k) => (
+          <div class="compare-row reveal" role="row" style={`--k: ${String(k)}`}>
+            <span class="compare-moment" role="rowheader">
+              {row.moment}
+            </span>
+            <span class="compare-alone" role="cell">
+              <span class="compare-label" aria-hidden="true">
+                {compare.alone}
+              </span>
+              {row.alone}
+            </span>
+            <span class="compare-atlas" role="cell">
+              <span class="compare-label" aria-hidden="true">
+                {compare.atlas}
+              </span>
+              {row.atlas}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
   <section class="section gate" aria-labelledby="gate-title">
     <div class="page section-grid">
-      <div class="section-intro">
+      <div class="section-intro reveal">
         <h2 id="gate-title">{gate.title}</h2>
         <p>{gate.body}</p>
+        <p class="more">
+          <a href={gate.link.href}>{gate.link.label}</a>
+        </p>
       </div>
       <ol class="verdicts">
-        {gate.commands.map(item => (
-          <li data-verdict={item.verdict.toLowerCase().replace(' ', '-')}>
-            <code>{item.command}</code>
+        {gate.commands.map((item, k) => (
+          <li class="reveal" data-verdict={item.verdict.toLowerCase().replace(' ', '-')} style={`--k: ${String(k)}`}>
+            <code>
+              <span class="prompt" aria-hidden="true">
+                $
+              </span>
+              {item.command}
+            </code>
             <span class="verdict">{item.verdict}</span>
             <span class="verdict-detail">{item.detail}</span>
           </li>
@@ -161,21 +233,32 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
 
   <section class="section catalogue" aria-labelledby="catalogue-title">
     <div class="page">
-      <h2 id="catalogue-title">{catalogue.title}</h2>
-      <dl>
-        {catalogue.items.map(item => (
-          <div>
-            <dt>{item.name}</dt>
-            <dd>{item.text}</dd>
-          </div>
+      <div class="section-head reveal">
+        <h2 id="catalogue-title">{catalogue.title}</h2>
+        <p>{catalogue.body}</p>
+      </div>
+      <ul class="cards" data-spotlight>
+        {catalogue.items.map((item, k) => (
+          <li class="card reveal" style={`--k: ${String(k % 3)}`}>
+            <a href={item.href}>
+              <h3>{item.name}</h3>
+              <p>{item.text}</p>
+              <span class="card-more" aria-hidden="true">
+                Read more
+                <svg viewBox="0 0 16 16">
+                  <path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5" />
+                </svg>
+              </span>
+            </a>
+          </li>
         ))}
-      </dl>
+      </ul>
     </div>
   </section>
 
   <section class="section install" id="install" aria-labelledby="install-title">
     <div class="page section-grid">
-      <div class="section-intro">
+      <div class="section-intro reveal">
         <h2 id="install-title">{install.title}</h2>
         <ol class="steps">
           {install.steps.map(step => (
@@ -184,24 +267,55 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
         </ol>
         <p class="aside">{install.update}</p>
       </div>
-      <div class="install-box">
+      <div class="install-box reveal">
         <InstallTabs ways={installWays} id="full" />
+        <p class="aside needs">{install.needs}</p>
+        <p class="aside">
+          <a href="/docs/install/">The install guide</a>, with the container and what the first start asks.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section faq" aria-labelledby="faq-title">
+    <div class="page section-grid">
+      <div class="section-intro reveal">
+        <h2 id="faq-title">{faq.title}</h2>
+        <p>
+          Not answered here? The <a href="/docs/">documentation</a> covers every part of Atlas, and the{' '}
+          <a href={`${REPOSITORY}/issues`}>issues on GitHub</a> are open.
+        </p>
+      </div>
+      <div class="questions reveal">
+        {faq.items.map(item => (
+          <details name="faq">
+            <summary>
+              <h3>{item.question}</h3>
+              <span class="toggle" aria-hidden="true" />
+            </summary>
+            <div class="answer">
+              <p>{item.answer}</p>
+              {item.href && (
+                <p class="more">
+                  <a href={item.href}>Read more in the docs</a>
+                </p>
+              )}
+            </div>
+          </details>
+        ))}
       </div>
     </div>
   </section>
 
   <section class="section read-on" aria-label="Keep reading">
     <div class="page read-on-grid">
-      <div>
+      <div class="reveal">
         <h2>
           <a href="/docs/">Documentation</a>
         </h2>
         <ul>
           <li>
-            <a href="/docs/">What Atlas is</a>
-          </li>
-          <li>
-            <a href="/docs/install/">Install</a>
+            <a href="/docs/install/">Install Atlas</a>
           </li>
           <li>
             <a href="/docs/guides/coding-agents/">Coding agents and accounts</a>
@@ -210,14 +324,17 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
             <a href="/docs/guides/machines/">Several machines</a>
           </li>
           <li>
-            <a href="/docs/guides/approval-gate/">The approval gate</a>
+            <a href="/docs/guides/models/">Models and keys</a>
+          </li>
+          <li>
+            <a href="/docs/troubleshooting/">Troubleshooting</a>
           </li>
           <li>
             <a href="/docs/reference/commands/">Every command</a>
           </li>
         </ul>
       </div>
-      <div>
+      <div class="reveal">
         <h2>
           <a href="/news/">News</a>
         </h2>
@@ -237,7 +354,7 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
           </p>
         )}
       </div>
-      <div>
+      <div class="reveal">
         <h2>
           <a href="/changelog/">Changelog</a>
         </h2>
@@ -260,6 +377,24 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
   const root = document.querySelector<HTMLElement>('[data-orrery]')
   if (root) {
     startOrrery(root)
+  }
+
+  // The cards light where the pointer is: one listener for the grid, a custom property per card.
+  const grid = document.querySelector<HTMLElement>('[data-spotlight]')
+  if (grid && window.matchMedia('(hover: hover)').matches) {
+    grid.addEventListener(
+      'pointermove',
+      event => {
+        const card = (event.target as Element).closest<HTMLElement>('.card')
+        if (!card) {
+          return
+        }
+        const box = card.getBoundingClientRect()
+        card.style.setProperty('--x', `${String(event.clientX - box.left)}px`)
+        card.style.setProperty('--y', `${String(event.clientY - box.top)}px`)
+      },
+      { passive: true }
+    )
   }
 </script>
 
@@ -423,8 +558,13 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
   }
 
   /* The hero: the headline unfolds once, with the sphere. */
+  .chapter--hero {
+    padding-top: 5.5rem;
+    padding-bottom: 3.5rem;
+  }
+
   .chapter--hero h1 {
-    font-size: clamp(2.6rem, 1.3rem + 3.7vw, 4.6rem);
+    font-size: clamp(2.6rem, 1.3rem + 3.4vw, 4.25rem);
     font-weight: 600;
     letter-spacing: -0.032em;
     line-height: 0.98;
@@ -444,7 +584,9 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
   }
 
   .chapter-body > .lede {
-    max-width: 31rem;
+    max-width: 32rem;
+    font-size: 1.1875rem;
+    line-height: 1.55;
     margin-bottom: 0.9rem;
   }
 
@@ -456,6 +598,103 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
   .note a {
     margin-left: 0.4em;
     color: var(--starlight);
+  }
+
+  .chapter-body > .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    justify-self: start;
+    padding: 0.3rem 0.8rem 0.3rem 0.65rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 999px;
+    background: rgb(13 19 34 / 0.6);
+    color: var(--haze);
+    font-size: var(--step--2);
+    font-weight: 540;
+    font-stretch: var(--narrow);
+    letter-spacing: 0.02em;
+  }
+
+  .pulse {
+    position: relative;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--brass);
+  }
+
+  .pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--brass);
+    animation: pulse 2.4s var(--ease-out) infinite;
+  }
+
+  @keyframes pulse {
+    from {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(3.2);
+    }
+  }
+
+  /* The hero's parts arrive one after another, under the headline as it unfolds. */
+  .rise {
+    animation: rise 1s var(--ease-out) both;
+    animation-delay: calc(0.35s + var(--rise, 0) * 0.09s);
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      translate: 0 0.9rem;
+    }
+  }
+
+  .proof {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem 1.5rem;
+    margin: 0.6rem 0 0;
+    padding: 1.1rem 0 0;
+    border-top: 1px solid var(--rule);
+    list-style: none;
+  }
+
+  .proof li {
+    display: grid;
+    grid-template-columns: 1rem minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: start;
+    font-size: var(--step--1);
+    line-height: 1.4;
+  }
+
+  .proof svg {
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.1rem;
+    fill: none;
+    stroke: var(--brass);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .proof strong {
+    display: block;
+    font-weight: 600;
+  }
+
+  .proof-detail {
+    color: var(--haze);
+    font-size: var(--step--2);
   }
 
   /* The route's meters, filled by the orrery's clock. */
@@ -665,11 +904,31 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
     font-size: 0.95rem;
   }
 
+  .prompt {
+    margin-right: 0.6em;
+    color: var(--haze);
+    user-select: none;
+  }
+
   .verdict {
     justify-self: end;
-    font-size: var(--step--1);
+    padding: 0.1rem 0.65rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 999px;
+    font-size: var(--step--2);
     font-weight: 600;
     font-stretch: var(--wide);
+    white-space: nowrap;
+  }
+
+  [data-verdict='reviewed'] .verdict {
+    border-color: rgb(134 182 255 / 0.45);
+    color: var(--signal);
+  }
+
+  [data-verdict='asks-you'] .verdict {
+    border-color: rgb(231 179 106 / 0.55);
+    background: var(--brass-soft);
   }
 
   .verdict-detail {
@@ -692,30 +951,289 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
     color: var(--haze);
   }
 
-  .catalogue dl {
+  .section-head {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0 clamp(1.5rem, 4vw, 3.5rem);
-    margin: 3rem 0 0;
+    gap: 1.1rem;
+    max-width: 44rem;
   }
 
-  .catalogue dl > div {
-    padding: 1.4rem 0 1.6rem;
+  .section-head > p {
+    color: rgb(232 236 244 / 0.82);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  .more {
+    font-size: var(--step--1);
+  }
+
+  .more a {
+    color: var(--brass);
+    text-decoration-color: rgb(231 179 106 / 0.4);
+  }
+
+  .more a::after {
+    content: ' →';
+  }
+
+  /* The comparison: a row per moment of the day, the coding agent alone and inside Atlas. */
+  .compare-table {
+    display: grid;
+    margin-top: 3.25rem;
     border-top: 1px solid var(--rule);
   }
 
-  .catalogue dt {
-    margin-bottom: 0.45rem;
+  .compare-row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem clamp(1.5rem, 4vw, 3rem);
+    padding: 1.4rem 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: var(--step--1);
+    line-height: 1.55;
+  }
+
+  .compare-row--head {
+    padding: 1rem 0;
+    color: var(--haze);
+    font-size: var(--step--2);
+    font-weight: 600;
+    font-stretch: var(--wide);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .compare-row--head .compare-atlas {
+    color: var(--brass);
+  }
+
+  .compare-moment {
     font-size: var(--step-0);
     font-weight: 600;
     font-stretch: var(--wide);
+    line-height: 1.3;
   }
 
-  .catalogue dd {
-    margin: 0;
+  .compare-alone {
+    color: var(--haze);
+  }
+
+  .compare-row:not(.compare-row--head) .compare-atlas {
+    position: relative;
+    padding-left: 1.6rem;
+    color: var(--starlight);
+  }
+
+  .compare-row:not(.compare-row--head) .compare-atlas::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.35rem;
+    width: 0.85rem;
+    height: 0.85rem;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle, var(--brass) 0 30%, transparent 34%), radial-gradient(circle, var(--brass-soft) 0 100%);
+  }
+
+  .compare-label {
+    display: none;
+  }
+
+  /* What Atlas does beside the coding agents: a card each, lit where the pointer is. */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 3.25rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .card a {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 0.55rem;
+    height: 100%;
+    padding: 1.5rem 1.5rem 1.35rem;
+    border: 1px solid var(--rule);
+    border-radius: calc(var(--radius) + 4px);
+    background: linear-gradient(180deg, rgb(13 19 34 / 0.75), rgb(5 7 15 / 0.4));
+    color: inherit;
+    text-decoration: none;
+    overflow: hidden;
+    isolation: isolate;
+    transition:
+      border-color 0.3s,
+      translate 0.4s var(--ease-out);
+  }
+
+  .card a::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(22rem circle at var(--x, 50%) var(--y, -30%), rgb(231 179 106 / 0.11), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .card a:hover,
+  .card a:focus-visible {
+    border-color: rgb(231 179 106 / 0.35);
+    translate: 0 -2px;
+  }
+
+  .card a:hover::before,
+  .card a:focus-visible::before {
+    opacity: 1;
+  }
+
+  .card h3 {
+    font-size: var(--step-1);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+  }
+
+  .card p {
     color: var(--haze);
     font-size: var(--step--1);
     line-height: 1.55;
+  }
+
+  .card-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.4rem;
+    color: var(--brass);
+    font-size: var(--step--2);
+    font-weight: 560;
+    opacity: 0.75;
+    transition: opacity 0.3s;
+  }
+
+  .card-more svg {
+    width: 0.85rem;
+    height: 0.85rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: translate 0.3s var(--ease-out);
+  }
+
+  .card a:hover .card-more {
+    opacity: 1;
+  }
+
+  .card a:hover .card-more svg {
+    translate: 3px 0;
+  }
+
+  /* The questions: one open at a time, each a heading search engines read. */
+  .questions {
+    border-top: 1px solid var(--rule);
+  }
+
+  .questions details {
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .questions summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.3rem 0;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .questions summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .questions h3 {
+    font-size: var(--step-0);
+    font-weight: 580;
+    font-stretch: var(--normal);
+    letter-spacing: -0.005em;
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+
+  .questions summary:hover h3 {
+    color: #fff;
+  }
+
+  .toggle {
+    position: relative;
+    flex: none;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 50%;
+    transition:
+      rotate 0.35s var(--ease-out),
+      border-color 0.2s;
+  }
+
+  .toggle::before,
+  .toggle::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0.65rem;
+    height: 1.5px;
+    background: var(--starlight);
+    translate: -50% -50%;
+  }
+
+  .toggle::after {
+    rotate: 90deg;
+    transition: opacity 0.2s;
+  }
+
+  details[open] .toggle {
+    rotate: 180deg;
+    border-color: var(--brass);
+  }
+
+  details[open] .toggle::after {
+    opacity: 0;
+  }
+
+  .answer {
+    display: grid;
+    gap: 0.6rem;
+    max-width: 40rem;
+    padding: 0 3rem 1.5rem 0;
+    color: rgb(232 236 244 / 0.8);
+    font-size: var(--step--1);
+    line-height: 1.65;
+  }
+
+  /* Opening a question slides its answer in, where the browser can animate to a height of auto. */
+  @supports (interpolate-size: allow-keywords) {
+    .questions {
+      interpolate-size: allow-keywords;
+    }
+
+    .questions details::details-content {
+      height: 0;
+      overflow: clip;
+      transition:
+        height 0.4s var(--ease-out),
+        content-visibility 0.4s allow-discrete;
+    }
+
+    .questions details[open]::details-content {
+      height: auto;
+    }
   }
 
   .steps {
@@ -872,20 +1390,57 @@ const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() 
       grid-template-columns: 1fr;
     }
 
-    .catalogue dl {
+    .cards {
       grid-template-columns: 1fr;
+    }
+
+    .compare-row {
+      grid-template-columns: 1fr;
+      gap: 0.6rem;
+    }
+
+    .compare-row--head {
+      display: none;
+    }
+
+    .compare-label {
+      display: block;
+      color: var(--haze);
+      font-size: var(--step--2);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .compare-atlas .compare-label {
+      color: var(--brass);
+    }
+
+    .proof {
+      grid-template-columns: 1fr;
+    }
+
+    .answer {
+      padding-right: 0;
     }
   }
 
   @media (min-width: 861px) and (max-width: 1180px) {
-    .catalogue dl {
+    .cards {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .chapter--hero h1 {
+    .chapter--hero h1,
+    .rise,
+    .pulse::after {
       animation: none;
+    }
+
+    .card a,
+    .toggle {
+      transition: none;
     }
 
     canvas,

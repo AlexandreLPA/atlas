@@ -2,7 +2,7 @@
 title: "Memory"
 description: "What Atlas remembers, where it keeps it, how it reaches the model, and which changes wait for your approval."
 sidebar:
-  order: 3
+  order: 4
 ---
 
 What Atlas remembers, where it keeps it, how it reaches the
@@ -70,7 +70,7 @@ with nothing around it. The design is in [ARCHITECTURE.md](https://github.com/ma
 - **Blank or missing, the default stands in.** Unreadable too, and the log says why.
 - **What belongs there:** tone, stance and style, everywhere. What is about you goes in your
   profile; a project's rules, in that project's `AGENTS.md`.
-- **Who changes it:** you, in an editor or on the app's Soul screen; and the agent, with its file
+- **Who changes it:** you, in an editor or under **Settings**, then **Personalization**, in the app; and the agent, with its file
   tools, when you ask it to ("from now on, no emoji; save that in your soul"). It asks no approval.
   Its instructions say where the file is and give it leave to edit it when you ask,
   keeping the rest and telling you it applies from the next conversation: without that leave, a
@@ -266,11 +266,15 @@ skills nobody used for 30 days. The whole design is in
 
 ## See and change it yourself
 
+- **In the app**, open **Settings**, then **Personalization**: **About you** is your profile
+  (`USER.md`) and **Memory** the agent's notes (`MEMORY.md`), each entry read, edited, removed or
+  added there, with the limit in characters in view. The memory proposals keep their own screen,
+  with a shortcut from there.
 - **The files are plain text** in your home: `~/.atlas/memory/USER.md` and `MEMORY.md` by default
   (`ATLAS_HOME` moves the home, and a named home is `~/.atlas/homes/<name>/`), and a bot's notes in
   `bots/<name>/MEMORY.md`. Open them in any editor, and keep a line holding only `§` between
-  entries. The app has no screen for them yet: it shows the proposals only.
-- **The soul** is `~/.atlas/SOUL.md`, and the app's Soul screen, in the sidebar, edits it.
+  entries.
+- **The soul** is `~/.atlas/SOUL.md`, edited under **Settings**, then **Personalization**, too.
 - **Your edits** reach new conversations at once, a bot's conversation at its next turn, and a
   conversation already open at its next compaction.
 - **To have the agent remember or forget something,** ask it: it adds or removes the entry with the

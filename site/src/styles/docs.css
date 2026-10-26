@@ -106,3 +106,14 @@ h1#_top {
   background: var(--sl-color-accent-low);
   color: var(--sl-color-accent-high);
 }
+
+/* Moving to and from the rest of the site cross-fades, as the site's own pages do. */
+@view-transition {
+  navigation: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+}

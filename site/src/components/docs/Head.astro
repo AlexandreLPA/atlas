@@ -1,10 +1,38 @@
 ---
-// Starlight's head, plus each page's Markdown twin for agents.
+// Starlight's head, plus what the rest of the site's pages carry: each page's Markdown twin for
+// agents, the fonts fetched before the first paint (so the text never jumps when they arrive), the
+// share image, and the structured data that tells a search engine where the page sits.
 import Default from '@astrojs/starlight/components/Head.astro'
+import martianLatin from '@fontsource-variable/martian-mono/files/martian-mono-latin-wdth-normal.woff2?url'
+import monaLatin from '@fontsource-variable/mona-sans/files/mona-sans-latin-wdth-normal.woff2?url'
 
-const { id } = Astro.locals.starlightRoute
+import { application, docPage, jsonLd, organization, website } from '../../lib/seo'
+
+const { entry, id, lastUpdated } = Astro.locals.starlightRoute
+const site = Astro.site ?? new URL(Astro.url.origin)
+const image = new URL('/og.jpg', site)
+const graph = jsonLd([
+  organization(site),
+  website(site),
+  application(site),
+  ...docPage(site, {
+    path: Astro.url.pathname,
+    title: entry.data.title,
+    description: entry.data.description ?? '',
+    modified: lastUpdated
+  })
+])
 ---
 
 <Default />
+<link rel="preload" href={monaLatin} as="font" type="font/woff2" crossorigin />
+<link rel="preload" href={martianLatin} as="font" type="font/woff2" crossorigin />
 {id && <link rel="alternate" type="text/markdown" href={`/${id}.md`} />}
 <meta name="theme-color" content="#05070f" />
+<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1" />
+<meta property="og:image" content={image} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Atlas: every coding agent, every account, one window." />
+<meta name="twitter:image" content={image} />
+<script type="application/ld+json" is:inline set:html={graph} />

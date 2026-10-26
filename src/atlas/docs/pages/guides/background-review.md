@@ -2,7 +2,7 @@
 title: "The background review"
 description: "When Atlas rereads a conversation to learn from it, what it may change in your profile, notes and skills, and what it costs."
 sidebar:
-  order: 4
+  order: 5
 ---
 
 When the background review runs, what it may change in your

@@ -1,6 +1,6 @@
 ---
-// The frame of every page outside the documentation: the head with what agents and feeds read,
-// the navigation, and the footer.
+// The frame of every page outside the documentation: the head with what search engines, feeds and
+// agents read, the navigation, and the footer.
 import '@fontsource-variable/mona-sans/wdth.css'
 import '@fontsource-variable/martian-mono/wdth.css'
 import '../styles/site.css'
@@ -8,6 +8,7 @@ import monaLatin from '@fontsource-variable/mona-sans/files/mona-sans-latin-wdth
 
 import Footer from '../components/Footer.astro'
 import Nav from '../components/Nav.astro'
+import { jsonLd, organization, website } from '../lib/seo'
 
 interface Props {
   title: string
@@ -17,23 +18,34 @@ interface Props {
   current?: 'home' | 'news' | 'changelog'
   /** The share image, from `public/`. */
   image?: string
+  /** Structured data for search engines, beside the site's own. */
+  schema?: Record<string, unknown>[] | undefined
+  /** Kept out of search results, as the 404 is. */
+  noindex?: boolean
 }
 
-const { title, description, markdown, current, image = '/og.jpg' } = Astro.props
-const canonical = new URL(Astro.url.pathname, Astro.site)
-const imageUrl = new URL(image, Astro.site)
+const { title, description, markdown, current, image = '/og.jpg', schema = [], noindex = false } = Astro.props
+const site = Astro.site ?? new URL(Astro.url.origin)
+const canonical = new URL(Astro.url.pathname, site)
+const imageUrl = new URL(image, site)
+const graph = jsonLd([organization(site), website(site), ...schema])
 ---
 
 <!doctype html>
 <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    <meta
+      name="robots"
+      content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large, max-snippet:-1'}
+    />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="theme-color" content="#05070f" />
+    <meta name="color-scheme" content="dark" />
     <link rel="preload" href={monaLatin} as="font" type="font/woff2" crossorigin />
     {markdown && <link rel="alternate" type="text/markdown" href={markdown} />}
     <link rel="alternate" type="application/rss+xml" title="Atlas news" href="/news/rss.xml" />
@@ -41,13 +53,19 @@ const imageUrl = new URL(image, Astro.site)
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Atlas" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={imageUrl} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Atlas: every coding agent, every account, one window." />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
+    <script type="application/ld+json" is:inline set:html={graph} />
     <slot name="head" />
   </head>
   <body>

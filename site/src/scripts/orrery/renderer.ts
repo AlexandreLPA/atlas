@@ -1,6 +1,6 @@
 // The orrery's WebGL2 renderer: the strands, the curves (arms, routes, links, ticks) and the
 // sprites (bodies, stars, particles), all blended additively on a transparent canvas.
-import { instanceBuffer, program, uniforms, type Uniforms, vertexBuffer } from './gl'
+import { finishProgram, instanceBuffer, startProgram, uniforms, type Uniforms, vertexBuffer, whenLinked } from './gl'
 import type { Mat4 } from './math'
 import { CURVE_SEGMENTS, SEGMENTS, STRANDS } from './model'
 import {
@@ -68,6 +68,12 @@ function strip(segments: number): Float32Array {
   return data
 }
 
+interface Programs {
+  strand: WebGLProgram
+  curve: WebGLProgram
+  sprite: WebGLProgram
+}
+
 export class Renderer {
   readonly gl: WebGL2RenderingContext
   private readonly strandProgram: WebGLProgram
@@ -102,17 +108,33 @@ export class Renderer {
   height = 1
   dpr = 1
 
-  constructor(
-    readonly canvas: HTMLCanvasElement,
-    stars: Float32Array
-  ) {
+  /**
+   * The renderer, once its programs are linked. The shaders compile while the page goes on, so the
+   * scene never holds up the first paint or the first scroll; the drawn sphere stands in meanwhile.
+   */
+  static async create(canvas: HTMLCanvasElement, stars: Float32Array): Promise<Renderer> {
     const gl = canvas.getContext('webgl2', { alpha: true, antialias: false, premultipliedAlpha: true })
     if (!gl) {
       throw new Error('WebGL2 is not available.')
     }
+    const programs: Programs = {
+      strand: startProgram(gl, strandVertex, lineFragment),
+      curve: startProgram(gl, curveVertex, curveFragment),
+      sprite: startProgram(gl, spriteVertex, spriteFragment)
+    }
+    await whenLinked(gl, [programs.strand, programs.curve, programs.sprite])
+    return new Renderer(canvas, gl, programs, stars)
+  }
+
+  private constructor(
+    readonly canvas: HTMLCanvasElement,
+    gl: WebGL2RenderingContext,
+    programs: Programs,
+    stars: Float32Array
+  ) {
     this.gl = gl
 
-    this.strandProgram = program(gl, strandVertex, lineFragment)
+    this.strandProgram = finishProgram(gl, programs.strand)
     this.strandUniforms = uniforms(gl, this.strandProgram, [
       ...SCREEN_UNIFORMS,
       'u_model',
@@ -141,7 +163,7 @@ export class Renderer {
     }
     instanceBuffer(gl, instances, [{ location: 2, size: 2 }], gl.STATIC_DRAW)
 
-    this.curveProgram = program(gl, curveVertex, curveFragment)
+    this.curveProgram = finishProgram(gl, programs.curve)
     this.curveUniforms = uniforms(gl, this.curveProgram, [...SCREEN_UNIFORMS, 'u_time'])
     this.curveVao = gl.createVertexArray()
     gl.bindVertexArray(this.curveVao)
@@ -163,7 +185,7 @@ export class Renderer {
       gl.DYNAMIC_DRAW
     )
 
-    this.spriteProgram = program(gl, spriteVertex, spriteFragment)
+    this.spriteProgram = finishProgram(gl, programs.sprite)
     this.spriteUniforms = uniforms(gl, this.spriteProgram, [...SCREEN_UNIFORMS, 'u_time', 'u_alpha'])
     const corners = new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1])
     const spriteLayout = [

@@ -2,7 +2,7 @@
 title: "The approval gate"
 description: "How Atlas checks each command before it runs, what always asks you, what never runs, and what auto mode changes."
 sidebar:
-  order: 6
+  order: 12
 ---
 
 Atlas runs commands on your machine, so every command its agent wants to run passes the **approval
