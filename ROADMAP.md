@@ -3808,6 +3808,16 @@ confiança. **Sem redesenho:** polimento, fluidez, percepção de velocidade e i
   deixou de abrir processos com a máquina carregada (`0xC0000142`). Os dois testes passaram sozinhos
   três vezes, e cada rodada refeita passou. Fiscais: 2.700 testes do Python com 91,43% de cobertura,
   o `npm run check` (450 do Vitest), o do site e os 76 do e2e.
+- **Achado ao atualizar (26/10):** o botão de atualizar do app falhou na busca, com o erro do Python
+  nas Configurações: o título da entrega 9 tem um ⌘, e o `python -m atlas.installation check`
+  escrevia a resposta na página de código ANSI do Windows (cp1252), que não tem esse caractere. O
+  mesmo defeito estragava, desde o começo, os acentos das notas em português na janela de
+  atualização, que o app lê como UTF-8. Agora a busca escreve em UTF-8, qualquer que seja o console.
+  A instalação de antes da entrega 9 não passa desse título pelo botão, porque quem olha é o código
+  dela: atualiza uma vez pelo `atlas update` num terminal, onde o console aceita qualquer caractere,
+  e o botão volta. Provado no pytest: a busca rodada num pipe em cp1252, com um título com ⌘ e um em
+  português, lida inteira como UTF-8; o teste falha sem a correção. Fiscais: 2.701 testes do Python
+  com 91,44% de cobertura, o `npm run check` (450 do Vitest), o do site e os 76 do e2e.
 
 ## Assuntos de desenho ainda abertos
 

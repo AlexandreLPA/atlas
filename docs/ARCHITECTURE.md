@@ -1527,7 +1527,9 @@ Step 11, the first switch: the user moves to Atlas for every day.
     check` fetches the branch's upstream and says how many commits it lacks and their subjects,
     each with its `Notes-pt-BR` trailer, the subject in Portuguese that the app in Portuguese
     shows (AGENTS.md, Commits), with nothing to type and no window (`GIT_TERMINAL_PROMPT=0`,
-    `GCM_INTERACTIVE=never`). Only
+    `GCM_INTERACTIVE=never`). It writes them as UTF-8, which the app reads, whatever the
+    console's code page: Windows writes a pipe in its ANSI one, which garbled the Portuguese
+    subjects' accents and has no ⌘, on which a look failed on 26/10/2026. Only
     an installation, with its toolchain beside it, is offered one; a development checkout updates
     with git. The app looks 10 seconds after it opens, every hour and when the window comes back
     after an hour, since Atlas's `main` moves several times a day.

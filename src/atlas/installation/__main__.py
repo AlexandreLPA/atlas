@@ -50,7 +50,11 @@ def arguments() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = arguments().parse_args(argv)
     if args.command == "check":
-        sys.stdout.write(_status().to_json() + "\n")
+        # As UTF-8, which the app reads, whatever the console's code page: Windows writes a pipe
+        # in its ANSI one, which garbled every accent of a Portuguese subject and has no ⌘ at all
+        # (a look over a subject with one failed on 26/10/2026).
+        sys.stdout.buffer.write((_status().to_json() + "\n").encode())
+        sys.stdout.buffer.flush()
         return 0
     app = Parent(args.app_pid)
     try:

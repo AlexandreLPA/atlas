@@ -813,3 +813,28 @@ def test_the_check_runs_as_a_module_and_offers_a_development_checkout_nothing() 
         "development",
         False,
     )
+
+
+def test_the_check_says_its_subjects_in_utf_8_whatever_the_pipes_code_page() -> None:
+    """The app reads the check as UTF-8, and Windows writes a pipe in its ANSI code page (cp1252
+    here), which garbled every accent of a Portuguese subject and has no ⌘: a look over a subject
+    with one failed on 26/10/2026."""
+    code = (
+        "import sys\n"
+        "import atlas.installation.__main__ as module\n"
+        "from atlas.installation import UpdateStatus\n"
+        "module._status = lambda: UpdateStatus(True, behind=1,\n"
+        "    commits=('On a Mac, \\u2318W closes the tab',),\n"
+        "    commits_pt_br=('No Mac, o Cmd+W fecha a aba, n\\u00e3o a janela',))\n"
+        "sys.exit(module.main(['check']))\n"
+    )
+    said = subprocess.run(  # noqa: S603 - this interpreter, a fixed script
+        [sys.executable, "-c", code],
+        capture_output=True,
+        check=True,
+        env={**os.environ, "PYTHONIOENCODING": "cp1252"},
+    )
+    status = json.loads(said.stdout.decode("utf-8"))
+    assert status["commits"] == ["On a Mac, ⌘W closes the tab"]
+    assert status["commits_pt_br"] == ["No Mac, o Cmd+W fecha a aba, não a janela"]
+    assert status["available"] is True
