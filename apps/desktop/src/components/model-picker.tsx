@@ -52,6 +52,7 @@ export function ModelPicker({ connected }: { connected: boolean }) {
     <div className="flex items-center gap-2 text-xs">
       <PillSelect
         aria-label={t.composer.model}
+        data-testid="model-select"
         disabled={!connected}
         onChange={event => {
           pickModel(event.target.value)

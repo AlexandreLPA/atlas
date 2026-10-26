@@ -2,10 +2,11 @@ import { useStore } from '@nanostores/react'
 
 import { t } from '@/i18n'
 import type { BotRow } from '@/protocol/protocol.generated'
-import { $bots, $read, $selected, $used, $view, newBot, openBot } from '@/store/app'
+import { $bots, $read, $readError, $selected, $used, $view, newBot, openBot } from '@/store/app'
 import { byLastUse, lastUse } from '@/store/status'
 
 import { BotFace } from './bot-face'
+import { ReadFailed } from './read-failed'
 import { StatusDot, useConversationDot } from './status-dot'
 import { Plus } from './ui/icons'
 import { SkeletonRows } from './ui/skeleton'
@@ -23,6 +24,7 @@ export function BotsList() {
   const selected = useStore($selected)
   const view = useStore($view)
   const read = useStore($read).bots
+  const failed = useStore($readError).bots
 
   return (
     <>
@@ -39,8 +41,8 @@ export function BotsList() {
       </div>
       <ul className="flex-1 overflow-y-auto px-2 pb-3">
         {!read && bots.length === 0 && (
-          <li>
-            <SkeletonRows label={t.bots.reading} />
+          <li className={failed ? 'px-1' : ''}>
+            {failed ? <ReadFailed error={failed} what="bots" /> : <SkeletonRows label={t.bots.reading} />}
           </li>
         )}
         {read && bots.length === 0 && <li className="px-2 py-1 text-sm text-neutral-500">{t.bots.empty}</li>}

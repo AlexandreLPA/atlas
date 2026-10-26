@@ -5,7 +5,9 @@ import { Streamdown } from 'streamdown'
 import { t } from '@/i18n'
 import type { AttachmentRow } from '@/protocol/protocol.generated'
 import { $remote, currentOwner, type Sending } from '@/store/app'
+import { draftOf, setDraft } from '@/store/drafts'
 import { openPreview, targetOf } from '@/store/previews'
+import { openSettings } from '@/store/settings'
 import { isPart, type Item, type Part, reasoningAbout, type Thread } from '@/store/thread'
 import type { Waiting } from '@/store/waiting'
 
@@ -15,6 +17,7 @@ import { ReviewRow } from './review-row'
 import { AnswerStreaming, SHELL_RENDERERS } from './shell-block'
 import { ToolRow } from './tool-row'
 import { ArrowDown } from './ui/icons'
+import { InlineError } from './ui/inline-error'
 import { SkeletonThread } from './ui/skeleton'
 import { elapsed, useNow } from './use-now'
 
@@ -130,7 +133,13 @@ export function ThreadView({
               Array.isArray(segment) ? (
                 <Trail key={segment[0]?.key} parts={segment} waiting={waiting} />
               ) : (
-                <ItemView item={segment} key={segment.key} />
+                <ItemView
+                  item={segment}
+                  key={segment.key}
+                  latest={segment === last}
+                  place={place}
+                  said={segment === last ? lastSaid(thread.items) : null}
+                />
               )
             )}
             {sending.map(row => (
@@ -345,7 +354,19 @@ function ReasoningPart({ part }: { part: Extract<Part, { kind: 'reasoning' }> })
   )
 }
 
-function ItemView({ item }: { item: Exclude<Item, Part> }) {
+/** `latest`, it is the thread's last item; `place`, whose box the thread's is (its draft's key);
+ * `said`, the user's last words in the thread. */
+function ItemView({
+  item,
+  latest,
+  place,
+  said
+}: {
+  item: Exclude<Item, Part>
+  latest: boolean
+  place?: string
+  said: null | string
+}) {
   switch (item.kind) {
     case 'user':
       return (
@@ -408,12 +429,99 @@ function ItemView({ item }: { item: Exclude<Item, Part> }) {
       return <TerminalRowView item={item} />
 
     case 'end':
-      return (
+      return item.status === 'failed' ? (
+        <TurnFailed item={item} latest={latest} place={place} said={said} />
+      ) : (
         <p className="text-sm text-neutral-500" data-testid="turn-end">
           {endText(item)}
         </p>
       )
   }
+}
+
+/** The user's last words in a thread: what a failed turn was answering. */
+function lastSaid(items: Item[]): null | string {
+  const found = items.findLast(item => item.kind === 'user')
+
+  return found?.kind === 'user' && found.text ? found.text : null
+}
+
+/** Errors a key fixes: none stored, refused, or its account out of credit. */
+const KEYED = new Set(['ModelAuthError', 'ModelKeyError', 'ModelOutOfCreditError'])
+
+/**
+ * A turn that failed, as an error in the server's words, and, as the conversation's last word, the
+ * ways out that exist: its message back in the box to send again, the model to change, a key to
+ * connect when one is what failed (the UI review, 25/10/2026: a failure read like "Stopped.", grey
+ * and with no way out). Nothing is sent again by itself: that would store the message twice.
+ */
+function TurnFailed({
+  item,
+  latest,
+  place,
+  said
+}: {
+  item: Extract<Item, { kind: 'end' }>
+  latest: boolean
+  place?: string
+  said: null | string
+}) {
+  return (
+    <InlineError live={latest} testId="turn-failed">
+      <p data-testid="turn-end">{endText(item)}</p>
+      {latest && (
+        <div className="mt-2 flex flex-wrap gap-2" data-testid="turn-actions">
+          {said !== null && place !== undefined && (
+            <TurnAction
+              label={t.thread.putBack}
+              onClick={() => {
+                const kept = draftOf(place)
+                setDraft(place, kept ? `${kept}\n\n${said}` : said)
+                document.querySelector<HTMLTextAreaElement>('[data-testid="composer"] textarea')?.focus()
+              }}
+              testId="turn-put-back"
+            />
+          )}
+          <TurnAction
+            label={t.thread.changeModel}
+            onClick={() => {
+              const select = document.querySelector<HTMLSelectElement>('[data-testid="model-select"]')
+              select?.focus()
+
+              try {
+                select?.showPicker()
+              } catch {
+                // A list that does not open on demand stays focused: the arrows choose.
+              }
+            }}
+            testId="turn-change-model"
+          />
+          {item.error !== null && KEYED.has(item.error) && (
+            <TurnAction
+              label={t.thread.connectKey}
+              onClick={() => {
+                openSettings('model')
+              }}
+              testId="turn-connect-key"
+            />
+          )}
+        </div>
+      )}
+    </InlineError>
+  )
+}
+
+function TurnAction({ label, onClick, testId }: { label: string; onClick: () => void; testId: string }) {
+  return (
+    <button
+      className="rounded-md border border-red-300 bg-white px-2.5 py-1 text-xs font-medium text-red-900 hover:bg-red-100 dark:border-red-800 dark:bg-transparent dark:text-red-100 dark:hover:bg-red-900/40"
+      data-testid={testId}
+      onClick={onClick}
+      type="button"
+    >
+      {label}
+    </button>
+  )
 }
 
 /** A message of the user on its way: drawn as theirs at once, lighter, saying where it is, until

@@ -27,6 +27,15 @@ export const en = {
     reasonPlaceholder: 'Why not? (optional, the agent reads it)',
     title: (tool: string) => `Allow ${tool}?`
   },
+  /** What every card that waits for the user says once answered, until the server has it. */
+  card: {
+    answering: 'Sending your answer…'
+  },
+  /** A list or a page whose read failed, in its own place. */
+  lists: {
+    again: 'Read again',
+    failed: (error: string) => `It could not be read: ${error}`
+  },
   ask: {
     other: 'Other',
     otherPlaceholder: 'Your answer',
@@ -755,6 +764,11 @@ export const en = {
     sending: 'Sending…',
     /** Under a message the server has, waiting to enter the turn that runs. */
     queued: 'Enters once the current step ends',
+    // A failed turn's ways out, those that exist: its message back in the box to send again, the
+    // model to change, a key to connect.
+    changeModel: 'Change the model',
+    connectKey: 'Connect a key',
+    putBack: 'Put it back in the box',
     failed: (error: string) => `The turn failed: ${error}`,
     halted: 'The turn stopped: the agent repeated the same call.',
     interrupted: 'Stopped.',

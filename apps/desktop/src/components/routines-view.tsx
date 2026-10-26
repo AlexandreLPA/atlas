@@ -3,7 +3,9 @@ import { useState } from 'react'
 
 import { t } from '@/i18n'
 import type { RoutineRow, RunRow } from '@/protocol/protocol.generated'
-import { $routines, $runs, actOnRoutine, readRuns, selectConversation, showConversation } from '@/store/app'
+import { $readError, $routines, $runs, actOnRoutine, readRuns, selectConversation, showConversation } from '@/store/app'
+
+import { ReadFailed } from './read-failed'
 
 /**
  * The routines, kept short (decided on 11/10/2026): the list, run now,
@@ -12,6 +14,7 @@ import { $routines, $runs, actOnRoutine, readRuns, selectConversation, showConve
  */
 export function RoutinesView() {
   const routines = useStore($routines)
+  const failed = useStore($readError).routines
 
   return (
     <div className="flex-1 overflow-y-auto" data-testid="routines-view">
@@ -27,7 +30,8 @@ export function RoutinesView() {
           </button>
         </div>
         <p className="text-sm text-neutral-500">{t.routines.intro}</p>
-        {routines.length === 0 && <p className="text-neutral-500">{t.routines.empty}</p>}
+        {failed && <ReadFailed error={failed} what="routines" />}
+        {!failed && routines.length === 0 && <p className="text-neutral-500">{t.routines.empty}</p>}
         {routines.map(routine => (
           <Routine key={routine.id} routine={routine} />
         ))}

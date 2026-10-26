@@ -61,6 +61,13 @@ export const ptBR: Override<Messages> = {
     title: 'Título',
     tools: 'Ferramentas'
   },
+  card: {
+    answering: 'Enviando sua resposta…'
+  },
+  lists: {
+    again: 'Ler de novo',
+    failed: (error: string) => `Não deu para ler: ${error}`
+  },
   ask: {
     other: 'Outro',
     otherPlaceholder: 'Sua resposta',
@@ -759,6 +766,9 @@ export const ptBR: Override<Messages> = {
     reading: 'Lendo a conversa…',
     sending: 'Enviando…',
     queued: 'Entra quando o passo atual terminar',
+    changeModel: 'Trocar de modelo',
+    connectKey: 'Conectar uma chave',
+    putBack: 'Devolver à caixa',
     failed: (error: string) => `O turno falhou: ${error}`,
     halted: 'O turno parou: o agente repetiu a mesma chamada.',
     interrupted: 'Parado.',

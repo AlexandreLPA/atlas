@@ -4,6 +4,7 @@
  */
 export {
   IconAdjustmentsHorizontal as Adjustments,
+  IconAlertCircle as Alert,
   IconArchive as Archive,
   IconArchiveOff as ArchiveOff,
   IconArrowDown as ArrowDown,

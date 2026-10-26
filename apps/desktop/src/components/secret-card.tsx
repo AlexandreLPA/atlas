@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { t } from '@/i18n'
 import { answerSecret, type Card } from '@/store/app'
 
+import { CardAnswering } from './card-answering'
+
 type SecretCardProps = { card: Extract<Card, { kind: 'secret' }> }
 
 /** Step 16d: the agent asks for an API key by name. The card is masked, with an eye to show,
@@ -17,6 +19,10 @@ export function SecretCard({ card }: SecretCardProps) {
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
+
+  if (card.answered) {
+    return <CardAnswering testId="secret-card" title={t.secret.title(card.params.name)} />
+  }
 
   // The value goes exactly as pasted: no trim, no normalizing.
   const submit = () => {

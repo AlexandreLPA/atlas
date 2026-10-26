@@ -4,6 +4,8 @@ import { t } from '@/i18n'
 import type { QuestionRow } from '@/protocol/protocol.generated'
 import { answerAsk, type Card } from '@/store/app'
 
+import { CardAnswering } from './card-answering'
+
 type AskCardProps = { card: Extract<Card, { kind: 'ask' }> }
 
 /** The model's questions as a card: 1 to 5 questions, each with its choices
@@ -12,6 +14,10 @@ export function AskCard({ card }: AskCardProps) {
   const questions = card.params.questions
   const [picked, setPicked] = useState<Record<string, string[]>>({})
   const [typed, setTyped] = useState<Record<string, string>>({})
+
+  if (card.answered) {
+    return <CardAnswering testId="ask-card" title={t.ask.title(questions.length)} />
+  }
 
   const toggle = (question: QuestionRow, choice: string) => {
     setPicked(current => {

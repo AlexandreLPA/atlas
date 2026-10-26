@@ -2,9 +2,18 @@ import { useStore } from '@nanostores/react'
 
 import { t } from '@/i18n'
 import type { ProposalRow } from '@/protocol/protocol.generated'
-import { $approved, $conversations, $proposals, type Approved, selectConversation, showConversation } from '@/store/app'
+import {
+  $approved,
+  $conversations,
+  $proposals,
+  $readError,
+  type Approved,
+  selectConversation,
+  showConversation
+} from '@/store/app'
 
 import { ProposalCard } from './proposal-card'
+import { ReadFailed } from './read-failed'
 
 /**
  * Every memory proposal waiting for the user, as a screen: global,
@@ -15,6 +24,7 @@ export function ProposalsView() {
   const proposals = useStore($proposals)
   const approved = useStore($approved)
   const done = approvedHere(approved, proposals, () => true)
+  const failed = useStore($readError).proposals
 
   return (
     <div className="flex-1 overflow-y-auto" data-testid="proposals-view">
@@ -30,7 +40,10 @@ export function ProposalsView() {
           </button>
         </div>
         <p className="text-sm text-neutral-500">{t.proposals.intro}</p>
-        {proposals.length === 0 && done.length === 0 && <p className="text-neutral-500">{t.proposals.empty}</p>}
+        {failed && <ReadFailed error={failed} what="proposals" />}
+        {!failed && proposals.length === 0 && done.length === 0 && (
+          <p className="text-neutral-500">{t.proposals.empty}</p>
+        )}
         {done.map(({ proposal, result }) => (
           <ProposalCard approved={result} key={proposal.id} proposal={proposal} />
         ))}

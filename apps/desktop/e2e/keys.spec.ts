@@ -59,4 +59,12 @@ test('a turn on a model whose key is not stored says how to store it', async () 
     'The turn failed: There is no key for OpenAI: the vault has no OPENAI_API_KEY. ' +
       'Store it with `atlas secrets set OPENAI_API_KEY`.'
   )
+  // The ways out that exist, on the turn that failed (the UI review, 25/10/2026): the message back
+  // in the box to send again, and a key to connect, on the settings' Model.
+  const box = page.getByRole('textbox', { name: 'Message Atlas' })
+  await expect(box).toHaveValue('')
+  await page.getByTestId('turn-put-back').click()
+  await expect(box).toHaveValue('Hello')
+  await page.getByTestId('turn-connect-key').click()
+  await expect(page.getByTestId('settings-section')).toHaveAttribute('data-section', 'model')
 })

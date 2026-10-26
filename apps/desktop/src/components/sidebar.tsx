@@ -12,6 +12,7 @@ import {
   $pairings,
   $proposals,
   $read,
+  $readError,
   $selected,
   $sidebarTab,
   $used,
@@ -33,6 +34,7 @@ import { BotsList } from './bots-list'
 import { ExecutorsList } from './executors-list'
 import { HomeBar } from './home-bar'
 import { RailEdge } from './rail-edge'
+import { ReadFailed } from './read-failed'
 import { StatusDot, useConversationDot, useConversationsDot, useInstancesDot } from './status-dot'
 import { Bulb, CalendarTime, LayoutSidebar, MessagePlus, Messages, Plug, Robot, Store, Terminal } from './ui/icons'
 import { SkeletonRows } from './ui/skeleton'
@@ -300,6 +302,7 @@ function Conversations() {
   const selected = useStore($selected)
   const view = useStore($view)
   const read = useStore($read).conversations
+  const failed = useStore($readError).conversations
 
   return (
     <>
@@ -315,8 +318,12 @@ function Conversations() {
       </div>
       <ul className="flex-1 overflow-y-auto px-2 pb-3">
         {!read && conversations.length === 0 && (
-          <li>
-            <SkeletonRows label={t.conversations.reading} />
+          <li className={failed ? 'px-1' : ''}>
+            {failed ? (
+              <ReadFailed error={failed} what="conversations" />
+            ) : (
+              <SkeletonRows label={t.conversations.reading} />
+            )}
           </li>
         )}
         {read && conversations.length === 0 && (

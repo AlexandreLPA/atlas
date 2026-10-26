@@ -4,6 +4,8 @@ import { t } from '@/i18n'
 import type { ApprovalResult } from '@/protocol/protocol.generated'
 import { answerApproval, type Card } from '@/store/app'
 
+import { CardAnswering } from './card-answering'
+
 type ApprovalCardProps = { card: Extract<Card, { kind: 'approval' }> }
 
 /**
@@ -15,6 +17,10 @@ export function ApprovalCard({ card }: ApprovalCardProps) {
   const { params } = card
   const [reason, setReason] = useState('')
   const wider = !params.guardian_denied
+
+  if (card.answered) {
+    return <CardAnswering testId="approval-card" title={t.approval.title(params.tool)} />
+  }
 
   const choose = (choice: ApprovalResult['choice']) => {
     answerApproval(card.id, choice === 'deny' && reason.trim() ? { choice, reason: reason.trim() } : { choice })

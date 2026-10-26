@@ -3661,6 +3661,18 @@ confiança. **Sem redesenho:** polimento, fluidez, percepção de velocidade e i
   esperava as palavras do título como sinal de que o modelo tinha respondido, e o título provisório
   já tem as mesmas palavras; agora espera o título do modelo. Fiscais: 2.690 testes do Python com
   91,46% de cobertura, o `npm run check` (411 do Vitest) e o e2e.
+- **Entrega 3, erros com saída (26/10):** o turno que falhou é um erro com as palavras do servidor
+  e, sendo a última fala da conversa, oferece as saídas que existem: devolver a mensagem à caixa,
+  trocar de modelo e, quando a chave é o que falhou (nenhuma, recusada ou sem crédito), conectar
+  uma; nada é reenviado sozinho, o que gravaria a mensagem duas vezes. As listas da barra, as
+  propostas e as rotinas liam em silêncio e, falhando, pareciam vazias ou velhas: agora dizem por
+  quê, no lugar, com "Ler de novo" (`$readError`). O cartão respondido sumia na hora, até sem
+  conexão para levar a resposta, e voltava depois: agora diz que a resposta está a caminho até o
+  `request.cancel` do servidor; a reconexão o tira, e o pedido que chega de novo aceita resposta.
+  Provado no Vitest (as saídas do turno, o erro das telas, o cartão respondido e a reconexão) e no
+  e2e (no turno sem chave, "Devolver à caixa" traz a mensagem e "Conectar uma chave" abre a seção
+  Modelo). Fiscais: 2.690 testes do Python com 91,45% de cobertura, o `npm run check` (417 do
+  Vitest) e os 70 do e2e.
 
 ## Assuntos de desenho ainda abertos
 

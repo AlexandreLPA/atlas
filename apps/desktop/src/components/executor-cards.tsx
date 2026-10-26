@@ -4,6 +4,8 @@ import { t } from '@/i18n'
 import type { ExecutorApprovalParams, ExecutorQuestionParams } from '@/protocol/protocol.generated'
 import { answerExecutor, type Card } from '@/store/app'
 
+import { CardAnswering } from './card-answering'
+
 export type ExecutorCard = Extract<Card, { kind: 'executor-approval' | 'executor-question' }>
 
 /**
@@ -13,6 +15,17 @@ export type ExecutorCard = Extract<Card, { kind: 'executor-approval' | 'executor
  * guidelines asking for approval first, so the card carries the name.
  */
 export function ExecutorCardView({ card }: { card: ExecutorCard }) {
+  if (card.answered) {
+    return card.kind === 'executor-approval' ? (
+      <CardAnswering
+        testId="executor-approval-card"
+        title={t.executor.wantsTo(card.params.executor_title, card.params.tool)}
+      />
+    ) : (
+      <CardAnswering testId="executor-question-card" title={t.executor.asks(card.params.executor_title)} />
+    )
+  }
+
   return card.kind === 'executor-approval' ? (
     <ApprovalCard id={card.id} params={card.params} />
   ) : (

@@ -1207,6 +1207,16 @@ Cut to what a first screen needs: about 6 runtime packages.
   server has, in a turn that runs, says it enters once the current step ends, and goes when the
   turn ends (its words back in the box when it never entered). The words typed in a box stay with
   their conversation (`store/drafts.ts`), and so does where the user read to in it.
+- **An error has a way out, in its own place** (step 9d; the review found a failed turn written
+  as quietly as "Stopped.", and lists and pages that failed to read looking empty or old). A
+  failed turn is an error in the server's words and, as the conversation's last word, offers the
+  ways out that exist: its message back in the box, the model to change, and a key to connect when
+  a key is what failed (`ModelKeyError`, `ModelAuthError`, `ModelOutOfCreditError`); nothing is
+  sent again by itself, which would store the message twice. A list or a page whose read failed
+  says why with "Read again" (`$readError`), never "nothing here". A card answered says the answer
+  is on its way until the server's `request.cancel` takes it down, never gone first as if it had
+  arrived; a reconnect drops it, and the request, delivered again while it waits, takes an answer
+  again.
 - **Memory proposals** (step 9b): the review's row offers to review the change; the proposal is a
   card in the conversation the review read, beside the other cards, until it is decided; and the
   sidebar counts the open proposals, only when there are some, and opens the list of all. A card

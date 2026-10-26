@@ -102,12 +102,15 @@ export interface Sending {
   text: string
 }
 
-export type Card =
+/** A request of the server waiting for the user. `answered`, the user answered it and the server
+ * has not said it has the answer yet (its `request.cancel`): it says so, and takes no other. */
+export type Card = { answered?: boolean } & (
   | { conversationId: string; id: string; kind: 'approval'; params: ApprovalParams }
   | { conversationId: string; id: string; kind: 'ask'; params: AskParams }
   | { conversationId: string; id: string; kind: 'executor-approval'; params: ExecutorApprovalParams }
   | { conversationId: string; id: string; kind: 'executor-question'; params: ExecutorQuestionParams }
   | { conversationId: string; id: string; kind: 'secret'; params: SecretParams }
+)
 
 /** The workbench's copy: its instances, and the executors the plugins found. */
 export interface Workbench {
@@ -255,6 +258,9 @@ export interface Shell {
 /** A list of the sidebar, read from the server. */
 export type Listed = 'bots' | 'conversations' | 'workbench'
 
+/** What the screen reads from the server and shows as a list or a page of its own. */
+export type Readable = 'proposals' | 'routines' | Listed
+
 /** One open home: its client, and the copy of its server's state. */
 export class HomeSession {
   readonly $connection = atom<Connection>({ error: null, state: 'idle' })
@@ -262,6 +268,10 @@ export class HomeSession {
    * is empty (found by the UI review on 25/10/2026: "No conversations yet" while the server
    * started, to someone with conversations). */
   readonly $read = map<Record<Listed, boolean>>({ bots: false, conversations: false, workbench: false })
+  /** Why each list or page could not be read the last time, until a read works: it says so in
+   * its place, with a way to read it again, never looking empty or old (the UI review,
+   * 25/10/2026, which found these reads failing in silence). */
+  readonly $readError = map<Partial<Record<Readable, string>>>({})
   readonly $conversations = atom<ConversationRow[]>([])
   readonly $selected = atom<null | string>(null)
   readonly $threads = map<Record<string, Thread>>({})
@@ -425,7 +435,10 @@ export class HomeSession {
         if (state === 'open') {
           // What was told before the socket fell may be over: the rows say it again.
           this.heard.clear()
-          void this.refreshList()
+          // An answer sent before the socket fell: its request comes again if it still waits.
+          this.$cards.set(this.$cards.get().filter(card => !card.answered))
+          // A read that fails says so in its place ($readError).
+          void this.refreshList().catch(() => undefined)
           // They belong to no conversation, so nothing replays them: read them again.
           void this.refreshProposals().catch(() => undefined)
           void readHomes(this).catch(() => undefined)
@@ -470,11 +483,25 @@ export class HomeSession {
     return Object.values(this.$threads.get()).some(thread => thread.running)
   }
 
+  /** Read `what` with `read`, keeping why it failed until a read of it works; the failure still
+   * reaches the caller. */
+  async reading(what: Readable, read: () => Promise<void>): Promise<void> {
+    try {
+      await read()
+      this.$readError.setKey(what, undefined)
+    } catch (error) {
+      this.$readError.setKey(what, error instanceof Error ? error.message : String(error))
+      throw error
+    }
+  }
+
   async refreshList(): Promise<void> {
-    const { conversations } = await this.client.call('conversation.list', {})
-    this.$conversations.set(conversations)
-    this.$read.setKey('conversations', true)
-    this.readLive(conversations.map(row => [row.id, row.running] as const))
+    await this.reading('conversations', async () => {
+      const { conversations } = await this.client.call('conversation.list', {})
+      this.$conversations.set(conversations)
+      this.$read.setKey('conversations', true)
+      this.readLive(conversations.map(row => [row.id, row.running] as const))
+    })
     // A home made in the terminal meanwhile shows up too.
     void readHomes(this).catch(() => undefined)
   }
@@ -550,10 +577,12 @@ export class HomeSession {
   }
 
   async refreshWorkbench(): Promise<void> {
-    // Its open requests come back as cards through the channel, as a conversation's do.
-    const { executors, instances } = await this.client.call('workbench.list', {})
-    this.$workbench.set({ executors, instances: instances.filter(row => row.state !== 'ended') })
-    this.$read.setKey('workbench', true)
+    await this.reading('workbench', async () => {
+      // Its open requests come back as cards through the channel, as a conversation's do.
+      const { executors, instances } = await this.client.call('workbench.list', {})
+      this.$workbench.set({ executors, instances: instances.filter(row => row.state !== 'ended') })
+      this.$read.setKey('workbench', true)
+    })
   }
 
   /** The executors alone, read again when the plugins changed: the instances are the events'. A
@@ -1400,10 +1429,12 @@ export class HomeSession {
   }
 
   async refreshBots(): Promise<void> {
-    const { bots } = await this.client.call('bot.list', {})
-    this.$bots.set(bots)
-    this.$read.setKey('bots', true)
-    this.readLive(bots.flatMap(bot => (bot.conversation_id ? [[bot.conversation_id, bot.running] as const] : [])))
+    await this.reading('bots', async () => {
+      const { bots } = await this.client.call('bot.list', {})
+      this.$bots.set(bots)
+      this.$read.setKey('bots', true)
+      this.readLive(bots.flatMap(bot => (bot.conversation_id ? [[bot.conversation_id, bot.running] as const] : [])))
+    })
   }
 
   /** Which conversations run, as their rows were read: one told of since is left as told. */
@@ -1515,8 +1546,10 @@ export class HomeSession {
   }
 
   async refreshRoutines(): Promise<void> {
-    const { routines } = await this.client.call('routine.list', {})
-    this.$routines.set(routines)
+    await this.reading('routines', async () => {
+      const { routines } = await this.client.call('routine.list', {})
+      this.$routines.set(routines)
+    })
   }
 
   /** Change the marketplace's screen state. */
@@ -1750,8 +1783,10 @@ export class HomeSession {
   }
 
   async refreshProposals(): Promise<void> {
-    const { proposals } = await this.client.call('memory.proposals', {})
-    this.$proposals.set(proposals)
+    await this.reading('proposals', async () => {
+      const { proposals } = await this.client.call('memory.proposals', {})
+      this.$proposals.set(proposals)
+    })
   }
 
   /**
@@ -1899,10 +1934,14 @@ export class HomeSession {
     this.$autoMode.setKey(conversationId, result.enabled)
   }
 
+  /** Answer a card: it says the answer is on its way until the server says it has it
+   * (`request.cancel`), never gone first as if it had arrived; with no connection, the server
+   * delivers the request again once one opens, and the card takes an answer again (the UI review,
+   * 25/10/2026). */
   answer(id: string, result: Record<string, unknown>): void {
     this.requests.get(id)?.respond(result)
     this.requests.delete(id)
-    this.$cards.set(this.$cards.get().filter(card => card.id !== id))
+    this.$cards.set(this.$cards.get().map(card => (card.id === id ? { ...card, answered: true } : card)))
   }
 
   private handleRequest(request: ServerRequest): boolean {
@@ -2214,6 +2253,7 @@ export class HomeSession {
 
 export const $connection = atom<Connection>({ error: null, state: 'idle' })
 export const $read = map<Record<Listed, boolean>>({ bots: false, conversations: false, workbench: false })
+export const $readError = map<Partial<Record<Readable, string>>>({})
 export const $conversations = atom<ConversationRow[]>([])
 export const $selected = atom<null | string>(null)
 export const $threads = map<Record<string, Thread>>({})
@@ -2300,6 +2340,7 @@ function mirror<T>(target: WritableAtom<T>, pick: (session: HomeSession) => Read
 const MIRRORS: Mirror[] = [
   mirror($connection, s => s.$connection),
   mirror($read, s => s.$read),
+  mirror($readError, s => s.$readError),
   mirror($conversations, s => s.$conversations),
   mirror($selected, s => s.$selected),
   mirror($threads, s => s.$threads),
@@ -2585,6 +2626,20 @@ function notifyFor(session: HomeSession, conversationId: string, title: string):
 
 export function refreshList(): Promise<void> {
   return current().refreshList()
+}
+
+/** Read again a list or a page whose last read failed; a failure again says so in its place. */
+export function readAgain(what: Readable): void {
+  const session = current()
+  const read = {
+    bots: () => session.refreshBots(),
+    conversations: () => session.refreshList(),
+    proposals: () => session.refreshProposals(),
+    routines: () => session.refreshRoutines(),
+    workbench: () => session.refreshWorkbench()
+  }[what]
+
+  void read().catch(() => undefined)
 }
 
 export function selectConversation(conversationId: string): Promise<void> {

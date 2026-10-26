@@ -166,7 +166,7 @@ becomes an identifier. Portuguese is listed because the roadmap is written in Po
 | `desktop app` | app desktop | The Electron app in `apps/desktop/`: it starts the server, or reaches a running one, and shows the conversations |
 | `ready line` | linha de pronto | `ATLAS_SERVER_READY port=<n>`, which `atlas serve` writes on standard output once it listens, so whoever started it learns the port |
 | `parent watchdog` | vigia do app | The server's check, every 2 seconds, that the process which started it (`--parent-pid`) is alive; the server stops when it is gone |
-| `card` | cartão | What the screen shows for a server request: `ask_user`'s questions or an approval, taken down on `request.cancel` |
+| `card` | cartão | What the screen shows for a server request: `ask_user`'s questions or an approval, taken down on `request.cancel`; answered, it says the answer is on its way until then |
 | `composer` | caixa de texto | Where the user writes; while a turn runs, what it sends steers the turn, and a stop puts the unsent messages back in it |
 | `message catalog` | catálogo de textos | Every text the screen shows, by key, typed: `en` whole, other languages as partial overrides |
 | `locale` | idioma | The catalog the screen shows, taken from the system: `pt-BR`, or `en` for anything else |

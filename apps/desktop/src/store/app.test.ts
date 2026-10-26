@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { EventParams } from '@/protocol/channel'
+import type { EventParams, ServerRequest } from '@/protocol/channel'
 import type { AtlasClient, ConnectionState } from '@/protocol/client'
 import type { InstanceRow } from '@/protocol/protocol.generated'
 
@@ -221,6 +221,71 @@ describe('a message on its way (the UI review, 25/10/2026)', () => {
     })
     expect(session.$sending.get().c1).toBeUndefined()
     expect(session.$restored.get().c1).toBe('And the docs')
+  })
+})
+
+describe('a card answered (the UI review, 25/10/2026)', () => {
+  /** A home whose requests, events and socket states the test hands it. */
+  async function home() {
+    let ask: (request: ServerRequest) => boolean = () => false
+    let hear: (event: EventParams) => void = () => undefined
+    let state: (now: ConnectionState) => void = () => undefined
+    const client = Object.assign(quietClient(), {
+      onEvent: (handler: (event: EventParams) => void) => {
+        hear = handler
+
+        return () => undefined
+      },
+      onRequest: (handler: (request: ServerRequest) => boolean) => {
+        ask = handler
+
+        return () => undefined
+      },
+      onState: (handler: (now: ConnectionState) => void) => {
+        state = handler
+
+        return () => undefined
+      }
+    })
+    stop = startApp({ client: () => client, shell: { focus: () => undefined, notify: () => undefined } })
+    await openHome('work')
+    const request = (): ServerRequest => ({
+      fail: vi.fn(),
+      id: 'srq-1',
+      method: 'approval',
+      params: { conversation_id: 'c1', reason: 'recursive delete', target: 'rm -r build', tool: 'run_command' },
+      replayed: false,
+      respond: vi.fn()
+    })
+
+    return { ask, hear, request, session: current(), state }
+  }
+
+  it('says the answer is on its way until the server has it, then goes', async () => {
+    const { ask, hear, request, session } = await home()
+    const asked = request()
+    ask(asked)
+
+    session.answer('srq-1', { choice: 'once' })
+    expect(asked.respond).toHaveBeenCalledWith({ choice: 'once' })
+    expect(session.$cards.get().map(card => card.answered)).toEqual([true])
+    hear({
+      conversation_id: 'c1',
+      payload: { id: 'srq-1', method: 'approval', reason: 'resolved' },
+      type: 'request.cancel'
+    })
+    expect(session.$cards.get()).toEqual([])
+  })
+
+  it('answered as the socket fell, takes an answer again once the request comes again', async () => {
+    const { ask, request, session, state } = await home()
+    ask(request())
+    session.answer('srq-1', { choice: 'deny' })
+
+    state('open')
+    expect(session.$cards.get()).toEqual([])
+    ask({ ...request(), replayed: true })
+    expect(session.$cards.get().map(card => card.answered ?? false)).toEqual([false])
   })
 })
 

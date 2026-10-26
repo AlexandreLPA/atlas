@@ -11,6 +11,7 @@ import {
   $openFolders,
   $openSession,
   $read,
+  $readError,
   $sessionFolders,
   $sessions,
   $used,
@@ -42,6 +43,7 @@ import { openSettings } from '@/store/settings'
 import { byLastUse, instanceKey, lastUse } from '@/store/status'
 
 import { AddAccount, FolderAccount, LoginForm, RemoveAccount } from './executor-accounts'
+import { ReadFailed } from './read-failed'
 import { StatusDot, useInstancesDot, useSessionDot, useSessionInstance } from './status-dot'
 import {
   Archive,
@@ -87,6 +89,7 @@ import { when } from './when'
 export function ExecutorsList() {
   const { executors } = useStore($workbench)
   const read = useStore($read).workbench
+  const failed = useStore($readError).workbench
   const home = useStore($home)
   const order = useStore($executorOrder)[home ?? ''] ?? []
   const on = inOrder(
@@ -109,7 +112,13 @@ export function ExecutorsList() {
         {harnesses.map(rows => (
           <Harness key={rows[0] ? harnessOf(rows[0]) : ''} reorder={reorder} rows={rows} />
         ))}
-        {!read && on.length === 0 && <SkeletonRows count={2} label={t.executors.reading} />}
+        {!read &&
+          on.length === 0 &&
+          (failed ? (
+            <ReadFailed error={failed} what="workbench" />
+          ) : (
+            <SkeletonRows count={2} label={t.executors.reading} />
+          ))}
         {read && on.length === 0 && (
           <div className="space-y-1 px-2 py-1 text-sm text-neutral-500">
             <p>{t.executors.noneOn}</p>

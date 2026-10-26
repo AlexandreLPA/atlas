@@ -358,3 +358,46 @@ describe('a conversation read, sent to and come back to (the UI review, 25/10/20
     expect(screen.getByTestId('to-latest')).toBeTruthy()
   })
 })
+
+describe('a turn that failed (the UI review, 25/10/2026)', () => {
+  const user: Item = { attachments: [], key: 'u', kind: 'user', steered: false, text: 'Plan my week' }
+  const failed = (error: null | string): Item => ({
+    error,
+    key: 'e',
+    kind: 'end',
+    status: 'failed',
+    text: 'The account cannot pay.'
+  })
+
+  it('is an error, and as the last word offers the ways out that exist', async () => {
+    const { $drafts } = await import('@/store/drafts')
+    const { $settings, $settingsSection } = await import('@/store/settings')
+    render(<ThreadView place="c-failed" thread={{ items: [user, failed('ModelOutOfCreditError')], running: false }} />)
+
+    expect(screen.getByTestId('turn-failed').getAttribute('role')).toBe('alert')
+    fireEvent.click(screen.getByTestId('turn-put-back'))
+    expect($drafts.get()['c-failed']).toBe('Plan my week')
+    fireEvent.click(screen.getByTestId('turn-connect-key'))
+    expect($settings.get()).toBe(true)
+    expect($settingsSection.get()).toBe('model')
+    expect(screen.getByTestId('turn-change-model')).toBeTruthy()
+    $settings.set(false)
+  })
+
+  it('offers a key only where a key is what failed, and nothing once it is not the last word', () => {
+    const { rerender } = render(
+      <ThreadView place="c-failed-2" thread={{ items: [user, failed('ModelRateLimitError')], running: false }} />
+    )
+    expect(screen.queryByTestId('turn-connect-key')).toBeNull()
+    expect(screen.getByTestId('turn-put-back')).toBeTruthy()
+
+    rerender(
+      <ThreadView
+        place="c-failed-2"
+        thread={{ items: [user, failed('ModelKeyError'), { ...user, key: 'u2', text: 'Again' }], running: false }}
+      />
+    )
+    expect(screen.queryByTestId('turn-actions')).toBeNull()
+    expect(screen.getByTestId('turn-failed').getAttribute('role')).toBeNull()
+  })
+})
