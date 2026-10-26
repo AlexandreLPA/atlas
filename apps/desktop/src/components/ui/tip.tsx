@@ -21,7 +21,7 @@ export function Tip({
         <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
         <Tooltip.Portal>
           <Tooltip.Content
-            className="z-50 max-w-64 rounded-md bg-neutral-900 px-2 py-1 text-xs text-white shadow-md dark:bg-neutral-100 dark:text-neutral-900"
+            className="z-50 max-w-64 rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground shadow-md"
             side={side}
             sideOffset={6}
           >
@@ -72,4 +72,4 @@ export function IconButton({
 }
 
 export const ICON_BUTTON =
-  'inline-flex shrink-0 items-center justify-center rounded-md p-1 text-neutral-500 hover:bg-neutral-200 hover:text-neutral-800 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-neutral-400 disabled:opacity-40 aria-pressed:bg-neutral-200 aria-pressed:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:aria-pressed:bg-neutral-800 dark:aria-pressed:text-neutral-100'
+  'inline-flex shrink-0 items-center justify-center rounded-md p-1 text-muted-foreground hover:bg-selected hover:text-foreground disabled:opacity-40 aria-pressed:bg-selected aria-pressed:text-foreground'

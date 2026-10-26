@@ -48,28 +48,28 @@ export function LoginForm({ executor, onDone }: { executor: ExecutorRow; onDone:
           })
         }}
       >
-        <p className="text-neutral-600 dark:text-neutral-300">{t.accounts.loginNote(executor.title)}</p>
+        <p className="text-soft">{t.accounts.loginNote(executor.title)}</p>
         <div className="flex gap-1">
           <input
             aria-label={t.accounts.login}
             autoFocus
-            className="min-w-0 flex-1 rounded border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
+            className="min-w-0 flex-1 rounded border border-border-strong px-2 py-1 bg-raised"
             onChange={event => {
               setLogin(event.target.value)
             }}
             placeholder={t.accounts.login}
             value={login}
           />
-          <button className="rounded bg-orange-600 px-2 py-1 text-white" type="submit">
+          <button className="rounded bg-primary px-2 py-1 text-primary-foreground" type="submit">
             {t.accounts.logIn}
           </button>
-          <button className="rounded px-2 py-1 text-neutral-500" onClick={onDone} type="button">
+          <button className="rounded px-2 py-1 text-muted-foreground" onClick={onDone} type="button">
             {t.accounts.cancel}
           </button>
         </div>
       </form>
       {error && (
-        <p className="text-red-600" role="alert">
+        <p className="text-failed-text" role="alert">
           {error}
         </p>
       )}
@@ -93,7 +93,7 @@ export function AddAccount({ executors }: { executors: ExecutorRow[] }) {
   if (!adding) {
     return (
       <button
-        className="flex w-full items-center gap-2 rounded-md border border-neutral-300 px-2 py-1.5 text-left text-sm font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+        className="flex w-full items-center gap-2 rounded-md border border-border-strong px-2 py-1.5 text-left text-sm font-medium hover:bg-muted"
         data-testid="add-account"
         onClick={() => {
           setAdding(true)
@@ -109,7 +109,7 @@ export function AddAccount({ executors }: { executors: ExecutorRow[] }) {
   return (
     <form
       autoComplete="off"
-      className="space-y-2 rounded-md border border-dashed border-neutral-300 p-2 text-xs dark:border-neutral-700"
+      className="space-y-2 rounded-md border border-dashed border-border-strong p-2 text-xs"
       data-testid="add-account-form"
       onSubmit={event => {
         event.preventDefault()
@@ -124,7 +124,7 @@ export function AddAccount({ executors }: { executors: ExecutorRow[] }) {
       {executors.length > 1 && (
         <select
           aria-label={t.accounts.of}
-          className="w-full rounded border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
+          className="w-full rounded border border-border-strong px-2 py-1 bg-raised"
           data-testid="account-executor"
           onChange={event => {
             setChosen(event.target.value)
@@ -141,7 +141,7 @@ export function AddAccount({ executors }: { executors: ExecutorRow[] }) {
       <input
         aria-label={t.accounts.nickname}
         autoFocus
-        className="w-full rounded border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
+        className="w-full rounded border border-border-strong px-2 py-1 bg-raised"
         data-testid="account-nickname"
         maxLength={40}
         onChange={event => {
@@ -151,22 +151,22 @@ export function AddAccount({ executors }: { executors: ExecutorRow[] }) {
         spellCheck={false}
         value={nickname}
       />
-      <p className="text-neutral-500">{t.accounts.nicknameNote}</p>
+      <p className="text-muted-foreground">{t.accounts.nicknameNote}</p>
       {error && (
-        <p className="text-red-600" role="alert">
+        <p className="text-failed-text" role="alert">
           {error}
         </p>
       )}
       <div className="flex gap-2">
         <button
-          className="rounded bg-orange-600 px-2 py-1 font-medium text-white disabled:opacity-50"
+          className="rounded bg-primary px-2 py-1 font-medium text-primary-foreground disabled:opacity-50"
           disabled={!nickname.trim()}
           type="submit"
         >
           {t.accounts.adding}
         </button>
         <button
-          className="rounded px-2 py-1 text-neutral-500"
+          className="rounded px-2 py-1 text-muted-foreground"
           onClick={() => {
             setNickname('')
             setAdding(false)
@@ -189,10 +189,10 @@ export function RemoveAccount({ executor, onDone }: { executor: ExecutorRow; onD
 
   return (
     <div className="space-y-1 px-2 pb-1 text-xs" data-testid="remove-account-confirm">
-      <p className="text-neutral-600 dark:text-neutral-300">{t.accounts.removeNote(executor.nickname, folder)}</p>
+      <p className="text-soft">{t.accounts.removeNote(executor.nickname, folder)}</p>
       <div className="flex gap-2">
         <button
-          className="rounded bg-red-600 px-2 py-0.5 text-white"
+          className="rounded bg-danger px-2 py-0.5 text-white"
           onClick={() => {
             void removeAccount(executor.base, executor.account_id).then(done => {
               onDone()
@@ -206,12 +206,12 @@ export function RemoveAccount({ executor, onDone }: { executor: ExecutorRow; onD
         >
           {t.accounts.remove(executor.nickname)}
         </button>
-        <button className="rounded px-2 py-0.5 text-neutral-500" onClick={onDone} type="button">
+        <button className="rounded px-2 py-0.5 text-muted-foreground" onClick={onDone} type="button">
           {t.accounts.cancel}
         </button>
       </div>
       {error && (
-        <p className="text-red-600" role="alert">
+        <p className="text-failed-text" role="alert">
           {error}
         </p>
       )}
@@ -244,7 +244,7 @@ export function FolderAccount({
   return (
     <select
       aria-label={t.accounts.folder(name)}
-      className="max-w-24 shrink-0 cursor-pointer appearance-none truncate rounded bg-transparent px-1 text-xs font-normal text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800"
+      className="max-w-24 shrink-0 cursor-pointer appearance-none truncate rounded bg-transparent px-1 text-xs font-normal text-muted-foreground hover:bg-selected"
       data-testid="folder-account"
       onChange={event => {
         void setFolderAccount(base, folder, event.target.value)

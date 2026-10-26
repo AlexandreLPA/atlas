@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { t } from '@/i18n'
 import { $contributions, $pluginPage, inArea } from '@/plugins/registry'
 import { host } from '@/plugins/sdk'
+import type { ConversationRow } from '@/protocol/protocol.generated'
 import {
   $bots,
   $cards,
@@ -35,7 +36,7 @@ import { ExecutorsList } from './executors-list'
 import { HomeBar } from './home-bar'
 import { RailEdge } from './rail-edge'
 import { ReadFailed } from './read-failed'
-import { StatusDot, useConversationDot, useConversationsDot, useInstancesDot } from './status-dot'
+import { rowDot, StatusDot, useConversationDot, useConversationsDot, useInstancesDot } from './status-dot'
 import { Bulb, CalendarTime, LayoutSidebar, MessagePlus, Messages, Plug, Robot, Store, Terminal } from './ui/icons'
 import { SkeletonRows } from './ui/skeleton'
 import { IconButton, Tip } from './ui/tip'
@@ -77,7 +78,7 @@ export function Sidebar() {
     return (
       <nav
         aria-label="Conversations"
-        className="flex w-9 shrink-0 flex-col items-center gap-2 border-r border-neutral-200 bg-neutral-50 py-3 dark:border-neutral-800 dark:bg-neutral-900"
+        className="flex w-9 shrink-0 flex-col items-center gap-2 border-r border-border bg-subtle py-3"
       >
         <IconButton
           icon={LayoutSidebar}
@@ -89,7 +90,9 @@ export function Sidebar() {
           testId="sidebar-show"
         />
         {asking > 0 ? (
-          <span className="rounded-full bg-amber-500 px-1.5 text-xs leading-4 font-medium text-white">{asking}</span>
+          <span className="rounded-full bg-waiting px-1.5 text-xs leading-4 font-medium text-waiting-foreground">
+            {asking}
+          </span>
         ) : (
           <StatusDot dot={worst([conversationsDot, botsDot, executorsDot])} />
         )}
@@ -99,10 +102,7 @@ export function Sidebar() {
   }
 
   return (
-    <nav
-      aria-label="Conversations"
-      className="sidebar-open flex flex-col border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900"
-    >
+    <nav aria-label="Conversations" className="sidebar-open flex flex-col border-r border-border bg-subtle">
       <div className="space-y-1 p-3">
         <div className="flex items-center gap-1 pb-1">
           <IconButton
@@ -114,7 +114,7 @@ export function Sidebar() {
             side="bottom"
             testId="sidebar-hide"
           />
-          <div className="flex min-w-0 flex-1 rounded-md bg-neutral-200 p-0.5 dark:bg-neutral-800" role="tablist">
+          <div className="flex min-w-0 flex-1 rounded-md bg-selected p-0.5" role="tablist">
             <Tab current={tab} dot={conversationsDot} icon={Messages} label={t.conversations.tab} tab="conversations" />
             <Tab count={bots.length} current={tab} dot={botsDot} icon={Robot} label={t.bots.tab} tab="bots" />
             <Tab
@@ -166,7 +166,7 @@ export function Sidebar() {
             testId="plugins-entry"
           >
             <span
-              className="rounded-full bg-amber-500 px-2 text-xs leading-5 font-medium text-white"
+              className="rounded-full bg-waiting px-2 text-xs leading-5 font-medium text-waiting-foreground"
               data-testid="plugins-waiting"
             >
               {t.plugins.waiting(waiting)}
@@ -180,9 +180,8 @@ export function Sidebar() {
             label={t.proposals.title}
             onClick={showProposals}
             testId="proposals-entry"
-            tone="violet"
           >
-            <span className="rounded-full bg-violet-600 px-2 text-xs leading-5 font-medium text-white">
+            <span className="rounded-full bg-waiting px-2 text-xs leading-5 font-medium text-waiting-foreground">
               {proposals.length}
             </span>
           </Entry>
@@ -208,8 +207,7 @@ function Entry({
   icon: Glyph,
   label,
   onClick,
-  testId,
-  tone = 'neutral'
+  testId
 }: {
   children?: ReactNode
   current: boolean
@@ -217,24 +215,18 @@ function Entry({
   label: string
   onClick: () => void
   testId: string
-  tone?: 'neutral' | 'violet'
 }) {
-  const on =
-    tone === 'violet'
-      ? 'bg-violet-100 font-medium dark:bg-violet-950'
-      : 'bg-neutral-200 font-medium dark:bg-neutral-800'
-
   return (
     <button
       aria-current={current ? 'page' : undefined}
       className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-        current ? on : 'hover:bg-neutral-100 dark:hover:bg-neutral-800'
+        current ? 'bg-selected font-medium' : 'hover:bg-hover'
       }`}
       data-testid={testId}
       onClick={onClick}
       type="button"
     >
-      <Glyph aria-hidden className="shrink-0 text-neutral-500" size={16} stroke={1.75} />
+      <Glyph aria-hidden className="shrink-0 text-muted-foreground" size={16} stroke={1.75} />
       <span className="min-w-0 flex-1 truncate">{label}</span>
       {children}
     </button>
@@ -266,9 +258,7 @@ function Tab({
         aria-label={label}
         aria-selected={current === tab}
         className={`relative flex min-w-0 flex-1 items-center justify-center gap-1 rounded px-2 py-1 ${
-          current === tab
-            ? 'bg-white text-neutral-900 shadow-sm dark:bg-neutral-950 dark:text-neutral-100'
-            : 'text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+          current === tab ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
         }`}
         data-testid={`tab-${tab}`}
         onClick={() => {
@@ -278,10 +268,10 @@ function Tab({
         type="button"
       >
         <Glyph aria-hidden size={16} stroke={1.75} />
-        {count ? <span className="text-xs text-neutral-500">{count}</span> : null}
+        {count ? <span className="text-xs text-muted-foreground">{count}</span> : null}
         {alert ? (
           <span
-            className="rounded-full bg-amber-500 px-1.5 text-xs leading-4 font-medium text-white"
+            className="rounded-full bg-waiting px-1.5 text-xs leading-4 font-medium text-waiting-foreground"
             data-testid={`tab-${tab}-alert`}
           >
             {alert}
@@ -308,7 +298,7 @@ function Conversations() {
     <>
       <div className="px-3 pb-2">
         <button
-          className="flex w-full items-center gap-2 rounded-md border border-neutral-300 px-2 py-1.5 text-left text-sm font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+          className="flex w-full items-center gap-2 rounded-md border border-border-strong px-2 py-1.5 text-left text-sm font-medium hover:bg-muted"
           onClick={newConversation}
           type="button"
         >
@@ -327,35 +317,11 @@ function Conversations() {
           </li>
         )}
         {read && conversations.length === 0 && (
-          <li className="px-2 py-1 text-sm text-neutral-500">{t.conversations.empty}</li>
+          <li className="px-2 py-1 text-sm text-muted-foreground">{t.conversations.empty}</li>
         )}
         {conversations.map(conversation => (
           <li key={conversation.id}>
-            <button
-              aria-current={conversation.id === selected && view === 'conversation' ? 'page' : undefined}
-              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
-                conversation.id === selected && view === 'conversation'
-                  ? 'bg-neutral-200 font-medium dark:bg-neutral-800'
-                  : 'hover:bg-neutral-100 dark:hover:bg-neutral-800/60'
-              }`}
-              data-testid="conversation-row"
-              onClick={() => void selectConversation(conversation.id)}
-              title={conversation.title}
-              type="button"
-            >
-              <ConversationDot conversationId={conversation.id} />
-              <span className="min-w-0 flex-1 truncate" data-testid="conversation-title">
-                {conversation.title || t.conversations.untitled}
-                {conversation.source !== 'app' && (
-                  <span className="ml-1 text-xs font-normal text-neutral-500" data-testid="conversation-via">
-                    {t.conversations.via(conversation.source)}
-                  </span>
-                )}
-              </span>
-              <span className="shrink-0 text-xs font-normal text-neutral-500" data-testid="conversation-when">
-                {when(conversation.updated_at)}
-              </span>
-            </button>
+            <Conversation current={conversation.id === selected && view === 'conversation'} row={conversation} />
           </li>
         ))}
       </ul>
@@ -363,6 +329,37 @@ function Conversations() {
   )
 }
 
-function ConversationDot({ conversationId }: { conversationId: string }) {
-  return <StatusDot dot={useConversationDot(conversationId)} slot />
+/** A conversation's row: its dot, and its title in bold while what its turn ended with is unseen. */
+function Conversation({ current, row }: { current: boolean; row: ConversationRow }) {
+  const dot = useConversationDot(row.id)
+
+  return (
+    <button
+      aria-current={current ? 'page' : undefined}
+      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm ${
+        current ? 'bg-selected font-medium' : 'hover:bg-hover'
+      }`}
+      data-testid="conversation-row"
+      data-unread={dot === 'unread' || undefined}
+      onClick={() => void selectConversation(row.id)}
+      title={row.title}
+      type="button"
+    >
+      <StatusDot dot={rowDot(dot)} slot />
+      <span
+        className={`min-w-0 flex-1 truncate ${dot === 'unread' ? 'font-semibold' : ''}`}
+        data-testid="conversation-title"
+      >
+        {row.title || t.conversations.untitled}
+        {row.source !== 'app' && (
+          <span className="ml-1 text-xs font-normal text-muted-foreground" data-testid="conversation-via">
+            {t.conversations.via(row.source)}
+          </span>
+        )}
+      </span>
+      <span className="shrink-0 text-xs font-normal text-muted-foreground" data-testid="conversation-when">
+        {when(row.updated_at)}
+      </span>
+    </button>
+  )
 }

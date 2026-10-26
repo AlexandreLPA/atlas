@@ -3673,6 +3673,31 @@ confiança. **Sem redesenho:** polimento, fluidez, percepção de velocidade e i
   e2e (no turno sem chave, "Devolver à caixa" traz a mensagem e "Conectar uma chave" abre a seção
   Modelo). Fiscais: 2.690 testes do Python com 91,45% de cobertura, o `npm run check` (417 do
   Vitest) e os 70 do e2e.
+- **Entrega 4, base visual e movimento (26/10):** as cores ganharam nome num arquivo só
+  (`src/styles.css`), para o claro e o escuro: fundos, textos, bordas, o preto e branco dos botões
+  e uma cor por estado (azul pulsando, trabalhando; âmbar, esperando o usuário; verde, terminou;
+  vermelho, falhou), mais `danger` para o botão que apaga e `added` e `removed` para as linhas de
+  uma mudança. As cerca de 1.400 cores escritas direto em 51 arquivos viraram esses nomes, por uma
+  tabela de conversão revista à mão; um teste barra cor de paleta, cor escrita e cor só do escuro
+  numa tela (`colors.test.ts`), e só guardam as próprias cores a marca do fabricante de cada
+  executor, o tipo do arquivo no chip e o rosto do bot. Os blocos de código e as tabelas das
+  respostas, que pintam com esses nomes e saíam com borda preta, agora seguem o tema. O roxo, o
+  laranja e o azul-céu dos botões e links viraram preto e branco (o link ganhou sublinhado); o ponto
+  de trabalhando da lista ficou azul como o da trilha; a conversa não vista ganha o título em
+  negrito, e o ponto fica para o que junta conversas (as abas, uma pasta fechada); o "Auto" ligado
+  deixou o âmbar (um ponto cheio); a faixa da conexão ficou neutra, com o ponto azul enquanto
+  reconecta e vermelho quando cai; os cartões que pedem o usuário ficaram âmbar; o normal (servidor
+  conectado, chave guardada) não tem cor. O foco do teclado é um anel cinza igual em todo controle,
+  no lugar da cor de destaque do sistema. Movimento: uma curva e três durações (120, 180 e 260 ms);
+  as cores de um controle mudam suave, o que abre e fecha desliza, e o que chega na conversa à
+  vista, um cartão e a mensagem a caminho sobem 4 px no lugar, enquanto a conversa que se abre já
+  aparece pronta (`data-settled`); com "reduzir movimento" no sistema, nada se mexe. Provado no
+  Vitest (as cores com nome, o não visto em negrito, a conversa que abre inteira) e no e2e (o que
+  chega sobe e a conversa aberta não, teste que falha sem a regra; com "reduzir movimento", nada se
+  mexe; uma resposta longa não segura quadro além de 250 ms, e aqui nenhum passou de 50 ms).
+  Fiscais: 2.690 testes do Python com 91,46% de cobertura, o `npm run check` (422 do Vitest) e os
+  73 do e2e; um deles falhou uma vez só ao apagar a pasta temporária, que o Gemini CLI desta
+  máquina ainda escrevia, e passou nas três vezes seguintes.
 
 ## Assuntos de desenho ainda abertos
 

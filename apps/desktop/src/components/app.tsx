@@ -123,11 +123,7 @@ export function App() {
   }, [])
 
   return (
-    <div
-      className="relative flex h-full bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
-      data-connection={state}
-      style={widths}
-    >
+    <div className="relative flex h-full bg-background text-foreground" data-connection={state} style={widths}>
       <Sidebar />
       <main className="main-pane flex min-w-0 flex-1 flex-col">
         <ConnectionBand />
@@ -205,14 +201,24 @@ function ConnectionBand() {
       ? t.connection.connecting
       : t.connection.closed
 
+  // Quiet, with the state's dot: blue while it dials again, red once the line is lost; amber is
+  // only what waits for the user (decided with the user on 25/10/2026).
   return (
     <div
-      className="border-b border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100"
+      className="flex items-center gap-2 border-b border-border bg-subtle px-4 py-2 text-sm text-soft"
       data-testid="connection-band"
       role="status"
     >
-      {text}
-      {error && <span className="ml-2 opacity-75">{t.connection.failed(error)}</span>}
+      <span
+        aria-hidden
+        className={`size-2 shrink-0 rounded-full ${
+          state === 'closed' ? 'bg-failed' : 'bg-working motion-safe:animate-pulse'
+        }`}
+      />
+      <span>
+        {text}
+        {error && <span className="ml-2 text-muted-foreground">{t.connection.failed(error)}</span>}
+      </span>
     </div>
   )
 }
@@ -220,7 +226,7 @@ function ConnectionBand() {
 /** The conversation's place while the home's server starts: what happens, never "nothing here". */
 function Opening() {
   return (
-    <p className="pt-24 text-center text-neutral-500" data-testid="opening" role="status">
+    <p className="pt-24 text-center text-muted-foreground" data-testid="opening" role="status">
       {t.connection.opening}
     </p>
   )

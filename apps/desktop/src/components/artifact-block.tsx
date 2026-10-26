@@ -20,7 +20,7 @@ export function ArtifactBlock({ code, isIncomplete, language }: CustomRendererPr
       <CodeBlock code={code} isIncomplete={isIncomplete} language={language}>
         <CodeBlockCopyButton code={code} />
         <button
-          className="rounded px-1.5 text-xs text-neutral-600 hover:bg-neutral-200 disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          className="rounded px-1.5 text-xs text-soft hover:bg-selected disabled:opacity-50"
           data-testid="open-beside"
           disabled={isIncomplete}
           onClick={() => {

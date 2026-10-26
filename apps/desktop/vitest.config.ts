@@ -21,6 +21,9 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          // The styles' own words, for the test that keeps the app's colors named (src/colors.test.ts);
+          // no other CSS is read.
+          css: { include: [/styles\.css/] },
           environment: 'jsdom',
           include: ['src/**/*.test.{ts,tsx}'],
           name: 'window',

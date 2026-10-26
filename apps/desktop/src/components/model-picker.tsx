@@ -29,7 +29,7 @@ export function ModelPicker({ connected }: { connected: boolean }) {
   const current: ConversationModel = models[selected ?? DRAFT] ?? options.default
 
   if (!current.provider || !current.model) {
-    return <span className="text-xs text-neutral-500">{t.composer.noModel}</span>
+    return <span className="text-xs text-muted-foreground">{t.composer.noModel}</span>
   }
 
   const providers = withCurrent(options.providers, current.provider, current.model)

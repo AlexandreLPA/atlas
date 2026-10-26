@@ -62,7 +62,7 @@ export function HomeBar() {
   const name = home ?? ''
 
   return (
-    <div className="space-y-2 border-t border-neutral-200 p-2 dark:border-neutral-800" data-testid="home-bar">
+    <div className="space-y-2 border-t border-border p-2" data-testid="home-bar">
       <MachinePicker />
       <div className="flex items-center gap-1">
         <HomeMenu
@@ -72,14 +72,14 @@ export function HomeBar() {
         >
           <button
             aria-label={t.homes.menu(name)}
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-neutral-400 dark:hover:bg-neutral-800"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-selected"
             data-home={name}
             data-testid="home-button"
             type="button"
           >
             <HomePicture name={name} picture={picture} size="sm" />
             <span className="min-w-0 flex-1 truncate font-medium">{name}</span>
-            <ChevronDown aria-hidden className="shrink-0 text-neutral-400" size={14} stroke={1.75} />
+            <ChevronDown aria-hidden className="shrink-0 text-muted-foreground" size={14} stroke={1.75} />
           </button>
         </HomeMenu>
         <IconButton
@@ -114,7 +114,7 @@ function MachinePicker() {
       <DropdownMenu.Trigger asChild>
         <button
           aria-label={t.machines.selector(label)}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs text-neutral-600 hover:bg-neutral-200 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-xs text-soft hover:bg-selected"
           data-machine={named?.name ?? ''}
           data-testid="machine-button"
           type="button"
@@ -125,13 +125,13 @@ function MachinePicker() {
             <Computer aria-hidden className="shrink-0" size={14} stroke={1.75} />
           )}
           <span className="min-w-0 flex-1 truncate">{label}</span>
-          <ChevronDown aria-hidden className="shrink-0 text-neutral-400" size={12} stroke={1.75} />
+          <ChevronDown aria-hidden className="shrink-0 text-muted-foreground" size={12} stroke={1.75} />
         </button>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="start"
-          className="z-50 w-60 rounded-lg border border-neutral-200 bg-white p-1 text-neutral-900 shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
+          className="z-50 w-60 rounded-lg border border-border bg-raised p-1 text-foreground shadow-lg"
           data-testid="machine-menu"
           side="top"
           sideOffset={6}
@@ -156,12 +156,12 @@ function MachinePicker() {
             >
               <Machine aria-hidden size={15} stroke={1.75} />
               <span className="min-w-0 flex-1 truncate">
-                {each.name} <span className="text-neutral-500">· {each.home}</span>
+                {each.name} <span className="text-muted-foreground">· {each.home}</span>
               </span>
               {machine === each.id && <Check aria-hidden size={14} stroke={2} />}
             </DropdownMenu.Item>
           ))}
-          <DropdownMenu.Separator className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" />
+          <DropdownMenu.Separator className="my-1 h-px bg-selected" />
           <DropdownMenu.Item
             className={ITEM}
             data-testid="machine-settings"
@@ -179,7 +179,7 @@ function MachinePicker() {
 }
 
 const ITEM =
-  'flex cursor-default items-center gap-2 rounded px-2 py-1.5 text-sm outline-none select-none data-disabled:opacity-40 data-highlighted:bg-neutral-100 dark:data-highlighted:bg-neutral-800'
+  'flex cursor-default items-center gap-2 rounded px-2 py-1.5 text-sm outline-none select-none data-disabled:opacity-40 data-highlighted:bg-muted'
 
 function HomeMenu({ children, onEdit }: { children: ReactElement; onEdit: () => void }) {
   const homes = useStore($homes)
@@ -194,12 +194,14 @@ function HomeMenu({ children, onEdit }: { children: ReactElement; onEdit: () => 
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="start"
-          className="z-50 w-60 rounded-lg border border-neutral-200 bg-white p-1 text-neutral-900 shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
+          className="z-50 w-60 rounded-lg border border-border bg-raised p-1 text-foreground shadow-lg"
           data-testid="home-menu"
           side="top"
           sideOffset={6}
         >
-          <DropdownMenu.Label className="px-2 pt-1 pb-0.5 text-xs text-neutral-500">{t.homes.homes}</DropdownMenu.Label>
+          <DropdownMenu.Label className="px-2 pt-1 pb-0.5 text-xs text-muted-foreground">
+            {t.homes.homes}
+          </DropdownMenu.Label>
           {names.map(name => (
             <DropdownMenu.Item
               className={ITEM}
@@ -227,7 +229,7 @@ function HomeMenu({ children, onEdit }: { children: ReactElement; onEdit: () => 
             <Plus aria-hidden size={15} stroke={1.75} />
             {t.homes.newHome}
           </DropdownMenu.Item>
-          <DropdownMenu.Separator className="my-1 h-px bg-neutral-200 dark:bg-neutral-800" />
+          <DropdownMenu.Separator className="my-1 h-px bg-selected" />
           <DropdownMenu.Item className={ITEM} data-testid="home-profile" onSelect={onEdit}>
             <UserCircle aria-hidden size={15} stroke={1.75} />
             {t.homes.editProfile}
@@ -260,10 +262,10 @@ function HomeProfile({
   return (
     <Dialog.Root onOpenChange={onOpenChange} open={open}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/30" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-scrim" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed top-1/2 left-1/2 z-50 w-[22rem] -translate-x-1/2 -translate-y-1/2 space-y-4 rounded-xl border border-neutral-200 bg-white p-5 text-neutral-900 shadow-xl dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
+          className="fixed top-1/2 left-1/2 z-50 w-[22rem] -translate-x-1/2 -translate-y-1/2 space-y-4 rounded-xl border border-border bg-raised p-5 text-foreground shadow-xl"
           data-testid="home-profile-dialog"
         >
           <div className="flex items-start justify-between">
@@ -275,7 +277,7 @@ function HomeProfile({
           <div className="flex items-center gap-4">
             <button
               aria-label={t.homes.picture}
-              className="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-400"
+              className="rounded-full"
               onClick={() => chooser.current?.click()}
               type="button"
             >
@@ -308,7 +310,7 @@ function HomeProfile({
                   type="file"
                 />
                 <button
-                  className="flex items-center gap-1.5 rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                  className="flex items-center gap-1.5 rounded-md border border-border-strong px-2 py-1 text-xs hover:bg-muted"
                   data-testid="home-picture"
                   onClick={() => chooser.current?.click()}
                   type="button"
@@ -328,11 +330,11 @@ function HomeProfile({
             </div>
           </div>
           {(unreadable || refused) && (
-            <p className="text-xs text-red-600" role="alert">
+            <p className="text-xs text-failed-text" role="alert">
               {unreadable ? t.homes.pictureUnreadable : refused}
             </p>
           )}
-          <p className="text-xs text-neutral-500">{t.homes.profileHint}</p>
+          <p className="text-xs text-muted-foreground">{t.homes.profileHint}</p>
           <div className="flex gap-2">
             <button
               className={BUTTON}
@@ -381,7 +383,7 @@ function HomePicture({ name, picture, size }: { name: string; picture: null | st
   ) : (
     <span
       aria-hidden
-      className={`${box} grid shrink-0 place-items-center rounded-full bg-neutral-300 font-semibold text-neutral-700 uppercase dark:bg-neutral-700 dark:text-neutral-200`}
+      className={`${box} grid shrink-0 place-items-center rounded-full bg-border-strong font-semibold text-soft uppercase`}
     >
       {name.slice(0, 1)}
     </span>
@@ -435,9 +437,7 @@ function Notice({ notice }: { notice: HomeNotice }) {
   return (
     <div
       className={`flex items-start gap-2 rounded-md px-2 py-1.5 text-xs [overflow-wrap:anywhere] ${
-        notice.kind === 'failed'
-          ? 'bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200'
-          : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200'
+        notice.kind === 'failed' ? 'bg-failed/10 text-failed-text' : 'bg-muted text-soft'
       }`}
       data-kind={notice.kind}
       data-testid="home-notice"
@@ -459,4 +459,4 @@ export function size(bytes: number): string {
 }
 
 const BUTTON =
-  'flex flex-1 items-center justify-center gap-1.5 truncate rounded-md border border-neutral-300 px-2 py-1.5 text-sm hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:hover:bg-neutral-800'
+  'flex flex-1 items-center justify-center gap-1.5 truncate rounded-md border border-border-strong px-2 py-1.5 text-sm hover:bg-muted disabled:opacity-40'

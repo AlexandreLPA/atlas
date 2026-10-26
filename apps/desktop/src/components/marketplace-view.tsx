@@ -51,12 +51,12 @@ function Listing() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-lg font-semibold">{t.marketplace.title}</h1>
-          <p className="text-sm text-neutral-500">{t.marketplace.intro}</p>
+          <p className="text-sm text-muted-foreground">{t.marketplace.intro}</p>
           {/* Sharing starts with making one: Atlas writes it with the user, and the guide says how
               it enters (decided by the user on 25/10/2026). */}
           <p className="mt-1 flex gap-3 text-sm">
             <button
-              className="text-violet-600 hover:underline"
+              className="link"
               data-testid="marketplace-make"
               onClick={writePlugin}
               title={t.marketplace.makeHint}
@@ -64,7 +64,7 @@ function Listing() {
             >
               {t.marketplace.makeYourOwn}
             </button>
-            <a className="text-violet-600 hover:underline" href={PLUGIN_GUIDE} rel="noreferrer" target="_blank">
+            <a className="link" href={PLUGIN_GUIDE} rel="noreferrer" target="_blank">
               {t.marketplace.guide}
             </a>
           </p>
@@ -72,7 +72,7 @@ function Listing() {
         <div className="flex shrink-0 items-center gap-2">
           <input
             aria-label={t.marketplace.search}
-            className="w-56 rounded-md border border-neutral-300 bg-transparent px-2 py-1 text-sm dark:border-neutral-700"
+            className="w-56 rounded-md border border-border-strong bg-transparent px-2 py-1 text-sm"
             data-testid="marketplace-search"
             onChange={event => {
               setMarketQuery(event.target.value)
@@ -96,14 +96,14 @@ function Listing() {
         </div>
       </div>
       <Notice />
-      <div className="flex gap-1 border-b border-neutral-200 dark:border-neutral-800" role="tablist">
+      <div className="flex gap-1 border-b border-border" role="tablist">
         {KINDS.map(kind => (
           <KindTab count={total[kind]} current={market.kind} key={kind} kind={kind} />
         ))}
       </div>
       {market.failed && <Failed text={market.failed} />}
       {nothing && (
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-muted-foreground">
           {market.list === null && market.reading
             ? t.marketplace.reading
             : market.query
@@ -130,7 +130,7 @@ function Notice() {
 
   return (
     <p
-      className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100"
+      className="rounded-md bg-waiting/10 px-3 py-2 text-sm text-waiting-text"
       data-testid="marketplace-notice"
       role="status"
     >
@@ -146,7 +146,7 @@ function KindTab({ count, current, kind }: { count: number; current: MarketKind;
     <button
       aria-selected={on}
       className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${
-        on ? 'border-violet-600 font-medium' : 'border-transparent text-neutral-500 hover:text-neutral-800'
+        on ? 'border-foreground font-medium' : 'border-transparent text-muted-foreground hover:text-foreground'
       }`}
       data-testid={`marketplace-tab-${kind}`}
       onClick={() => {
@@ -156,7 +156,7 @@ function KindTab({ count, current, kind }: { count: number; current: MarketKind;
       type="button"
     >
       {t.marketplace.tabs[kind]}
-      <span className="ml-1.5 text-xs text-neutral-400">{count}</span>
+      <span className="ml-1.5 text-xs text-muted-foreground">{count}</span>
     </button>
   )
 }
@@ -168,7 +168,7 @@ function Shelf({ rows, title }: { rows: MarketplaceRow[]; title: string }) {
 
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-medium text-neutral-500">{title}</h2>
+      <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {rows.map(row => (
           <Card key={row.name} row={row} />
@@ -181,7 +181,7 @@ function Shelf({ rows, title }: { rows: MarketplaceRow[]; title: string }) {
 function Card({ row }: { row: MarketplaceRow }) {
   return (
     <div
-      className="flex cursor-pointer flex-col gap-2 rounded-lg border border-neutral-200 p-3 hover:border-violet-400 dark:border-neutral-800"
+      className="flex cursor-pointer flex-col gap-2 rounded-lg border border-border p-3 hover:border-border-strong"
       data-name={row.name}
       data-testid="marketplace-card"
       onClick={() => {
@@ -199,13 +199,15 @@ function Card({ row }: { row: MarketplaceRow }) {
         <Picture row={row} size={40} />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{row.title}</p>
-          <p className="truncate text-xs text-neutral-500">{t.marketplace.by(row.author)}</p>
+          <p className="truncate text-xs text-muted-foreground">{t.marketplace.by(row.author)}</p>
         </div>
         {row.tier === 'official' && <Badge>{t.marketplace.officialBadge}</Badge>}
       </div>
-      <p className="line-clamp-2 min-h-10 text-sm text-neutral-600 dark:text-neutral-300">{row.summary}</p>
+      <p className="line-clamp-2 min-h-10 text-sm text-soft">{row.summary}</p>
       <div className="flex items-center justify-between gap-2">
-        <span className="truncate text-xs text-neutral-400">{row.shipped ? t.marketplace.shipped : row.version}</span>
+        <span className="truncate text-xs text-muted-foreground">
+          {row.shipped ? t.marketplace.shipped : row.version}
+        </span>
         <Action row={row} />
       </div>
     </div>
@@ -219,20 +221,18 @@ function ItemPage() {
 
   return (
     <div className="space-y-4" data-testid="marketplace-page">
-      <button className="text-sm text-violet-600 hover:underline" onClick={closeMarketItem} type="button">
+      <button className="link text-sm" onClick={closeMarketItem} type="button">
         ← {t.marketplace.back}
       </button>
       {row && <Head row={row} />}
       {market.failed && <Failed text={market.failed} />}
       {market.brought.length > 0 && (
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
-          {t.marketplace.brought(market.brought.join(', '))}
-        </p>
+        <p className="text-sm text-soft">{t.marketplace.brought(market.brought.join(', '))}</p>
       )}
       {market.confirming !== null && <Confirm name={market.confirming} />}
-      {row?.state === 'off' && <p className="text-sm text-neutral-500">{t.marketplace.turnOnHint}</p>}
+      {row?.state === 'off' && <p className="text-sm text-muted-foreground">{t.marketplace.turnOnHint}</p>}
       {market.pageError && <Failed text={market.pageError} />}
-      {!page && !market.pageError && <p className="text-sm text-neutral-500">{t.marketplace.loadingPage}</p>}
+      {!page && !market.pageError && <p className="text-sm text-muted-foreground">{t.marketplace.loadingPage}</p>}
       {page && <Body page={page} />}
     </div>
   )
@@ -250,9 +250,9 @@ function Head({ row }: { row: MarketplaceRow }) {
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-lg font-semibold">{row.title}</h1>
           {row.tier === 'official' && <Badge>{t.marketplace.officialBadge}</Badge>}
-          <span className="text-xs text-neutral-500">{t.marketplace.kinds[row.kind]}</span>
+          <span className="text-xs text-muted-foreground">{t.marketplace.kinds[row.kind]}</span>
         </div>
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-muted-foreground">
           {[
             t.marketplace.by(row.author),
             row.shipped ? t.marketplace.shipped : '',
@@ -263,10 +263,10 @@ function Head({ row }: { row: MarketplaceRow }) {
             .join(' · ')}
         </p>
         <p className="text-sm">{row.summary}</p>
-        {row.problem && <p className="text-sm text-amber-700 dark:text-amber-300">{row.problem}</p>}
+        {row.problem && <p className="text-sm text-waiting-text">{row.problem}</p>}
         <div className="flex flex-wrap gap-3 text-sm">
           {row.source_url && (
-            <a className="text-violet-600 hover:underline" href={row.source_url} rel="noreferrer" target="_blank">
+            <a className="link" href={row.source_url} rel="noreferrer" target="_blank">
               {row.kind === 'mcp' ? t.marketplace.homepage : t.marketplace.source}
             </a>
           )}
@@ -277,7 +277,7 @@ function Head({ row }: { row: MarketplaceRow }) {
         {removable &&
           (removing ? (
             <button
-              className={`${BUTTON} text-red-600`}
+              className={`${BUTTON} text-failed-text`}
               data-testid="marketplace-remove-confirm"
               disabled={market.busy === row.name}
               onClick={() => {
@@ -314,7 +314,7 @@ function Body({ page }: { page: MarketplacePage }) {
           <ul className="space-y-0.5 text-sm">
             {page.needs.map(need => (
               <li
-                className={need.state === 'missing' ? 'text-amber-700 dark:text-amber-300' : 'text-neutral-600'}
+                className={need.state === 'missing' ? 'text-waiting-text' : 'text-soft'}
                 data-state={need.state}
                 data-testid="marketplace-need"
                 key={`${need.kind}-${need.name}`}
@@ -338,12 +338,7 @@ function Body({ page }: { page: MarketplacePage }) {
           <h2 className="text-sm font-medium">{t.marketplace.screenshots}</h2>
           <div className="flex gap-3 overflow-x-auto">
             {page.screenshots.map(shot => (
-              <img
-                alt=""
-                className="h-48 rounded-md border border-neutral-200 dark:border-neutral-800"
-                key={shot}
-                src={shot}
-              />
+              <img alt="" className="h-48 rounded-md border border-border" key={shot} src={shot} />
             ))}
           </div>
         </section>
@@ -352,7 +347,7 @@ function Body({ page }: { page: MarketplacePage }) {
         <section className="space-y-2">
           <h2 className="text-sm font-medium">{t.marketplace.entry}</h2>
           <pre
-            className="overflow-x-auto rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs dark:border-neutral-800 dark:bg-neutral-900"
+            className="overflow-x-auto rounded-lg border border-border bg-subtle p-3 text-xs"
             data-testid="marketplace-entry-json"
           >
             {page.entry}
@@ -360,10 +355,7 @@ function Body({ page }: { page: MarketplacePage }) {
         </section>
       )}
       {page.readme && (
-        <article
-          className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
-          data-testid="marketplace-readme"
-        >
+        <article className="rounded-lg border border-border p-4" data-testid="marketplace-readme">
           {/* A stranger's text: its raw HTML is skipped, and its addresses kept to the item's tree. */}
           <Streamdown
             mode="static"
@@ -387,12 +379,12 @@ function Secret({ item, secret }: { item: string; secret: MarketplaceSecretRow }
     <div className="text-sm" data-stored={secret.stored} data-testid="marketplace-secret">
       <p>
         <span className="font-mono">{secret.name}</span>
-        <span className="ml-2 text-neutral-500">
+        <span className="ml-2 text-muted-foreground">
           {secret.stored ? t.marketplace.secretStored : t.marketplace.secretMissing}
         </span>
         {secret.stored && !changing && (
           <button
-            className="ml-2 text-violet-600 hover:underline"
+            className="link ml-2"
             data-testid="marketplace-secret-change"
             onClick={() => {
               setChanging(true)
@@ -404,10 +396,10 @@ function Secret({ item, secret }: { item: string; secret: MarketplaceSecretRow }
         )}
       </p>
       {secret.description && (
-        <p className="text-neutral-500">
+        <p className="text-muted-foreground">
           {secret.description}{' '}
           {secret.url && (
-            <a className="text-violet-600 hover:underline" href={secret.url} rel="noreferrer" target="_blank">
+            <a className="link" href={secret.url} rel="noreferrer" target="_blank">
               {secret.url}
             </a>
           )}
@@ -429,7 +421,7 @@ function Secret({ item, secret }: { item: string; secret: MarketplaceSecretRow }
           <input
             aria-label={secret.name}
             autoComplete="off"
-            className="w-72 rounded-md border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-700"
+            className="w-72 rounded-md border border-border-strong bg-transparent px-2 py-1"
             data-testid="marketplace-secret-input"
             onChange={event => {
               setValue(event.target.value)
@@ -509,7 +501,7 @@ function Action({ row }: { row: MarketplaceRow }) {
 
   return (
     <span
-      className={`text-xs ${action === 'retired' || action === 'unavailable' ? 'text-amber-700' : 'text-neutral-500'}`}
+      className={`text-xs ${action === 'retired' || action === 'unavailable' ? 'text-waiting-text' : 'text-muted-foreground'}`}
       data-action={action}
       data-testid="marketplace-action"
       title={row.problem ?? undefined}
@@ -523,7 +515,7 @@ function Action({ row }: { row: MarketplaceRow }) {
 function Confirm({ name }: { name: string }) {
   return (
     <div
-      className="space-y-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-800 dark:bg-amber-950"
+      className="space-y-2 rounded-md border border-waiting/40 bg-waiting/10 p-3 text-sm"
       data-testid="marketplace-confirm"
     >
       <p>{t.marketplace.localChanges(name)}</p>
@@ -557,7 +549,7 @@ function Picture({ row, size }: { row: MarketplaceRow; size: number }) {
 
   return (
     <span
-      className="flex shrink-0 items-center justify-center rounded-md bg-neutral-100 text-neutral-500 dark:bg-neutral-800"
+      className="flex shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
       style={{ height: size, width: size }}
     >
       {row.kind === 'executor' && row.shipped ? (
@@ -570,25 +562,20 @@ function Picture({ row, size }: { row: MarketplaceRow; size: number }) {
 }
 
 function Badge({ children }: { children: ReactNode }) {
-  return (
-    <span className="shrink-0 rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
-      {children}
-    </span>
-  )
+  return <span className="shrink-0 rounded-full bg-selected px-2 py-0.5 text-xs font-medium text-soft">{children}</span>
 }
 
 function Failed({ text }: { text: string }) {
   return (
-    <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300" role="alert">
+    <p className="rounded-md bg-failed/10 px-3 py-2 text-sm text-failed-text" role="alert">
       {text}
     </p>
   )
 }
 
-const BUTTON =
-  'rounded-md border border-neutral-300 px-2 py-1 text-sm hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:hover:bg-neutral-800'
+const BUTTON = 'rounded-md border border-border-strong px-2 py-1 text-sm hover:bg-muted disabled:opacity-40'
 const PRIMARY =
-  'rounded-md bg-violet-600 px-3 py-1 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-40'
+  'rounded-md bg-primary px-3 py-1 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40'
 
 /** A UTC time as the user's local date and time. */
 function when(utc: string): string {

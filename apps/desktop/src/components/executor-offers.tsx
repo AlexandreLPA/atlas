@@ -30,7 +30,7 @@ export function ExecutorOffers() {
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-semibold">{t.executors.harnesses}</h2>
-          <p className="text-xs text-neutral-500">{t.executors.harnessesIntro}</p>
+          <p className="text-xs text-muted-foreground">{t.executors.harnessesIntro}</p>
         </div>
         <IconButton
           className={detecting ? 'animate-spin' : ''}
@@ -46,7 +46,7 @@ export function ExecutorOffers() {
       {executors.map(row => (
         <Offer key={row.name} row={row} />
       ))}
-      {errors.offer && <p className="text-xs text-red-600">{errors.offer}</p>}
+      {errors.offer && <p className="text-xs text-failed-text">{errors.offer}</p>}
     </section>
   )
 }
@@ -60,32 +60,27 @@ function Offer({ row }: { row: ExecutorRow }) {
   return (
     <div
       className={`space-y-2 rounded-lg border p-3 text-sm ${
-        usable
-          ? 'border-neutral-300 dark:border-neutral-700'
-          : 'border-dashed border-neutral-300 dark:border-neutral-700'
+        usable ? 'border-border-strong' : 'border-dashed border-border-strong'
       }`}
       data-testid="executor-offer"
       data-usable={usable}
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className={`font-medium ${usable ? '' : 'text-neutral-500'}`}>{row.title}</p>
+          <p className={`font-medium ${usable ? '' : 'text-muted-foreground'}`}>{row.title}</p>
           {usable ? (
-            <p className="truncate text-xs text-neutral-500">{found}</p>
+            <p className="truncate text-xs text-muted-foreground">{found}</p>
           ) : (
             // Why, in full: it says the command that installs or updates it.
-            <p
-              className="text-xs break-words whitespace-pre-wrap text-neutral-600 select-text dark:text-neutral-400"
-              data-testid="executor-problem"
-            >
+            <p className="text-xs break-words whitespace-pre-wrap text-soft select-text" data-testid="executor-problem">
               {row.problem || t.executors.notFound}
             </p>
           )}
         </div>
-        {usable && row.enabled && <span className="text-xs text-green-700">{t.executors.on}</span>}
+        {usable && row.enabled && <span className="text-xs text-muted-foreground">{t.executors.on}</span>}
         {usable && !row.enabled && !asking && (
           <button
-            className="rounded bg-orange-600 px-3 py-1 text-xs font-medium text-white"
+            className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
             onClick={() => {
               setAsking(true)
             }}
@@ -104,7 +99,7 @@ function Offer({ row }: { row: ExecutorRow }) {
           </ul>
           <div className="flex gap-2">
             <button
-              className="rounded bg-orange-600 px-3 py-1 font-medium text-white"
+              className="rounded bg-primary px-3 py-1 font-medium text-primary-foreground"
               onClick={() => {
                 void turnOnExecutor(row).then(() => {
                   setAsking(false)
@@ -115,7 +110,7 @@ function Offer({ row }: { row: ExecutorRow }) {
               {t.executors.confirmTurnOn}
             </button>
             <button
-              className="rounded border border-neutral-300 px-3 py-1 dark:border-neutral-700"
+              className="rounded border border-border-strong px-3 py-1"
               onClick={() => {
                 setAsking(false)
               }}

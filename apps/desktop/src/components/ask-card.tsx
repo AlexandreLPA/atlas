@@ -50,14 +50,14 @@ export function AskCard({ card }: AskCardProps) {
   return (
     <section
       aria-label={t.ask.title(questions.length)}
-      className="space-y-4 rounded-lg border border-blue-300 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/40"
+      className="enter space-y-4 rounded-lg border border-waiting/40 bg-waiting/10 p-4"
       data-testid="ask-card"
     >
       <h2 className="text-sm font-semibold">{t.ask.title(questions.length)}</h2>
       {questions.map(question => (
         <fieldset className="space-y-2" key={question.id}>
           <legend className="mb-1">{question.text}</legend>
-          {question.multi_select && <p className="text-xs text-neutral-500">{t.ask.pickSome}</p>}
+          {question.multi_select && <p className="text-xs text-muted-foreground">{t.ask.pickSome}</p>}
           <div className="flex flex-wrap gap-2">
             {[...question.choices, ...(question.choices.length ? [OTHER] : [])].map(choice => {
               const on = (picked[question.id] ?? []).includes(choice)
@@ -67,8 +67,8 @@ export function AskCard({ card }: AskCardProps) {
                   aria-pressed={on}
                   className={`rounded-md border px-3 py-1 text-sm ${
                     on
-                      ? 'border-blue-600 bg-blue-600 text-white'
-                      : 'border-neutral-300 bg-white hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900'
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-border-strong bg-raised hover:bg-muted'
                   }`}
                   key={choice}
                   onClick={() => {
@@ -84,7 +84,7 @@ export function AskCard({ card }: AskCardProps) {
           {(question.choices.length === 0 || (picked[question.id] ?? []).includes(OTHER)) && (
             <input
               aria-label={`${question.text} ${t.ask.otherPlaceholder}`}
-              className="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+              className="w-full rounded-md border border-border-strong bg-raised px-3 py-1.5 text-sm"
               onChange={event => {
                 setTyped(current => ({ ...current, [question.id]: event.target.value }))
               }}
@@ -96,14 +96,14 @@ export function AskCard({ card }: AskCardProps) {
       ))}
       <div className="flex gap-2">
         <button
-          className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white"
+          className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground"
           onClick={submit}
           type="button"
         >
           {t.ask.submit}
         </button>
         <button
-          className="rounded-md px-4 py-1.5 text-sm text-neutral-600 hover:bg-neutral-200 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          className="rounded-md px-4 py-1.5 text-sm text-soft hover:bg-selected"
           onClick={() => {
             answerAsk(card.id, {})
           }}

@@ -15,16 +15,13 @@ export function BotHeader({ bot }: { bot: BotRow }) {
   const routines = useStore($routines).filter(routine => routine.bot === bot.name).length
 
   return (
-    <header
-      className="flex items-center gap-3 border-b border-neutral-200 px-6 py-3 dark:border-neutral-800"
-      data-testid="bot-header"
-    >
+    <header className="flex items-center gap-3 border-b border-border px-6 py-3" data-testid="bot-header">
       <BotFace name={bot.name} size={36} title={bot.title} />
       <div className="min-w-0 flex-1">
         <p className="truncate font-medium">
-          {bot.title} <span className="font-mono text-xs font-normal text-neutral-500">@{bot.name}</span>
+          {bot.title} <span className="font-mono text-xs font-normal text-muted-foreground">@{bot.name}</span>
         </p>
-        {bot.description && <p className="truncate text-sm text-neutral-500">{bot.description}</p>}
+        {bot.description && <p className="truncate text-sm text-muted-foreground">{bot.description}</p>}
       </div>
       {routines > 0 && (
         <button className={BUTTON} data-testid="bot-routines" onClick={showRoutines} type="button">
@@ -44,10 +41,9 @@ export function BotEmpty({ bot }: { bot: BotRow }) {
     <div className="flex flex-col items-center gap-3 pt-20 text-center" data-testid="bot-empty">
       <BotFace name={bot.name} size={96} title={bot.title} />
       <p className="text-lg font-medium">{bot.title}</p>
-      <p className="max-w-md text-sm text-neutral-500">{bot.description || t.bots.emptyChat(bot.title)}</p>
+      <p className="max-w-md text-sm text-muted-foreground">{bot.description || t.bots.emptyChat(bot.title)}</p>
     </div>
   )
 }
 
-const BUTTON =
-  'shrink-0 rounded-md border border-neutral-300 px-2 py-1 text-sm hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800'
+const BUTTON = 'shrink-0 rounded-md border border-border-strong px-2 py-1 text-sm hover:bg-muted'

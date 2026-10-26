@@ -1,5 +1,4 @@
 import { useStore } from '@nanostores/react'
-import type { Icon } from '@tabler/icons-react'
 import { DropdownMenu } from 'radix-ui'
 import { type DragEvent, useRef, useState } from 'react'
 
@@ -43,24 +42,20 @@ import { openSettings } from '@/store/settings'
 import { byLastUse, instanceKey, lastUse } from '@/store/status'
 
 import { AddAccount, FolderAccount, LoginForm, RemoveAccount } from './executor-accounts'
+import { ExecutorAvatar } from './executor-avatar'
 import { ReadFailed } from './read-failed'
-import { StatusDot, useInstancesDot, useSessionDot, useSessionInstance } from './status-dot'
+import { rowDot, StatusDot, useInstancesDot, useSessionDot, useSessionInstance } from './status-dot'
 import {
   Archive,
   ArchiveOff,
   Check,
   ChevronDown,
   ChevronRight,
-  ClaudeCode,
-  Codex,
-  DeepSeek,
   Folder as FolderGlyph,
   More,
   Plus,
   Refresh,
-  Sparkles,
   SwitchAccount,
-  Terminal,
   Trash,
   UserCircle
 } from './ui/icons'
@@ -120,10 +115,10 @@ export function ExecutorsList() {
             <SkeletonRows count={2} label={t.executors.reading} />
           ))}
         {read && on.length === 0 && (
-          <div className="space-y-1 px-2 py-1 text-sm text-neutral-500">
+          <div className="space-y-1 px-2 py-1 text-sm text-muted-foreground">
             <p>{t.executors.noneOn}</p>
             <button
-              className="text-violet-700 hover:underline dark:text-violet-400"
+              className="link"
               data-testid="executors-open-settings"
               onClick={() => {
                 openSettings('executors')
@@ -205,7 +200,7 @@ function useReorder(home: null | string, harnesses: ExecutorRow[][]) {
         return ''
       }
 
-      return over.after ? 'shadow-[inset_0_-2px_0_0_#3b82f6]' : 'shadow-[inset_0_2px_0_0_#3b82f6]'
+      return over.after ? 'shadow-[inset_0_-2px_0_0_var(--foreground)]' : 'shadow-[inset_0_2px_0_0_var(--foreground)]'
     },
     start(event: DragEvent, next: Drag) {
       event.stopPropagation()
@@ -248,7 +243,7 @@ function Harness({ reorder, rows }: { reorder: Reorder; rows: ExecutorRow[] }) {
       ) : (
         <>
           <p
-            className="flex cursor-grab gap-1 px-2 pb-0.5 text-xs text-neutral-500"
+            className="flex cursor-grab gap-1 px-2 pb-0.5 text-xs text-muted-foreground"
             data-testid="harness-heading"
             draggable
             onDragEnd={reorder.end}
@@ -314,7 +309,7 @@ function ExecutorNode({
       }}
     >
       <div
-        className="group flex items-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
+        className="group flex items-center rounded-md hover:bg-hover"
         data-testid="executor-drag"
         draggable
         onDragEnd={reorder.end}
@@ -332,7 +327,7 @@ function ExecutorNode({
           }}
           type="button"
         >
-          <Chevron aria-hidden className="shrink-0 text-neutral-400" size={14} stroke={1.75} />
+          <Chevron aria-hidden className="shrink-0 text-muted-foreground" size={14} stroke={1.75} />
           <span className="relative shrink-0">
             <ExecutorAvatar row={row} />
             {!open && <StatusDot dot={dot} ring />}
@@ -341,7 +336,7 @@ function ExecutorNode({
             <span className="block truncate text-sm font-medium">{title}</span>
             {detail && (
               <span
-                className={`block truncate text-xs ${row.logged_in ? 'text-neutral-500' : 'text-amber-700 dark:text-amber-500'}`}
+                className={`block truncate text-xs ${row.logged_in ? 'text-muted-foreground' : 'text-waiting-text'}`}
               >
                 {detail}
               </span>
@@ -372,34 +367,6 @@ function ExecutorNode({
       {open && <ExecutorTree executor={row} />}
     </section>
   )
-}
-
-/** Each harness's mark, suggested by its maker's colors and never its logo (asked for by the user on
- * 21/10/2026, so a Codex account is not taken for a Claude Code one): Claude's terracotta and spark,
- * OpenAI's black and Codex's prompt, Google's blue and the sparkle its Gemini is known by (step 16p), DeepSeek's blue and a
- * telescope for its deep seeking (step 16q);
- * any other harness, a plain terminal. */
-function ExecutorAvatar({ row }: { row: ExecutorRow }) {
-  const [look, Glyph] = AVATARS[row.plugin] ?? AVATAR
-
-  return (
-    <span
-      aria-hidden
-      className={`grid h-7 w-7 place-items-center rounded-full ${look}`}
-      data-plugin={row.plugin}
-      data-testid="executor-avatar"
-    >
-      <Glyph size={15} stroke={2} />
-    </span>
-  )
-}
-
-const AVATAR: [string, Icon] = ['bg-neutral-600 text-white dark:bg-neutral-500', Terminal]
-const AVATARS: Record<string, [string, Icon]> = {
-  'claude-code': ['bg-[#d97757] text-white', ClaudeCode],
-  codex: ['bg-neutral-950 text-white ring-1 ring-neutral-700 dark:bg-white dark:text-neutral-950 dark:ring-0', Codex],
-  deepseek: ['bg-[#4d6bfe] text-white', DeepSeek],
-  'gemini-cli': ['bg-[#1a73e8] text-white', Sparkles]
 }
 
 /** A row's menu, behind its three dots (asked for by the user on 21/10/2026, to keep the sidebar
@@ -439,7 +406,7 @@ function ExecutorMenu({
       <DropdownMenu.Portal>
         <DropdownMenu.Content
           align="end"
-          className="z-50 w-64 rounded-lg border border-neutral-200 bg-white p-1 text-neutral-900 shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
+          className="z-50 w-64 rounded-lg border border-border bg-raised p-1 text-foreground shadow-lg"
           data-testid="executor-menu-content"
           onCloseAutoFocus={event => {
             if (typing.current) {
@@ -450,7 +417,7 @@ function ExecutorMenu({
           sideOffset={4}
         >
           <DropdownMenu.Label
-            className={`flex items-center gap-2 px-2 py-1.5 text-xs ${row.logged_in ? 'text-neutral-500' : 'text-amber-700 dark:text-amber-500'}`}
+            className={`flex items-center gap-2 px-2 py-1.5 text-xs ${row.logged_in ? 'text-muted-foreground' : 'text-waiting-text'}`}
             data-testid="executor-menu-account"
           >
             <UserCircle aria-hidden className="shrink-0" size={15} stroke={1.75} />
@@ -500,7 +467,7 @@ function ExecutorMenu({
             <>
               <DropdownMenu.Separator className={SEPARATOR} />
               <DropdownMenu.Item
-                className={`${MENU_ITEM} text-red-600 data-highlighted:bg-red-50 dark:text-red-500 dark:data-highlighted:bg-red-950/40`}
+                className={`${MENU_ITEM} text-failed-text data-highlighted:bg-failed/10`}
                 data-testid="remove-account"
                 onSelect={onRemove}
               >
@@ -516,8 +483,8 @@ function ExecutorMenu({
 }
 
 const MENU_ITEM =
-  'flex cursor-default items-center gap-2 rounded px-2 py-1.5 text-sm outline-none select-none data-disabled:opacity-40 data-highlighted:bg-neutral-100 dark:data-highlighted:bg-neutral-800'
-const SEPARATOR = 'my-1 h-px bg-neutral-200 dark:bg-neutral-800'
+  'flex cursor-default items-center gap-2 rounded px-2 py-1.5 text-sm outline-none select-none data-disabled:opacity-40 data-highlighted:bg-muted'
+const SEPARATOR = 'my-1 h-px bg-selected'
 
 /** What an executor opened has, under its row. */
 function ExecutorTree({ executor }: { executor: ExecutorRow }) {
@@ -533,12 +500,9 @@ function ExecutorTree({ executor }: { executor: ExecutorRow }) {
   const hidden = folders?.filter(row => archived.includes(row.folder)) ?? []
 
   return (
-    <div
-      className="ml-3 space-y-1 border-l border-neutral-200 pt-1 pl-2 dark:border-neutral-800"
-      data-testid="executor-tree"
-    >
+    <div className="ml-3 space-y-1 border-l border-border pt-1 pl-2" data-testid="executor-tree">
       {folders === null && !read?.error && (
-        <p className="px-2 py-1 text-xs text-neutral-500" data-testid="folders-reading" role="status">
+        <p className="px-2 py-1 text-xs text-muted-foreground" data-testid="folders-reading" role="status">
           {t.executors.readingFolders}
         </p>
       )}
@@ -550,7 +514,7 @@ function ExecutorTree({ executor }: { executor: ExecutorRow }) {
           }}
         />
       )}
-      {folders?.length === 0 && <p className="px-2 py-1 text-sm text-neutral-500">{t.executors.empty}</p>}
+      {folders?.length === 0 && <p className="px-2 py-1 text-sm text-muted-foreground">{t.executors.empty}</p>}
       {listed?.map(row => (
         <Folder executor={executor} key={row.folder} row={row} />
       ))}
@@ -558,7 +522,7 @@ function ExecutorTree({ executor }: { executor: ExecutorRow }) {
         <div data-testid="archived-folders">
           <button
             aria-expanded={showArchived}
-            className="flex items-center gap-1 px-2 pt-1 text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+            className="flex items-center gap-1 px-2 pt-1 text-xs text-muted-foreground hover:text-foreground"
             data-testid="archived-toggle"
             onClick={() => {
               setShowArchived(!showArchived)
@@ -576,7 +540,7 @@ function ExecutorTree({ executor }: { executor: ExecutorRow }) {
           {showArchived &&
             hidden.map(row => (
               <div
-                className="group flex items-center gap-2 px-2 py-0.5 text-xs text-neutral-500"
+                className="group flex items-center gap-2 px-2 py-0.5 text-xs text-muted-foreground"
                 data-folder={row.folder}
                 data-testid="archived-folder"
                 key={row.folder}
@@ -621,10 +585,10 @@ function Folder({ executor: node, row }: { executor: ExecutorRow; row: SessionFo
 
   return (
     <section data-folder={row.folder} data-open={open} data-testid="session-folder">
-      <div className="group relative flex items-center gap-1 rounded-md px-2 py-1 hover:bg-neutral-100 dark:hover:bg-neutral-800">
+      <div className="group relative flex items-center gap-1 rounded-md px-2 py-1 hover:bg-muted">
         <button
           aria-expanded={open}
-          className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-sm text-neutral-700 dark:text-neutral-300"
+          className="flex min-w-0 flex-1 items-center gap-1.5 text-left text-sm text-soft"
           data-testid="session-folder-toggle"
           onClick={() => {
             toggleFolder(executor, row.folder)
@@ -632,14 +596,14 @@ function Folder({ executor: node, row }: { executor: ExecutorRow; row: SessionFo
           title={row.folder}
           type="button"
         >
-          <Chevron aria-hidden className="shrink-0 text-neutral-400" size={12} stroke={1.75} />
-          <FolderGlyph aria-hidden className="shrink-0 text-neutral-500" size={15} stroke={1.75} />
+          <Chevron aria-hidden className="shrink-0 text-muted-foreground" size={12} stroke={1.75} />
+          <FolderGlyph aria-hidden className="shrink-0 text-muted-foreground" size={15} stroke={1.75} />
           <span className="truncate font-medium">{baseName(row.folder)}</span>
           {!open && <StatusDot dot={dot} />}
         </button>
         {row.account_id && <FolderAccount account={row.account_id} executor={node} folder={row.folder} />}
-        <span className={`shrink-0 text-xs text-neutral-500 ${HIDE_ON_HOVER}`}>{when(row.updated_at)}</span>
-        <span className={`${ROW_ACTIONS} top-1/2 -translate-y-1/2 bg-neutral-100 dark:bg-neutral-800`}>
+        <span className={`shrink-0 text-xs text-muted-foreground ${HIDE_ON_HOVER}`}>{when(row.updated_at)}</span>
+        <span className={`${ROW_ACTIONS} top-1/2 -translate-y-1/2 bg-muted`}>
           {!row.account_id && <FolderAccount account={row.account_id} executor={node} folder={row.folder} />}
           <IconButton
             icon={Archive}
@@ -652,14 +616,11 @@ function Folder({ executor: node, row }: { executor: ExecutorRow; row: SessionFo
         </span>
       </div>
       {open && (
-        <div
-          className="ml-3.5 border-l border-neutral-200 pl-1.5 dark:border-neutral-800"
-          data-testid="folder-sessions"
-        >
+        <div className="ml-3.5 border-l border-border pl-1.5" data-testid="folder-sessions">
           {/* A new conversation in the folder, its first row and always there (asked for by the user
               on 22/10/2026: on the folder's row, on hover, it was taken for a new folder's). */}
           <button
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
             data-testid="folder-new-session"
             onClick={() => {
               newSession(executor, row.folder)
@@ -673,7 +634,7 @@ function Folder({ executor: node, row }: { executor: ExecutorRow; row: SessionFo
             {t.executors.newSession}
           </button>
           {sessions === null && !read?.error && (
-            <p className="px-2 py-1 text-xs text-neutral-500" data-testid="sessions-reading" role="status">
+            <p className="px-2 py-1 text-xs text-muted-foreground" data-testid="sessions-reading" role="status">
               {t.executors.readingSessions}
             </p>
           )}
@@ -685,7 +646,9 @@ function Folder({ executor: node, row }: { executor: ExecutorRow; row: SessionFo
               }}
             />
           )}
-          {sessions?.length === 0 && <p className="px-2 py-1 text-sm text-neutral-500">{t.executors.emptyFolder}</p>}
+          {sessions?.length === 0 && (
+            <p className="px-2 py-1 text-sm text-muted-foreground">{t.executors.emptyFolder}</p>
+          )}
           <ul>
             {sessions?.map(session => (
               <li key={session.session_id || session.instance_id}>
@@ -697,7 +660,7 @@ function Folder({ executor: node, row }: { executor: ExecutorRow; row: SessionFo
             <div data-testid="archived-sessions">
               <button
                 aria-expanded={showArchived}
-                className="flex items-center gap-1 px-2 pt-1 text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                className="flex items-center gap-1 px-2 pt-1 text-xs text-muted-foreground hover:text-foreground"
                 data-testid="archived-sessions-toggle"
                 onClick={() => {
                   setShowArchived(!showArchived)
@@ -715,7 +678,7 @@ function Folder({ executor: node, row }: { executor: ExecutorRow; row: SessionFo
               {showArchived &&
                 hidden.map(session => (
                   <div
-                    className="group flex items-center gap-2 px-2 py-0.5 text-xs text-neutral-500"
+                    className="group flex items-center gap-2 px-2 py-0.5 text-xs text-muted-foreground"
                     data-session={session.session_id}
                     data-testid="archived-session"
                     key={session.session_id}
@@ -745,11 +708,11 @@ function Folder({ executor: node, row }: { executor: ExecutorRow; row: SessionFo
 function Failed({ error, onAgain }: { error: string; onAgain: () => void }) {
   return (
     <div className="space-y-1 px-2 py-1">
-      <p className="text-xs text-red-600" role="alert">
+      <p className="text-xs text-failed-text" role="alert">
         {t.executors.failed(error)}
       </p>
       <button
-        className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-800"
+        className="flex items-center gap-1 rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-selected"
         onClick={onAgain}
         type="button"
       >
@@ -776,7 +739,7 @@ function SessionItem({ executor, row }: { executor: string; row: SessionRow }) {
       <div className="relative">
         <SessionButton actions={Boolean(row.session_id) && !busy} row={row} />
         {row.session_id && !busy && (
-          <span className={`${ROW_ACTIONS} top-1 ${current ? 'bg-neutral-200' : 'bg-neutral-100'} dark:bg-neutral-800`}>
+          <span className={`${ROW_ACTIONS} top-1 ${current ? 'bg-selected' : 'bg-muted'}`}>
             <IconButton
               icon={Archive}
               label={t.executors.archiveSession(title)}
@@ -798,10 +761,10 @@ function SessionItem({ executor, row }: { executor: string; row: SessionRow }) {
       </div>
       {asking && (
         <div className="space-y-1 px-2 pb-1 text-xs" data-testid="delete-session-confirm">
-          <p className="text-neutral-600 dark:text-neutral-300">{t.executors.deleteSessionNote}</p>
+          <p className="text-soft">{t.executors.deleteSessionNote}</p>
           <div className="flex gap-2">
             <button
-              className="rounded bg-red-600 px-2 py-0.5 text-white"
+              className="rounded bg-danger px-2 py-0.5 text-white"
               onClick={() => {
                 void deleteSession(row).then(done => {
                   if (done) {
@@ -814,7 +777,7 @@ function SessionItem({ executor, row }: { executor: string; row: SessionRow }) {
               {t.executors.deleteSessionYes}
             </button>
             <button
-              className="rounded px-2 py-0.5 text-neutral-500"
+              className="rounded px-2 py-0.5 text-muted-foreground"
               onClick={() => {
                 setAsking(false)
               }}
@@ -826,7 +789,7 @@ function SessionItem({ executor, row }: { executor: string; row: SessionRow }) {
         </div>
       )}
       {error && asking && (
-        <p className="px-2 text-xs text-red-600" role="alert">
+        <p className="px-2 text-xs text-failed-text" role="alert">
           {error}
         </p>
       )}
@@ -864,9 +827,7 @@ function SessionButton({ actions, row }: { actions: boolean; row: SessionRow }) 
   return (
     <button
       aria-current={current ? 'page' : undefined}
-      className={`w-full rounded-md px-2 py-1.5 text-left ${
-        current ? 'bg-neutral-200 dark:bg-neutral-800' : 'group-hover:bg-neutral-100 dark:group-hover:bg-neutral-800'
-      }`}
+      className={`w-full rounded-md px-2 py-1.5 text-left ${current ? 'bg-selected' : 'group-hover:bg-muted'}`}
       data-session={row.session_id}
       data-state={dot === 'waiting' ? dot : live}
       data-testid="session-row"
@@ -875,14 +836,16 @@ function SessionButton({ actions, row }: { actions: boolean; row: SessionRow }) 
       type="button"
     >
       <span className="flex items-center gap-2">
-        <StatusDot dot={dot} slot />
-        <span className="min-w-0 flex-1 truncate text-sm">{row.title || t.executors.untitled}</span>
-        <span className={`shrink-0 text-xs text-neutral-500 ${actions ? HIDE_ON_HOVER : ''}`}>
+        <StatusDot dot={rowDot(dot)} slot />
+        <span className={`min-w-0 flex-1 truncate text-sm ${dot === 'unread' ? 'font-semibold' : ''}`}>
+          {row.title || t.executors.untitled}
+        </span>
+        <span className={`shrink-0 text-xs text-muted-foreground ${actions ? HIDE_ON_HOVER : ''}`}>
           {when(row.updated_at)}
         </span>
       </span>
       {marks.length > 0 && (
-        <span className="block truncate pl-4 text-xs text-neutral-500" data-testid="session-marks">
+        <span className="block truncate pl-4 text-xs text-muted-foreground" data-testid="session-marks">
           {marks.join(' · ')}
         </span>
       )}
@@ -904,7 +867,7 @@ function NewSession({ executor, onDone }: { executor: string; onDone: () => void
 
   return (
     <form
-      className="space-y-2 rounded-md border border-dashed border-neutral-300 p-2 text-xs dark:border-neutral-700"
+      className="space-y-2 rounded-md border border-dashed border-border-strong p-2 text-xs"
       data-testid="new-session-form"
       onSubmit={event => {
         event.preventDefault()
@@ -914,7 +877,7 @@ function NewSession({ executor, onDone }: { executor: string; onDone: () => void
       <input
         aria-label={t.executors.folder}
         autoFocus
-        className="w-full rounded border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
+        className="w-full rounded border border-border-strong px-2 py-1 bg-raised"
         onChange={event => {
           setFolder(event.target.value)
         }}
@@ -922,12 +885,12 @@ function NewSession({ executor, onDone }: { executor: string; onDone: () => void
         value={folder}
       />
       <div className="flex gap-2">
-        <button className="rounded bg-orange-600 px-2 py-1 font-medium text-white" type="submit">
+        <button className="rounded bg-primary px-2 py-1 font-medium text-primary-foreground" type="submit">
           {t.executors.start}
         </button>
         {canChooseFolder() && (
           <button
-            className="rounded border border-neutral-300 px-2 py-1 dark:border-neutral-700"
+            className="rounded border border-border-strong px-2 py-1"
             onClick={() => {
               void chooseFolder().then(chosen => {
                 if (chosen) {
@@ -940,7 +903,7 @@ function NewSession({ executor, onDone }: { executor: string; onDone: () => void
             {t.executors.choose}
           </button>
         )}
-        <button className="rounded px-2 py-1 text-neutral-500" onClick={onDone} type="button">
+        <button className="rounded px-2 py-1 text-muted-foreground" onClick={onDone} type="button">
           {t.executors.cancel}
         </button>
       </div>

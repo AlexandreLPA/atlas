@@ -109,9 +109,7 @@ export function RailEdge({ rail }: { rail: Rail }) {
     >
       <div
         className={`absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors ${
-          dragging
-            ? 'bg-neutral-400 dark:bg-neutral-500'
-            : 'group-hover/edge:bg-neutral-400 group-focus-visible/edge:bg-neutral-400 dark:group-hover/edge:bg-neutral-500'
+          dragging ? 'bg-faint' : 'group-hover/edge:bg-faint group-focus-visible/edge:bg-faint'
         }`}
       />
     </div>

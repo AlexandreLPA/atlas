@@ -7,7 +7,7 @@ import { byLastUse, lastUse } from '@/store/status'
 
 import { BotFace } from './bot-face'
 import { ReadFailed } from './read-failed'
-import { StatusDot, useConversationDot } from './status-dot'
+import { rowDot, StatusDot, useConversationDot } from './status-dot'
 import { Plus } from './ui/icons'
 import { SkeletonRows } from './ui/skeleton'
 import { when } from './when'
@@ -30,7 +30,7 @@ export function BotsList() {
     <>
       <div className="px-3 pb-2">
         <button
-          className="flex w-full items-center gap-2 rounded-md border border-neutral-300 px-2 py-1.5 text-left text-sm font-medium hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+          className="flex w-full items-center gap-2 rounded-md border border-border-strong px-2 py-1.5 text-left text-sm font-medium hover:bg-muted"
           data-testid="new-bot"
           onClick={newBot}
           type="button"
@@ -45,7 +45,7 @@ export function BotsList() {
             {failed ? <ReadFailed error={failed} what="bots" /> : <SkeletonRows label={t.bots.reading} />}
           </li>
         )}
-        {read && bots.length === 0 && <li className="px-2 py-1 text-sm text-neutral-500">{t.bots.empty}</li>}
+        {read && bots.length === 0 && <li className="px-2 py-1 text-sm text-muted-foreground">{t.bots.empty}</li>}
         {bots.map(bot => (
           <li key={bot.name}>
             <Row bot={bot} current={view === 'conversation' && selected !== null && selected === bot.conversation_id} />
@@ -63,7 +63,7 @@ function Row({ bot, current }: { bot: BotRow; current: boolean }) {
     <button
       aria-current={current ? 'page' : undefined}
       className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left ${
-        current ? 'bg-neutral-200 dark:bg-neutral-800' : 'hover:bg-neutral-100 dark:hover:bg-neutral-800/60'
+        current ? 'bg-selected' : 'hover:bg-hover'
       }`}
       data-bot={bot.name}
       data-testid="bot-row"
@@ -73,14 +73,14 @@ function Row({ bot, current }: { bot: BotRow; current: boolean }) {
     >
       <span className="relative shrink-0">
         <BotFace name={bot.name} title={bot.title} />
-        <StatusDot dot={dot} ring />
+        <StatusDot dot={rowDot(dot)} ring />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline justify-between gap-2">
-          <span className="truncate text-sm font-medium">{bot.title}</span>
-          <span className="shrink-0 text-xs text-neutral-500">{when(bot.updated_at)}</span>
+          <span className={`truncate text-sm ${dot === 'unread' ? 'font-semibold' : 'font-medium'}`}>{bot.title}</span>
+          <span className="shrink-0 text-xs text-muted-foreground">{when(bot.updated_at)}</span>
         </span>
-        <span className="block truncate text-xs text-neutral-500">
+        <span className="block truncate text-xs text-muted-foreground">
           <span className="font-mono">@{bot.name}</span>
           {(bot.preview || bot.description) && ` · ${bot.preview || bot.description}`}
         </span>

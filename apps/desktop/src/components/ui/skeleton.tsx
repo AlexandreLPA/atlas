@@ -38,7 +38,7 @@ export function SkeletonRows({ count = 4, label }: { count?: number; label: stri
         Array.from({ length: count }, (_, index) => (
           <div className="flex items-center gap-2 px-2 py-2" key={index}>
             <span
-              className="h-2.5 rounded-sm bg-neutral-200 motion-safe:animate-pulse dark:bg-neutral-800"
+              className="h-2.5 rounded-sm bg-selected motion-safe:animate-pulse"
               style={{ width: `${String(55 + ((index * 23) % 35))}%` }}
             />
           </div>
@@ -61,10 +61,10 @@ export function SkeletonThread({ label }: { label: string }) {
     >
       {shown && (
         <>
-          <div className="ml-auto h-9 w-2/5 rounded-2xl bg-neutral-100 motion-safe:animate-pulse dark:bg-neutral-800" />
+          <div className="ml-auto h-9 w-2/5 rounded-2xl bg-muted motion-safe:animate-pulse" />
           {[90, 75, 82, 40].map(width => (
             <div
-              className="h-3 rounded-sm bg-neutral-100 motion-safe:animate-pulse dark:bg-neutral-800"
+              className="h-3 rounded-sm bg-muted motion-safe:animate-pulse"
               key={width}
               style={{ width: `${String(width)}%` }}
             />

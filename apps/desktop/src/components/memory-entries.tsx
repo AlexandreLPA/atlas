@@ -70,26 +70,23 @@ export function MemoryEntries({ hint, target, title }: { hint: string; target: T
       <div className="flex items-baseline justify-between gap-3">
         <h3 className="text-sm font-semibold">{title}</h3>
         {read && (
-          <span className="text-xs text-neutral-500" data-testid="memory-used">
+          <span className="text-xs text-muted-foreground" data-testid="memory-used">
             {t.settings.used(read.used, read.limit)}
           </span>
         )}
       </div>
-      <p className="text-sm text-neutral-500">{hint}</p>
+      <p className="text-sm text-muted-foreground">{hint}</p>
       {read && (
-        <code className="block truncate text-xs text-neutral-500" title={read.path}>
+        <code className="block truncate text-xs text-muted-foreground" title={read.path}>
           {read.path}
         </code>
       )}
       {error && (
-        <p
-          className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
-          role="alert"
-        >
+        <p className="rounded-md bg-failed/10 px-3 py-2 text-sm text-failed-text" role="alert">
           {error}
         </p>
       )}
-      {read && read.entries.length === 0 && <p className="text-sm text-neutral-500">{t.settings.empty}</p>}
+      {read && read.entries.length === 0 && <p className="text-sm text-muted-foreground">{t.settings.empty}</p>}
       {read && read.entries.length > 0 && (
         <ul className="space-y-2">
           {read.entries.map((entry, index) =>
@@ -133,7 +130,7 @@ export function MemoryEntries({ hint, target, title }: { hint: string; target: T
               </li>
             ) : (
               <li
-                className="group flex items-start gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
+                className="group flex items-start gap-2 rounded-md border border-border px-3 py-2 text-sm"
                 data-testid="memory-entry"
                 key={entry}
               >
@@ -202,9 +199,7 @@ export function MemoryEntries({ hint, target, title }: { hint: string; target: T
   )
 }
 
-const FIELD =
-  'min-h-16 w-full rounded-md border border-neutral-300 bg-white p-2 text-sm dark:border-neutral-700 dark:bg-neutral-900'
+const FIELD = 'min-h-16 w-full rounded-md border border-border-strong bg-raised p-2 text-sm'
 const PRIMARY =
-  'shrink-0 rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900'
-const SECONDARY =
-  'rounded-md px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800'
+  'shrink-0 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-40'
+const SECONDARY = 'rounded-md px-3 py-1.5 text-sm text-soft hover:bg-muted'

@@ -33,22 +33,21 @@ const DOWN = new Set(['disabled', 'failed', 'needs-auth'])
 const SKILLS_SHOWN = 8
 
 const DOTS: Record<string, string> = {
-  connected: 'bg-emerald-500',
-  disabled: 'bg-neutral-400',
-  failed: 'bg-red-500',
-  'needs-auth': 'bg-amber-500',
-  pending: 'animate-pulse bg-neutral-400'
+  connected: 'bg-muted-foreground',
+  disabled: 'bg-faint',
+  failed: 'bg-failed',
+  'needs-auth': 'bg-waiting',
+  pending: 'bg-working motion-safe:animate-pulse'
 }
 
 const BARS: Record<ReturnType<typeof level>, string> = {
-  full: 'bg-red-500',
-  high: 'bg-amber-500',
-  ok: 'bg-sky-500'
+  full: 'bg-failed',
+  high: 'bg-waiting',
+  ok: 'bg-muted-foreground'
 }
 
-const HEADING = 'text-xs font-semibold tracking-wide text-neutral-500 uppercase'
-const REFRESH =
-  'rounded px-2 py-0.5 text-xs text-neutral-500 hover:bg-neutral-200 disabled:opacity-50 dark:hover:bg-neutral-800'
+const HEADING = 'text-xs font-semibold tracking-wide text-muted-foreground uppercase'
+const REFRESH = 'rounded px-2 py-0.5 text-xs text-muted-foreground hover:bg-selected disabled:opacity-50'
 
 /** One of the harness's plugins as the panel lists it: the skills and MCP servers it brings. */
 interface PluginGroup {
@@ -117,7 +116,7 @@ export function ExecutorPanel({ executor }: { executor: ExecutorRow }) {
     <div className="space-y-4 p-4 text-sm" data-executor={executor.name} data-testid="executor-panel">
       <header>
         <p className="font-semibold">{executor.title}</p>
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-muted-foreground">
           {[executor.version, executor.account, executor.plan].filter(Boolean).join(' · ')}
         </p>
       </header>
@@ -177,16 +176,16 @@ function SkillsSection({
         </button>
       </div>
       {read?.reading && !listed && (
-        <p className="text-xs text-neutral-500" role="status">
+        <p className="text-xs text-muted-foreground" role="status">
           {t.executorPanel.skillsReading}
         </p>
       )}
       {read?.error && (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-xs text-failed-text" role="alert">
           {t.executorPanel.failed(read.error)}
         </p>
       )}
-      {listed && skills.length === 0 && <p className="text-xs text-neutral-500">{t.executorPanel.skillsEmpty}</p>}
+      {listed && skills.length === 0 && <p className="text-xs text-muted-foreground">{t.executorPanel.skillsEmpty}</p>}
       {shown.length > 0 && (
         <ul>
           {shown.map(skill => (
@@ -202,7 +201,7 @@ function SkillsSection({
           }}
         />
       )}
-      {listed && <p className="px-1 text-xs text-neutral-500">{t.executorPanel.skillsFolder(baseName(folder))}</p>}
+      {listed && <p className="px-1 text-xs text-muted-foreground">{t.executorPanel.skillsFolder(baseName(folder))}</p>}
     </section>
   )
 }
@@ -211,7 +210,7 @@ function SkillRow({ skill }: { skill: SlashCommandRow }) {
   return (
     <li className="rounded px-1 py-0.5" data-testid="skill-row" title={skill.description || undefined}>
       <span className="block truncate">/{skill.name}</span>
-      {skill.description && <span className="block truncate text-xs text-neutral-500">{skill.description}</span>}
+      {skill.description && <span className="block truncate text-xs text-muted-foreground">{skill.description}</span>}
     </li>
   )
 }
@@ -248,25 +247,25 @@ function ServersSection({ executor }: { executor: ExecutorRow }) {
         </button>
       </div>
       {read?.reading && (
-        <p className="text-xs text-neutral-500" data-testid="connectors-reading" role="status">
+        <p className="text-xs text-muted-foreground" data-testid="connectors-reading" role="status">
           {t.executorPanel.reading}
         </p>
       )}
       {read?.error && (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-xs text-failed-text" role="alert">
           {t.executorPanel.failed(read.error)}
         </p>
       )}
-      {read && !read.listed && <p className="text-xs text-neutral-500">{t.executorPanel.none(executor.title)}</p>}
+      {read && !read.listed && <p className="text-xs text-muted-foreground">{t.executorPanel.none(executor.title)}</p>}
       {read && read.listed && !read.reading && !read.error && servers.length === 0 && (
-        <p className="text-xs text-neutral-500">{t.executorPanel.empty}</p>
+        <p className="text-xs text-muted-foreground">{t.executorPanel.empty}</p>
       )}
       {up.length === 0 && down > 0 && !showDown && (
-        <p className="px-1 text-xs text-neutral-500">{t.executorPanel.noneActive}</p>
+        <p className="px-1 text-xs text-muted-foreground">{t.executorPanel.noneActive}</p>
       )}
       {groups.map(([origin, rows]) => (
         <div data-origin={origin} data-testid="connector-group" key={origin}>
-          <p className="px-1 pt-1 text-xs text-neutral-500">{t.executorPanel.origins[origin] ?? origin}</p>
+          <p className="px-1 pt-1 text-xs text-muted-foreground">{t.executorPanel.origins[origin] ?? origin}</p>
           <ul>
             {rows.map(row => (
               <ConnectorRow key={`${row.plugin}:${row.name}`} row={row} />
@@ -284,7 +283,7 @@ function ServersSection({ executor }: { executor: ExecutorRow }) {
         />
       )}
       {read?.listed && read.connectors.length > 0 && (
-        <p className="pt-1 text-xs text-neutral-500">
+        <p className="pt-1 text-xs text-muted-foreground">
           {t.executorPanel.outsideProjects} {t.executorPanel.loginThere(executor.title)}
         </p>
       )}
@@ -303,12 +302,12 @@ function PluginRow({ plugin }: { plugin: PluginGroup }) {
   return (
     <li data-plugin={plugin.name} data-testid="plugin-row">
       <details className="group">
-        <summary className="flex cursor-pointer list-none items-baseline gap-2 rounded px-1 py-1 hover:bg-neutral-200 dark:hover:bg-neutral-800">
-          <span aria-hidden className="text-xs text-neutral-500 transition-transform group-open:rotate-90">
+        <summary className="flex cursor-pointer list-none items-baseline gap-2 rounded px-1 py-1 hover:bg-selected">
+          <span aria-hidden className="text-xs text-muted-foreground transition-transform group-open:rotate-90">
             ›
           </span>
           <span className="min-w-0 flex-1 truncate">{plugin.name}</span>
-          <span className="shrink-0 text-xs text-neutral-500">{summary.join(' · ')}</span>
+          <span className="shrink-0 text-xs text-muted-foreground">{summary.join(' · ')}</span>
         </summary>
         <div className="pb-1 pl-4">
           {plugin.skills.length > 0 && (
@@ -334,7 +333,7 @@ function PluginRow({ plugin }: { plugin: PluginGroup }) {
 function MoreButton({ label, onClick, testId }: { label: string; onClick: () => void; testId?: string }) {
   return (
     <button
-      className="rounded px-1 py-0.5 text-left text-xs text-neutral-500 hover:bg-neutral-200 hover:text-neutral-800 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
+      className="rounded px-1 py-0.5 text-left text-xs text-muted-foreground hover:bg-selected hover:text-foreground"
       data-testid={testId}
       onClick={onClick}
       type="button"
@@ -354,15 +353,15 @@ function ConnectorRow({ row }: { row: ExecutorConnector }) {
       data-testid="connector-row"
       title={row.error || undefined}
     >
-      <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOTS[row.status] ?? 'bg-neutral-400'}`} />
+      <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOTS[row.status] ?? 'bg-faint'}`} />
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline justify-between gap-2">
           <span className="truncate">{row.name}</span>
-          <span className="shrink-0 text-xs text-neutral-500">
+          <span className="shrink-0 text-xs text-muted-foreground">
             {t.executorPanel.statuses[row.status] ?? row.status}
           </span>
         </span>
-        {detail && <span className="block truncate text-xs text-neutral-500">{detail}</span>}
+        {detail && <span className="block truncate text-xs text-muted-foreground">{detail}</span>}
       </span>
     </li>
   )
@@ -396,18 +395,18 @@ function PlanUsage({ executor }: { executor: ExecutorRow }) {
         </button>
       </div>
       {read?.reading && !usage && (
-        <p className="text-xs text-neutral-500" data-testid="usage-reading" role="status">
+        <p className="text-xs text-muted-foreground" data-testid="usage-reading" role="status">
           {t.executorPanel.usageReading}
         </p>
       )}
       {read?.error && (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-xs text-failed-text" role="alert">
           {t.executorPanel.failed(read.error)}
         </p>
       )}
-      {usage?.unavailable && <p className="text-xs text-neutral-500">{t.executorPanel.usageNone}</p>}
+      {usage?.unavailable && <p className="text-xs text-muted-foreground">{t.executorPanel.usageNone}</p>}
       {usage?.extra_usage && (
-        <p className="text-xs text-amber-700 dark:text-amber-500" data-testid="usage-extra">
+        <p className="text-xs text-waiting-text" data-testid="usage-extra">
           {t.executorPanel.usageExtra}
         </p>
       )}
@@ -430,19 +429,19 @@ function UsageBar({ now, window }: { now: number; window: UsageWindowRow }) {
     <li data-testid="usage-window" data-window={window.id}>
       <div className="flex items-baseline justify-between gap-2 text-xs">
         <span className="truncate">{windowName(window, t.executorPanel.windows)}</span>
-        <span className="shrink-0 text-neutral-500">{t.executorPanel.used(used)}</span>
+        <span className="shrink-0 text-muted-foreground">{t.executorPanel.used(used)}</span>
       </div>
       <div
         aria-label={windowName(window, t.executorPanel.windows)}
         aria-valuemax={100}
         aria-valuemin={0}
         aria-valuenow={used}
-        className="mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800"
+        className="mt-1 h-1.5 overflow-hidden rounded-full bg-selected"
         role="progressbar"
       >
         <div className={`h-full rounded-full ${BARS[level(window.used)]}`} style={{ width: `${String(used)}%` }} />
       </div>
-      {resets && <p className="mt-0.5 text-xs text-neutral-500">{t.executorPanel.resets(resets)}</p>}
+      {resets && <p className="mt-0.5 text-xs text-muted-foreground">{t.executorPanel.resets(resets)}</p>}
     </li>
   )
 }

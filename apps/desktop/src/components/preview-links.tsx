@@ -27,7 +27,7 @@ export function PreviewLinks({ thread }: { thread: Thread }) {
     <div className="mx-auto flex w-full max-w-3xl flex-wrap gap-2 px-6 pb-2 text-xs" data-testid="preview-links">
       {links.map(target => (
         <span
-          className="flex items-center gap-1 rounded-full border border-neutral-300 px-2 py-0.5 dark:border-neutral-700"
+          className="flex items-center gap-1 rounded-full border border-border-strong px-2 py-0.5"
           data-testid="preview-link"
           key={key(target)}
         >
@@ -42,7 +42,7 @@ export function PreviewLinks({ thread }: { thread: Thread }) {
           </button>
           <button
             aria-label={t.preview.dismiss}
-            className="text-neutral-400 hover:text-neutral-700"
+            className="text-muted-foreground hover:text-soft"
             onClick={() => {
               dismissed.set(owner, new Set([...gone, key(target)]))
               redraw(count => count + 1)

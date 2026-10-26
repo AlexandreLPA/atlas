@@ -67,6 +67,9 @@ export function ThreadView({
   const following = useRef(true)
   const lastTop = useRef(0)
   const [away, setAway] = useState(false)
+  // Which thread has settled on screen: its parts rise into place only after that, so a
+  // conversation that opens is there at once instead of rising as a whole (styles.css, `.enter`).
+  const [settled, setSettled] = useState<null | string>(null)
   const last = thread.items.at(-1)
   const size = last ? growth(last) : 0
   const sent = last?.kind === 'user' || sending.length > 0
@@ -84,6 +87,22 @@ export function ThreadView({
       end.current?.scrollIntoView({ block: 'end' })
     }
   }, [place])
+
+  useEffect(() => {
+    if (loading) {
+      return
+    }
+    // Two frames: the first draws the thread, the second lets what comes after it rise.
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
+        setSettled(place ?? '')
+      })
+    })
+
+    return () => {
+      cancelAnimationFrame(frame)
+    }
+  }, [loading, place])
 
   useEffect(() => {
     // What the user sends, they want to see go out; at the end, the thread follows again.
@@ -114,12 +133,19 @@ export function ThreadView({
 
   function toLatest() {
     following.current = true
-    end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    end.current?.scrollIntoView({ behavior: still() ? 'auto' : 'smooth', block: 'end' })
   }
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <div className="flex-1 overflow-y-auto" data-testid="thread" onScroll={onScroll} ref={scroller}>
+      <div
+        className="flex-1 overflow-y-auto"
+        data-settled={settled === (place ?? '') ? '' : undefined}
+        data-testid="thread"
+        data-thread
+        onScroll={onScroll}
+        ref={scroller}
+      >
         <AnswerStreaming.Provider value={thread.running}>
           <div className="mx-auto max-w-3xl space-y-4 px-6 py-6">
             {thread.items.length === 0 &&
@@ -127,19 +153,22 @@ export function ThreadView({
               (loading ? (
                 <SkeletonThread label={t.thread.reading} />
               ) : (
-                (empty ?? <p className="pt-24 text-center text-neutral-500">{t.thread.empty}</p>)
+                (empty ?? <p className="pt-24 text-center text-muted-foreground">{t.thread.empty}</p>)
               ))}
             {segments(thread.items).map(segment =>
               Array.isArray(segment) ? (
                 <Trail key={segment[0]?.key} parts={segment} waiting={waiting} />
               ) : (
-                <ItemView
-                  item={segment}
-                  key={segment.key}
-                  latest={segment === last}
-                  place={place}
-                  said={segment === last ? lastSaid(thread.items) : null}
-                />
+                // The user's own message does not rise: it takes the place of the one on its way,
+                // which rose already.
+                <div className={segment.kind === 'user' ? undefined : 'enter'} key={segment.key}>
+                  <ItemView
+                    item={segment}
+                    latest={segment === last}
+                    place={place}
+                    said={segment === last ? lastSaid(thread.items) : null}
+                  />
+                </div>
               )
             )}
             {sending.map(row => (
@@ -155,7 +184,7 @@ export function ThreadView({
       {away && (
         <button
           aria-label={t.thread.toLatest}
-          className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-neutral-200 bg-white p-2 text-neutral-600 shadow-md hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:text-neutral-100"
+          className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-border bg-raised p-2 text-soft shadow-md hover:text-foreground"
           data-testid="to-latest"
           onClick={toLatest}
           title={t.thread.toLatest}
@@ -218,7 +247,7 @@ function Trail({ parts, waiting }: { parts: Part[]; waiting: ReadonlyMap<string,
     <div className="space-y-3" data-testid="trail">
       {parts.map((part, index) => (
         <div
-          className="relative min-w-0 pl-6"
+          className="enter relative min-w-0 pl-6"
           data-dot={dot(part, waiting)}
           data-kind={part.kind}
           data-testid="part"
@@ -227,7 +256,7 @@ function Trail({ parts, waiting }: { parts: Part[]; waiting: ReadonlyMap<string,
           {parts.length > 1 && (
             <span
               aria-hidden
-              className={`absolute left-[6px] w-px bg-neutral-300 dark:bg-neutral-700 ${index === 0 ? 'top-[0.75em]' : '-top-3'} ${index === parts.length - 1 ? 'h-[calc(0.75em+0.75rem)]' : 'bottom-0'}`}
+              className={`absolute left-[6px] w-px bg-border-strong ${index === 0 ? 'top-[0.75em]' : '-top-3'} ${index === parts.length - 1 ? 'h-[calc(0.75em+0.75rem)]' : 'bottom-0'}`}
             />
           )}
           <span
@@ -244,16 +273,16 @@ function Trail({ parts, waiting }: { parts: Part[]; waiting: ReadonlyMap<string,
 type Dot = 'denied' | 'failed' | 'final' | 'interim' | 'muted' | 'ok' | 'reasoning' | 'running' | 'waiting'
 
 const DOT: Record<Dot, string> = {
-  denied: 'bg-neutral-400 dark:bg-neutral-600',
-  failed: 'bg-red-600 dark:bg-red-500',
-  final: 'bg-neutral-900 dark:bg-neutral-100',
-  interim: 'bg-neutral-400 dark:bg-neutral-600',
-  muted: 'bg-neutral-400 dark:bg-neutral-600',
-  ok: 'bg-green-600 dark:bg-green-500',
-  reasoning: 'border-[1.5px] border-neutral-400 bg-white dark:border-neutral-500 dark:bg-neutral-950',
-  running: 'animate-pulse bg-blue-600 dark:bg-blue-400',
+  denied: 'bg-faint',
+  failed: 'bg-failed',
+  final: 'bg-primary',
+  interim: 'bg-faint',
+  muted: 'bg-faint',
+  ok: 'bg-done',
+  reasoning: 'border-[1.5px] border-faint bg-background',
+  running: 'bg-working motion-safe:animate-pulse',
   // Still, as the sidebar's own waiting dot: the call waits on the user, nothing runs.
-  waiting: 'bg-amber-500'
+  waiting: 'bg-waiting'
 }
 
 /** The dot's color is the part's state; a call a card holds waits, it does not run. */
@@ -289,7 +318,7 @@ function PartView({ part, waiting }: { part: Part; waiting: ReadonlyMap<string, 
       // The interim text is lighter; the answer has the full weight. Nothing moves or goes away.
       return (
         <div
-          className={part.role === 'interim' ? 'text-sm text-neutral-500 dark:text-neutral-400' : ''}
+          className={part.role === 'interim' ? 'text-sm text-muted-foreground' : ''}
           data-role={part.role}
           data-testid="assistant-message"
         >
@@ -310,7 +339,7 @@ function PartView({ part, waiting }: { part: Part; waiting: ReadonlyMap<string, 
     case 'other':
       // ACP v2: what the app does not know is kept raw and shown generically.
       return (
-        <details className="text-sm text-neutral-500" data-testid="other-part">
+        <details className="text-sm text-muted-foreground" data-testid="other-part">
           <summary className="cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
             <span className="font-mono">{part.type}</span> · {t.thread.other}
           </summary>
@@ -338,10 +367,10 @@ function ReasoningPart({ part }: { part: Extract<Part, { kind: 'reasoning' }> })
   const about = reasoningAbout(part.text)
 
   return (
-    <details className="text-sm text-neutral-500 dark:text-neutral-400" data-testid="reasoning">
+    <details className="text-sm text-muted-foreground" data-testid="reasoning">
       <summary className="cursor-pointer list-none truncate select-none [&::-webkit-details-marker]:hidden">
         {label}
-        {about && <span className="text-neutral-400 dark:text-neutral-500"> · {about}</span>}
+        {about && <span className="text-muted-foreground"> · {about}</span>}
       </summary>
       <div className="mt-1">
         {/* Streaming, as the answer streams: in static mode Streamdown sets its blocks from an effect
@@ -379,34 +408,32 @@ function ItemView({
             </div>
           )}
           {item.text && (
-            <div className="max-w-[85%] rounded-2xl bg-neutral-100 px-4 py-2 whitespace-pre-wrap dark:bg-neutral-800">
-              {item.text}
-            </div>
+            <div className="max-w-[85%] rounded-2xl bg-muted px-4 py-2 whitespace-pre-wrap">{item.text}</div>
           )}
           {item.skill && (
-            <span className="mt-1 text-xs text-neutral-500" data-skill={item.skill} data-testid="skill-invoked">
+            <span className="mt-1 text-xs text-muted-foreground" data-skill={item.skill} data-testid="skill-invoked">
               {t.thread.skill}
             </span>
           )}
-          {item.steered && <span className="mt-1 text-xs text-neutral-500">{t.thread.steered}</span>}
+          {item.steered && <span className="mt-1 text-xs text-muted-foreground">{t.thread.steered}</span>}
         </div>
       )
 
     case 'summary':
       return (
-        <details className="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700">
-          <summary className="cursor-pointer text-neutral-500">{t.thread.summary}</summary>
+        <details className="rounded-md border border-dashed border-border-strong px-3 py-2 text-sm">
+          <summary className="cursor-pointer text-muted-foreground">{t.thread.summary}</summary>
           <p className="mt-2 whitespace-pre-wrap">{item.text}</p>
         </details>
       )
 
     case 'status':
-      return <p className="text-center text-xs text-neutral-500">{item.text}</p>
+      return <p className="text-center text-xs text-muted-foreground">{item.text}</p>
 
     case 'file':
       return (
         <div className="flex flex-col items-start gap-1" data-testid="file-sent">
-          <span className="text-xs text-neutral-500">{t.thread.fileSent}</span>
+          <span className="text-xs text-muted-foreground">{t.thread.fileSent}</span>
           <SentAttachment attachment={item.attachment} />
         </div>
       )
@@ -414,10 +441,10 @@ function ItemView({
     case 'notice':
       return (
         <details
-          className="rounded-md border border-dashed border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700"
+          className="rounded-md border border-dashed border-border-strong px-3 py-2 text-sm"
           data-testid="notice"
         >
-          <summary className="cursor-pointer text-neutral-500">{t.thread.notice}</summary>
+          <summary className="cursor-pointer text-muted-foreground">{t.thread.notice}</summary>
           <p className="mt-2 whitespace-pre-wrap">{item.text}</p>
         </details>
       )
@@ -432,7 +459,7 @@ function ItemView({
       return item.status === 'failed' ? (
         <TurnFailed item={item} latest={latest} place={place} said={said} />
       ) : (
-        <p className="text-sm text-neutral-500" data-testid="turn-end">
+        <p className="text-sm text-muted-foreground" data-testid="turn-end">
           {endText(item)}
         </p>
       )
@@ -514,7 +541,7 @@ function TurnFailed({
 function TurnAction({ label, onClick, testId }: { label: string; onClick: () => void; testId: string }) {
   return (
     <button
-      className="rounded-md border border-red-300 bg-white px-2.5 py-1 text-xs font-medium text-red-900 hover:bg-red-100 dark:border-red-800 dark:bg-transparent dark:text-red-100 dark:hover:bg-red-900/40"
+      className="rounded-md border border-failed/40 bg-background/60 px-2.5 py-1 text-xs font-medium text-failed-text hover:bg-failed/10"
       data-testid={testId}
       onClick={onClick}
       type="button"
@@ -528,7 +555,7 @@ function TurnAction({ label, onClick, testId }: { label: string; onClick: () => 
  * the conversation's own takes its place. */
 function SendingView({ row }: { row: Sending }) {
   return (
-    <div className="flex flex-col items-end" data-state={row.state} data-testid="sending-message">
+    <div className="enter flex flex-col items-end" data-state={row.state} data-testid="sending-message">
       {row.attachments.length > 0 && (
         <div className="mb-1.5 flex max-w-[85%] flex-wrap justify-end gap-2 opacity-60">
           {row.attachments.map(attachment => (
@@ -537,11 +564,9 @@ function SendingView({ row }: { row: Sending }) {
         </div>
       )}
       {row.text && (
-        <div className="max-w-[85%] rounded-2xl bg-neutral-100 px-4 py-2 whitespace-pre-wrap opacity-60 dark:bg-neutral-800">
-          {row.text}
-        </div>
+        <div className="max-w-[85%] rounded-2xl bg-muted px-4 py-2 whitespace-pre-wrap opacity-60">{row.text}</div>
       )}
-      <span className="mt-1 text-xs text-neutral-500" role="status">
+      <span className="mt-1 text-xs text-muted-foreground" role="status">
         {row.state === 'queued' ? t.thread.queued : t.thread.sending}
       </span>
     </div>
@@ -577,9 +602,9 @@ function TerminalRowView({ item }: { item: Extract<Item, { kind: 'terminal' }> }
 
   return (
     <div className="flex flex-col items-end" data-testid="terminal-row">
-      <div className="w-full max-w-[85%] overflow-hidden rounded-xl bg-neutral-900 font-mono text-xs text-neutral-100 dark:bg-black">
-        <div className="border-b border-neutral-700 px-3 py-2 whitespace-pre-wrap">
-          <span className="text-green-400">$</span> {item.command}
+      <div className="dark w-full max-w-[85%] overflow-hidden rounded-xl bg-background font-mono text-xs text-foreground">
+        <div className="border-b border-border-strong px-3 py-2 whitespace-pre-wrap">
+          <span className="text-muted-foreground">$</span> {item.command}
         </div>
         {item.output && (
           <pre
@@ -590,9 +615,9 @@ function TerminalRowView({ item }: { item: Extract<Item, { kind: 'terminal' }> }
           </pre>
         )}
         {(item.exitCode !== null || item.state) && (
-          <div className="flex gap-3 border-t border-neutral-700 px-3 py-1.5 text-[0.7rem] text-neutral-400">
+          <div className="flex gap-3 border-t border-border-strong px-3 py-1.5 text-2xs text-muted-foreground">
             {item.exitCode !== null && (
-              <span className={failed ? 'text-red-400' : ''} data-testid="terminal-exit">
+              <span className={failed ? 'text-failed-text' : ''} data-testid="terminal-exit">
                 {t.terminal.exit(item.exitCode)}
               </span>
             )}
@@ -600,7 +625,7 @@ function TerminalRowView({ item }: { item: Extract<Item, { kind: 'terminal' }> }
           </div>
         )}
       </div>
-      {item.steered && <span className="mt-1 text-xs text-neutral-500">{t.thread.steered}</span>}
+      {item.steered && <span className="mt-1 text-xs text-muted-foreground">{t.thread.steered}</span>}
     </div>
   )
 }
@@ -620,12 +645,21 @@ function endText(item: Extract<Item, { kind: 'end' }>): string {
   }
 }
 
+/** The turn at work where nothing else shows it: blue and pulsing, as a call that runs. */
 function Working() {
   return (
-    <div aria-label="Working" className="flex gap-1 py-2" role="status">
-      <span className="h-2 w-2 animate-pulse rounded-full bg-neutral-400" />
-      <span className="h-2 w-2 animate-pulse rounded-full bg-neutral-400 [animation-delay:150ms]" />
-      <span className="h-2 w-2 animate-pulse rounded-full bg-neutral-400 [animation-delay:300ms]" />
+    <div aria-label="Working" className="enter flex gap-1 py-2" role="status">
+      <span className="h-2 w-2 rounded-full bg-working/70 motion-safe:animate-pulse" />
+      <span className="h-2 w-2 rounded-full bg-working/70 motion-safe:animate-pulse motion-safe:[animation-delay:150ms]" />
+      <span className="h-2 w-2 rounded-full bg-working/70 motion-safe:animate-pulse motion-safe:[animation-delay:300ms]" />
     </div>
   )
+}
+
+/** The system asks for less motion: a scroll jumps instead of gliding. */
+function still(): boolean {
+  // The tests' window has no `matchMedia`.
+  const query = (globalThis as { matchMedia?: typeof matchMedia }).matchMedia
+
+  return query?.('(prefers-reduced-motion: reduce)').matches ?? false
 }

@@ -94,7 +94,7 @@ export function SessionView() {
       {elsewhere && <Elsewhere where={open.elsewhere} />}
       <ThreadView
         empty={
-          <p className="pt-24 text-center text-neutral-500">
+          <p className="pt-24 text-center text-muted-foreground">
             {open.sessionId ? '' : t.executors.emptySession(title, baseName(open.folder))}
           </p>
         }
@@ -110,7 +110,7 @@ export function SessionView() {
             <ExecutorCardView card={card} key={card.id} />
           ))}
           {error && (
-            <p className="text-sm text-red-600" data-testid="session-error">
+            <p className="text-sm text-failed-text" data-testid="session-error">
               {error}
             </p>
           )}
@@ -118,7 +118,7 @@ export function SessionView() {
       )}
       {readOnly ? (
         <p
-          className="border-t border-neutral-200 p-4 text-center text-sm text-neutral-500 dark:border-neutral-800"
+          className="border-t border-border p-4 text-center text-sm text-muted-foreground"
           data-testid="session-read-only"
         >
           {open.expired ? t.executors.expired(title) : t.executors.readOnly}
@@ -139,15 +139,15 @@ function SessionHeader({ account, open, title }: { account: string; open: OpenSe
   const local = !useStore($remote) && open.folder !== ''
 
   return (
-    <header className="border-b border-neutral-200 px-6 py-3 dark:border-neutral-800" data-testid="session-header">
+    <header className="border-b border-border px-6 py-3" data-testid="session-header">
       <div className="mx-auto flex max-w-3xl items-center gap-2">
         <div className="min-w-0 flex-1">
           <h1 className="truncate font-semibold">{open.title || t.executors.untitled}</h1>
-          <p className="truncate text-xs text-neutral-500" title={open.folder}>
+          <p className="truncate text-xs text-muted-foreground" title={open.folder}>
             {[title, baseName(open.folder), account].filter(Boolean).join(' · ')}
           </p>
           {failed && (
-            <p className="truncate text-xs text-red-600" data-testid="open-in-editor-error" title={failed}>
+            <p className="truncate text-xs text-failed-text" data-testid="open-in-editor-error" title={failed}>
               {failed}
             </p>
           )}
@@ -176,12 +176,12 @@ function Elsewhere({ where }: { where: string }) {
 
   return (
     <div className="mx-auto mt-4 w-full max-w-3xl px-6" data-testid="session-elsewhere">
-      <div className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950">
+      <div className="space-y-2 rounded-xl border border-waiting/40 bg-waiting/10 p-4 text-sm">
         <p className="font-semibold">⚠ {t.executors.elsewhereTitle(place)}</p>
-        <p className="text-neutral-700 dark:text-neutral-300">{t.executors.elsewhereBody}</p>
+        <p className="text-soft">{t.executors.elsewhereBody}</p>
         <div className="flex flex-wrap gap-2">
           <button
-            className="rounded border border-neutral-300 bg-white px-3 py-1 dark:border-neutral-700 dark:bg-neutral-900"
+            className="rounded border border-border-strong bg-raised px-3 py-1"
             onClick={() => {
               chooseElsewhere('read')
             }}
@@ -190,7 +190,7 @@ function Elsewhere({ where }: { where: string }) {
             {t.executors.elsewhereRead}
           </button>
           <button
-            className="rounded bg-orange-600 px-3 py-1 font-medium text-white"
+            className="rounded bg-primary px-3 py-1 font-medium text-primary-foreground"
             onClick={() => {
               chooseElsewhere('copy')
             }}
@@ -199,7 +199,7 @@ function Elsewhere({ where }: { where: string }) {
             {t.executors.elsewhereCopy}
           </button>
           <button
-            className="rounded border border-neutral-300 bg-white px-3 py-1 dark:border-neutral-700 dark:bg-neutral-900"
+            className="rounded border border-border-strong bg-raised px-3 py-1"
             onClick={() => {
               chooseElsewhere('here')
             }}
@@ -302,7 +302,7 @@ function SessionComposer({
             open={open}
           />
         ) : open.choice === 'copy' && !instance ? (
-          <p className="text-xs text-orange-700" data-testid="session-copy-note">
+          <p className="text-xs text-waiting-text" data-testid="session-copy-note">
             {t.executors.copyNote}
           </p>
         ) : undefined
@@ -456,7 +456,7 @@ function SessionAccountRouteEditor({
                   : t.accounts.mainAccount}
             </label>
           ))}
-          <p className="text-neutral-500">{locked ? t.accounts.sessionBusy : t.accounts.session}</p>
+          <p className="text-muted-foreground">{locked ? t.accounts.sessionBusy : t.accounts.session}</p>
         </fieldset>
       )}
       {instance && <SessionRouteEditor instanceId={instance.instance_id} />}
@@ -498,7 +498,7 @@ function SessionRouteEditor({ instanceId }: { instanceId: string }) {
 
   if (route?.instance_id !== instanceId) {
     return (
-      <p className="text-xs text-neutral-500" role="status">
+      <p className="text-xs text-muted-foreground" role="status">
         …
       </p>
     )
@@ -541,7 +541,7 @@ function SessionRouteEditor({ instanceId }: { instanceId: string }) {
         />
         {t.route.enabled}
       </label>
-      <p className="text-neutral-500">{chosen.length ? t.route.note : t.route.empty}</p>
+      <p className="text-muted-foreground">{chosen.length ? t.route.note : t.route.empty}</p>
       <ol className="space-y-0.5" data-testid="session-route-stops">
         {chosen.map((choice, index) => (
           <li className="flex items-center gap-1" data-testid="session-route-stop" key={choice.key}>
@@ -556,7 +556,7 @@ function SessionRouteEditor({ instanceId }: { instanceId: string }) {
               }}
               type="checkbox"
             />
-            <span className="w-4 text-neutral-400">{index + 1}.</span>
+            <span className="w-4 text-muted-foreground">{index + 1}.</span>
             <span className="min-w-0 flex-1 truncate">{choice.label}</span>
             <IconButton
               disabled={index === 0}
@@ -578,7 +578,7 @@ function SessionRouteEditor({ instanceId }: { instanceId: string }) {
         ))}
       </ol>
       {others.length > 0 && (
-        <ul className="space-y-0.5 text-neutral-500" data-testid="session-route-others">
+        <ul className="space-y-0.5 text-muted-foreground" data-testid="session-route-others">
           {others.map(choice => (
             <li className="flex items-center gap-1" key={choice.key}>
               <input
@@ -660,24 +660,24 @@ function AccountSwitchNote({
     <div className="space-y-1 text-xs" data-testid="account-switch" role="alertdialog">
       <p className="font-medium">{t.accounts.switchTitle(who)}</p>
       {check === null ? (
-        <p className="text-neutral-500" role="status">
+        <p className="text-muted-foreground" role="status">
           {t.accounts.switchChecking}
         </p>
       ) : (
         <>
-          <p className="text-neutral-600 dark:text-neutral-300">{t.accounts.switchCopy}</p>
+          <p className="text-soft">{t.accounts.switchCopy}</p>
           {check.missing.length > 0 && (
-            <p className="text-amber-700 dark:text-amber-500" data-testid="account-switch-missing">
+            <p className="text-waiting-text" data-testid="account-switch-missing">
               {t.accounts.switchMissing(check.missing.join(', '))}
             </p>
           )}
-          {!check.compared && <p className="text-neutral-500">{t.accounts.switchUnknown}</p>}
-          <p className="text-neutral-600 dark:text-neutral-300">{t.accounts.switchCost(check.tokens ?? null)}</p>
+          {!check.compared && <p className="text-muted-foreground">{t.accounts.switchUnknown}</p>}
+          <p className="text-soft">{t.accounts.switchCost(check.tokens ?? null)}</p>
         </>
       )}
       <div className="flex gap-2">
         <button
-          className="rounded bg-orange-600 px-2 py-0.5 font-medium text-white disabled:opacity-50"
+          className="rounded bg-primary px-2 py-0.5 font-medium text-primary-foreground disabled:opacity-50"
           data-testid="account-switch-confirm"
           disabled={check === null}
           onClick={onConfirm}
@@ -685,7 +685,7 @@ function AccountSwitchNote({
         >
           {t.accounts.switchGo}
         </button>
-        <button className="rounded px-2 py-0.5 text-neutral-500" onClick={onCancel} type="button">
+        <button className="rounded px-2 py-0.5 text-muted-foreground" onClick={onCancel} type="button">
           {t.accounts.cancel}
         </button>
       </div>
@@ -762,7 +762,7 @@ function SessionModelPicker({ instance, open }: { instance: InstanceRow | undefi
         </PillSelect>
       )}
       {offer.ranAs && (
-        <span className="text-neutral-500" data-testid="session-ran-as">
+        <span className="text-muted-foreground" data-testid="session-ran-as">
           {t.executors.runsAs(offer.ranAs)}
         </span>
       )}

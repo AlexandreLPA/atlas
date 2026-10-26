@@ -131,7 +131,7 @@ function FileView({ path, title }: { path: string; title: string }) {
     case 'markdown':
       return <Content language="markdown" text={file.text} title={title} />
     case 'text':
-      return <pre className="h-full overflow-auto bg-white p-3 font-mono text-xs text-neutral-900">{file.text}</pre>
+      return <pre className="h-full overflow-auto bg-white p-3 font-mono text-xs text-foreground">{file.text}</pre>
   }
 }
 
@@ -180,7 +180,7 @@ function Content({ language, text, title }: { language: string; text: string; ti
   const markdown = language === 'mermaid' ? `${fence}mermaid\n${text}\n${fence}` : text
 
   return (
-    <div className="h-full overflow-auto bg-white p-4 text-neutral-900" data-testid="preview-markdown">
+    <div className="h-full overflow-auto bg-white p-4 text-foreground" data-testid="preview-markdown">
       <Streamdown mode="static" plugins={plugins}>
         {markdown}
       </Streamdown>
@@ -231,5 +231,5 @@ function Frame({ html, src, title }: { html?: string; src?: string; title: strin
 }
 
 function Note({ text }: { text: string }) {
-  return <p className="p-3 text-xs text-neutral-400">{text}</p>
+  return <p className="p-3 text-xs text-muted-foreground">{text}</p>
 }

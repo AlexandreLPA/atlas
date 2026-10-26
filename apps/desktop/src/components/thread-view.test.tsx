@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { t } from '@/i18n'
@@ -356,6 +356,28 @@ describe('a conversation read, sent to and come back to (the UI review, 25/10/20
 
     expect(thread.scrollTop).toBe(300)
     expect(screen.getByTestId('to-latest')).toBeTruthy()
+  })
+
+  it('opens whole, and lets what comes after rise into place, never while it is read', async () => {
+    const thread = { items: [text('an answer')], running: false }
+    const settled = () => screen.getByTestId('thread').hasAttribute('data-settled')
+    const { rerender } = render(<ThreadView place="p-a" thread={thread} />)
+    // Drawn without the movement first: what it opened with is there, not rising.
+    expect(settled()).toBe(false)
+    await waitFor(() => {
+      expect(settled()).toBe(true)
+    })
+    expect(screen.getByTestId('part').classList.contains('enter')).toBe(true)
+
+    rerender(<ThreadView place="p-b" thread={thread} />)
+    expect(settled()).toBe(false)
+    await waitFor(() => {
+      expect(settled()).toBe(true)
+    })
+
+    rerender(<ThreadView loading place="p-c" thread={{ items: [], running: false }} />)
+    await new Promise(resolve => setTimeout(resolve, 100))
+    expect(settled()).toBe(false)
   })
 })
 

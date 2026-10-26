@@ -44,12 +44,12 @@ export function ProposalCard({ approved, proposal, source }: ProposalCardProps) 
   return (
     <section
       aria-label={title}
-      className="space-y-3 rounded-lg border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900"
+      className="enter space-y-3 rounded-lg border border-border bg-raised p-4"
       data-proposal={proposal.id}
       data-testid="proposal-card"
     >
       <h2 className="flex items-center gap-2 text-sm font-semibold">
-        <Brain aria-hidden className="text-neutral-500" size={16} stroke={1.75} />
+        <Brain aria-hidden className="text-muted-foreground" size={16} stroke={1.75} />
         {title}
       </h2>
       {source}
@@ -64,7 +64,7 @@ export function ProposalCard({ approved, proposal, source }: ProposalCardProps) 
       ) : (
         <>
           {proposal.problem && (
-            <p className="text-sm text-amber-800 dark:text-amber-300" data-testid="proposal-problem">
+            <p className="text-sm text-waiting-text" data-testid="proposal-problem">
               {proposal.problem}
             </p>
           )}
@@ -160,10 +160,8 @@ function Replaced({ after, before }: { after: string; before: string }) {
           )}
         </p>
       )}
-      <details className="group text-xs text-neutral-500">
-        <summary className="cursor-pointer select-none hover:text-neutral-800 dark:hover:text-neutral-200">
-          {t.proposals.whole}
-        </summary>
+      <details className="group text-xs text-muted-foreground">
+        <summary className="cursor-pointer select-none hover:text-foreground">{t.proposals.whole}</summary>
         <div className="mt-2 space-y-2">
           <Label text={t.proposals.before} />
           <p className={BOX}>{before}</p>
@@ -176,7 +174,7 @@ function Replaced({ after, before }: { after: string; before: string }) {
 }
 
 function Label({ text }: { text: string }) {
-  return <p className="text-xs font-medium text-neutral-500">{text}</p>
+  return <p className="text-xs font-medium text-muted-foreground">{text}</p>
 }
 
 function Approved({ proposalId, result }: { proposalId: string; result: ProposalApproved }) {
@@ -187,7 +185,7 @@ function Approved({ proposalId, result }: { proposalId: string; result: Proposal
       <p className="font-medium">{t.proposals.applied}</p>
       {result.replaced.length > 0 && (
         <div>
-          <p className="text-neutral-500">{t.proposals.overwrote}</p>
+          <p className="text-muted-foreground">{t.proposals.overwrote}</p>
           {result.replaced.map(entry => (
             <p className="whitespace-pre-wrap" key={entry}>
               {entry}
@@ -197,7 +195,7 @@ function Approved({ proposalId, result }: { proposalId: string; result: Proposal
       )}
       {result.removed.length > 0 && (
         <div>
-          <p className="text-neutral-500">{t.proposals.removed}</p>
+          <p className="text-muted-foreground">{t.proposals.removed}</p>
           {result.removed.map(entry => (
             <p className="whitespace-pre-wrap" key={entry}>
               {entry}
@@ -205,7 +203,7 @@ function Approved({ proposalId, result }: { proposalId: string; result: Proposal
           ))}
         </div>
       )}
-      {lost && <p className="text-neutral-500">{t.proposals.readd}</p>}
+      {lost && <p className="text-muted-foreground">{t.proposals.readd}</p>}
       <button
         className={SECONDARY}
         onClick={() => {
@@ -219,13 +217,10 @@ function Approved({ proposalId, result }: { proposalId: string; result: Proposal
   )
 }
 
-const PRIMARY =
-  'rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900'
+const PRIMARY = 'rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-40'
 const SECONDARY =
-  'rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800'
+  'rounded-md border border-border-strong px-3 py-1.5 text-sm text-soft hover:bg-muted disabled:opacity-40'
 /** An entry's text, as the memory's screen draws one. */
-const BOX =
-  'rounded-md border border-neutral-200 px-3 py-2 text-sm whitespace-pre-wrap text-neutral-800 dark:border-neutral-800 dark:text-neutral-200'
-const REMOVED =
-  'bg-red-100 text-red-800 line-through decoration-red-600 decoration-1 dark:bg-red-950 dark:text-red-300 dark:decoration-red-400'
-const ADDED = 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300'
+const BOX = 'rounded-md border border-border px-3 py-2 text-sm whitespace-pre-wrap text-foreground'
+const REMOVED = 'bg-removed/15 line-through decoration-removed decoration-1'
+const ADDED = 'bg-added/15'

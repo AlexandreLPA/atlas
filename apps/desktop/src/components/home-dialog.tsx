@@ -60,7 +60,7 @@ function Dialog({ dialog }: { dialog: HomeDialog }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4"
       data-testid="home-dialog"
       onMouseDown={event => {
         if (event.target === event.currentTarget && !busy) {
@@ -71,7 +71,7 @@ function Dialog({ dialog }: { dialog: HomeDialog }) {
     >
       <form
         aria-label={title}
-        className="flex max-h-full w-full max-w-md flex-col gap-3 overflow-y-auto rounded-xl border border-neutral-200 bg-white p-5 shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+        className="flex max-h-full w-full max-w-md flex-col gap-3 overflow-y-auto rounded-xl border border-border bg-raised p-5 shadow-xl"
         onSubmit={event => {
           event.preventDefault()
           submit()
@@ -80,7 +80,7 @@ function Dialog({ dialog }: { dialog: HomeDialog }) {
       >
         <div>
           <h2 className="text-base font-semibold">{title}</h2>
-          <p className="text-sm text-neutral-500" data-testid={importing ? 'home-import-from' : undefined}>
+          <p className="text-sm text-muted-foreground" data-testid={importing ? 'home-import-from' : undefined}>
             {importing
               ? t.homes.importFrom(
                   dialog.info.home,
@@ -107,7 +107,7 @@ function Dialog({ dialog }: { dialog: HomeDialog }) {
           />
         </Field>
         {importing ? (
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">{t.homes.importHint}</p>
+          <p className="text-sm text-soft">{t.homes.importHint}</p>
         ) : (
           <Field label={t.homes.clone}>
             <select
@@ -125,11 +125,13 @@ function Dialog({ dialog }: { dialog: HomeDialog }) {
               ))}
               <option value="">{t.homes.cloneNone}</option>
             </select>
-            <span className="block text-xs text-neutral-500">{cloneFrom ? t.homes.cloneHint : t.homes.emptyHint}</span>
+            <span className="block text-xs text-muted-foreground">
+              {cloneFrom ? t.homes.cloneHint : t.homes.emptyHint}
+            </span>
           </Field>
         )}
         {error && (
-          <p className="text-sm break-words text-red-600" data-testid="home-error" role="alert">
+          <p className="text-sm break-words text-failed-text" data-testid="home-error" role="alert">
             {error}
           </p>
         )}
@@ -138,7 +140,7 @@ function Dialog({ dialog }: { dialog: HomeDialog }) {
             {t.homes.cancel}
           </button>
           <button
-            className="rounded-md bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-40"
+            className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
             data-testid="home-submit"
             disabled={busy || !handle}
             type="submit"
@@ -162,15 +164,13 @@ function Field({ children, hint, label }: { children: ReactNode; hint?: string; 
     <label className="block space-y-1 text-sm">
       <span className="flex items-baseline justify-between gap-2">
         <span className="font-medium">{label}</span>
-        {hint && <span className="text-xs text-neutral-500">{hint}</span>}
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
       </span>
       {children}
     </label>
   )
 }
 
-const INPUT =
-  'w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-950'
+const INPUT = 'w-full rounded-md border border-border-strong bg-background px-2 py-1.5 text-sm disabled:opacity-60'
 
-const BUTTON =
-  'rounded-md border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:hover:bg-neutral-800'
+const BUTTON = 'rounded-md border border-border-strong px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-40'

@@ -88,7 +88,7 @@ export function Heading({ children, hint }: { children: ReactNode; hint?: ReactN
   return (
     <div className="space-y-1">
       <h3 className="text-sm font-semibold">{children}</h3>
-      {hint && <p className="text-sm text-neutral-500">{hint}</p>}
+      {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
     </div>
   )
 }
@@ -96,7 +96,7 @@ export function Heading({ children, hint }: { children: ReactNode; hint?: ReactN
 function StatusLine({ status, variable }: { status?: Status; variable?: null | string }) {
   if (variable) {
     return (
-      <p className="text-xs text-amber-700 dark:text-amber-400" data-testid="setting-locked">
+      <p className="text-xs text-waiting-text" data-testid="setting-locked">
         {t.settings.locked(variable)}
       </p>
     )
@@ -108,14 +108,14 @@ function StatusLine({ status, variable }: { status?: Status; variable?: null | s
 
   if (status.kind === 'failed') {
     return (
-      <p className="text-xs text-red-600" data-testid="setting-error" role="alert">
+      <p className="text-xs text-failed-text" data-testid="setting-error" role="alert">
         {status.text}
       </p>
     )
   }
 
   return (
-    <p className="text-xs text-neutral-500" data-testid="setting-status" role="status">
+    <p className="text-xs text-muted-foreground" data-testid="setting-status" role="status">
       {status.kind === 'saving' ? t.settings.saving : t.settings.saved}
     </p>
   )
@@ -124,7 +124,7 @@ function StatusLine({ status, variable }: { status?: Status; variable?: null | s
 function Failure({ error }: { error: null | string }) {
   return (
     error && (
-      <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300" role="alert">
+      <p className="rounded-md bg-failed/10 px-3 py-2 text-sm text-failed-text" role="alert">
         {error}
       </p>
     )
@@ -165,8 +165,7 @@ function TextSetting({
 
   const props = {
     'aria-label': label,
-    className:
-      'w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900',
+    className: 'w-full rounded-md border border-border-strong bg-raised px-2 py-1.5 text-sm disabled:opacity-60',
     'data-testid': `setting-${field}`,
     disabled: row.variable !== null,
     onBlur: () => {
@@ -180,7 +179,7 @@ function TextSetting({
   return (
     <label className="block space-y-1.5">
       <span className="text-sm font-medium">{label}</span>
-      <span className="block text-sm text-neutral-500">{hint}</span>
+      <span className="block text-sm text-muted-foreground">{hint}</span>
       <span className="flex gap-2">
         {lines ? (
           <textarea
@@ -272,7 +271,7 @@ export function GeneralSection() {
         <Heading>{t.settings.about}</Heading>
         <p className="text-sm">{version ? t.settings.version(version) : '…'}</p>
         {update?.supported === false ? (
-          <p className="text-sm text-neutral-500">{t.settings.noUpdates}</p>
+          <p className="text-sm text-muted-foreground">{t.settings.noUpdates}</p>
         ) : (
           <div className="flex flex-wrap items-center gap-3">
             <button className={SECONDARY} data-testid="settings-look" disabled={looking} onClick={look} type="button">
@@ -295,7 +294,7 @@ export function GeneralSection() {
             ) : (
               looked &&
               update && (
-                <span className="text-sm text-neutral-500" role="status">
+                <span className="text-sm text-muted-foreground" role="status">
                   {update.error || t.settings.upToDate}
                 </span>
               )
@@ -326,12 +325,12 @@ function Choice({
   return (
     <fieldset className="space-y-1.5" data-testid={testId}>
       <legend className="text-sm font-medium">{label}</legend>
-      <p className="text-sm text-neutral-500">{hint}</p>
-      <div className="inline-flex rounded-md bg-neutral-200 p-0.5 dark:bg-neutral-800" role="radiogroup">
+      <p className="text-sm text-muted-foreground">{hint}</p>
+      <div className="inline-flex rounded-md bg-selected p-0.5" role="radiogroup">
         {options.map(([value, text]) => (
           <button
             aria-checked={value === current}
-            className="rounded px-3 py-1 text-sm aria-checked:bg-white aria-checked:shadow-sm dark:aria-checked:bg-neutral-950"
+            className="rounded px-3 py-1 text-sm aria-checked:bg-background aria-checked:shadow-sm"
             data-value={value}
             key={value}
             onClick={() => {
@@ -480,13 +479,13 @@ export function PersonalizationSection() {
 
   return (
     <div className="space-y-8">
-      <p className="text-sm text-neutral-500">{t.settings.appliesNext}</p>
+      <p className="text-sm text-muted-foreground">{t.settings.appliesNext}</p>
       <SoulSection />
       <MemoryEntries hint={t.settings.aboutYouHint} target="user" title={t.settings.aboutYou} />
       <MemoryEntries hint={t.settings.memoryHint} target="memory" title={t.settings.memory} />
       {proposals.length > 0 && (
         <button
-          className="text-sm text-violet-700 hover:underline dark:text-violet-400"
+          className="link text-sm"
           data-testid="settings-proposals"
           onClick={() => {
             closeSettings()
@@ -598,9 +597,8 @@ export function WorkspaceSection() {
   )
 }
 
-const SELECT =
-  'rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900'
+const SELECT = 'rounded-md border border-border-strong bg-raised px-2 py-1.5 text-sm disabled:opacity-60'
 const PRIMARY =
-  'shrink-0 rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900'
+  'shrink-0 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-40'
 const SECONDARY =
-  'shrink-0 rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800'
+  'shrink-0 rounded-md border border-border-strong px-3 py-1.5 text-sm text-soft hover:bg-muted disabled:opacity-40'

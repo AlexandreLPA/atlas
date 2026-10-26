@@ -53,10 +53,8 @@ export function AttachmentChip({ detail, failed, kind, name, onOpen, onRemove, p
     >
       <button
         aria-label={onOpen ? t.attachments.open(name) : name}
-        className={`flex max-w-56 items-center gap-2 rounded-xl border bg-white px-2 py-1.5 text-left transition-colors disabled:cursor-default dark:bg-neutral-900 ${
-          failed
-            ? 'border-red-400 dark:border-red-700'
-            : 'border-neutral-300 hover:border-neutral-400 dark:border-neutral-700 dark:hover:border-neutral-500'
+        className={`flex max-w-56 items-center gap-2 rounded-xl border bg-raised px-2 py-1.5 text-left transition-colors disabled:cursor-default ${
+          failed ? 'border-failed/60' : 'border-border-strong hover:border-faint'
         }`}
         disabled={!onOpen}
         onClick={onOpen}
@@ -64,7 +62,7 @@ export function AttachmentChip({ detail, failed, kind, name, onOpen, onRemove, p
       >
         <span
           className={`relative grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg text-[0.6rem] font-bold tracking-wide ${
-            thumbnail ? 'bg-neutral-100 dark:bg-neutral-800' : TONE[format.tone]
+            thumbnail ? 'bg-muted' : TONE[format.tone]
           }`}
           data-testid="attachment-badge"
         >
@@ -88,9 +86,7 @@ export function AttachmentChip({ detail, failed, kind, name, onOpen, onRemove, p
         </span>
         <span className="min-w-0">
           <span className="block truncate text-xs font-medium">{name}</span>
-          <span
-            className={`block truncate text-[0.65rem] ${failed ? 'text-red-600 dark:text-red-400' : 'text-neutral-500'}`}
-          >
+          <span className={`block truncate text-2xs ${failed ? 'text-failed-text' : 'text-muted-foreground'}`}>
             {detail}
           </span>
         </span>
@@ -98,7 +94,7 @@ export function AttachmentChip({ detail, failed, kind, name, onOpen, onRemove, p
       {onRemove && (
         <button
           aria-label={t.attachments.remove(name)}
-          className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full border border-neutral-300 bg-white text-[0.6rem] text-neutral-500 opacity-0 shadow-sm transition group-hover/chip:opacity-100 hover:text-neutral-900 focus-visible:opacity-100 dark:border-neutral-700 dark:bg-neutral-900"
+          className="absolute -top-1.5 -right-1.5 grid size-4 place-items-center rounded-full border border-border-strong bg-raised text-[0.6rem] text-muted-foreground opacity-0 shadow-sm transition group-hover/chip:opacity-100 hover:text-foreground focus-visible:opacity-100"
           onClick={onRemove}
           type="button"
         >

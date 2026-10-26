@@ -75,13 +75,13 @@ export function SettingsView() {
       open={open}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/30" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-scrim" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed top-1/2 left-1/2 z-50 flex h-[85vh] w-[min(60rem,92vw)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-neutral-200 bg-white text-neutral-900 shadow-xl dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
+          className="fixed top-1/2 left-1/2 z-50 flex h-[85vh] w-[min(60rem,92vw)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-raised text-foreground shadow-xl"
           data-testid="settings"
         >
-          <nav className="w-52 shrink-0 space-y-0.5 border-r border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-950">
+          <nav className="w-52 shrink-0 space-y-0.5 border-r border-border bg-subtle p-3">
             <Dialog.Title className="px-2 pt-1 pb-3 font-semibold">{t.settings.title}</Dialog.Title>
             {SECTIONS.map(each => {
               const Icon = ICONS[each]
@@ -89,7 +89,7 @@ export function SettingsView() {
               return (
                 <button
                   aria-current={each === section ? 'page' : undefined}
-                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-neutral-700 hover:bg-neutral-200 aria-[current=page]:bg-neutral-200 aria-[current=page]:font-medium aria-[current=page]:text-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:aria-[current=page]:bg-neutral-800 dark:aria-[current=page]:text-neutral-100"
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-soft hover:bg-selected aria-[current=page]:bg-selected aria-[current=page]:font-medium aria-[current=page]:text-foreground"
                   data-testid={`settings-nav-${each}`}
                   key={each}
                   onClick={() => {
@@ -160,10 +160,7 @@ function Section({ section }: { section: SettingsSection }) {
 
 function Card({ children, testId }: { children: ReactNode; testId: string }) {
   return (
-    <section
-      className="space-y-3 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800"
-      data-testid={testId}
-    >
+    <section className="space-y-3 rounded-lg border border-border p-3" data-testid={testId}>
       {children}
     </section>
   )
@@ -194,7 +191,7 @@ function ThisMachine() {
         testId="always-on"
       />
       {status?.on && (
-        <div className="space-y-3 border-l-2 border-neutral-200 pl-3 dark:border-neutral-800">
+        <div className="space-y-3 border-l-2 border-border pl-3">
           <Toggle
             checked={status.open}
             disabled={off}
@@ -204,12 +201,12 @@ function ThisMachine() {
             testId="open-to-machines"
           />
           {status.open && status.tailnet && (
-            <p className="text-xs text-neutral-500" data-testid="tailnet">
+            <p className="text-xs text-muted-foreground" data-testid="tailnet">
               {status.tailnet.name ? `${status.tailnet.name} · ${status.tailnet.address}` : status.tailnet.address}
             </p>
           )}
           {status.open && status.tailnet_problem && (
-            <p className="text-xs text-amber-700 dark:text-amber-300" data-testid="tailnet-problem">
+            <p className="text-xs text-waiting-text" data-testid="tailnet-problem">
               {t.machines.noTailnet} {status.tailnet_problem}
             </p>
           )}
@@ -265,8 +262,8 @@ function ThisMachine() {
           </div>
         </div>
       )}
-      {busy && <p className="text-xs text-neutral-500">{t.machines.busy}</p>}
-      {working && <p className="text-xs text-neutral-500">{t.machines.working}</p>}
+      {busy && <p className="text-xs text-muted-foreground">{t.machines.busy}</p>}
+      {working && <p className="text-xs text-muted-foreground">{t.machines.working}</p>}
     </Card>
   )
 }
@@ -290,16 +287,16 @@ function Toggle({
     <label className="flex items-start gap-3">
       <Switch.Root
         checked={checked}
-        className="relative mt-0.5 h-5 w-9 shrink-0 rounded-full bg-neutral-300 transition-colors disabled:opacity-40 data-[state=checked]:bg-neutral-900 dark:bg-neutral-700 dark:data-[state=checked]:bg-neutral-100"
+        className="relative mt-0.5 h-5 w-9 shrink-0 rounded-full bg-border-strong transition-colors disabled:opacity-40 data-[state=checked]:bg-primary"
         data-testid={testId}
         disabled={disabled}
         onCheckedChange={onChange}
       >
-        <Switch.Thumb className="block h-4 w-4 translate-x-0.5 rounded-full bg-white transition-transform data-[state=checked]:translate-x-4 dark:data-[state=checked]:bg-neutral-900" />
+        <Switch.Thumb className="block h-4 w-4 translate-x-0.5 rounded-full bg-white transition-transform data-[state=checked]:translate-x-4 data-[state=checked]:bg-raised" />
       </Switch.Root>
       <span>
         <span className="block text-sm">{label}</span>
-        <span className="block text-xs text-neutral-500">{hint}</span>
+        <span className="block text-xs text-muted-foreground">{hint}</span>
       </span>
     </label>
   )
@@ -328,7 +325,7 @@ function OtherMachines() {
           </button>
         )}
       </div>
-      {machines.length === 0 && !adding && <p className="text-xs text-neutral-500">{t.machines.othersEmpty}</p>}
+      {machines.length === 0 && !adding && <p className="text-xs text-muted-foreground">{t.machines.othersEmpty}</p>}
       <ul className="space-y-2">
         {machines.map(machine => (
           <MachineItem key={machine.id} machine={machine} />
@@ -355,16 +352,12 @@ function MachineItem({ machine }: { machine: MachineRow }) {
       : `${t.machines.viaSsh} · ${machine.sshHost ?? ''}`
 
   return (
-    <li
-      className="space-y-1 rounded-md bg-neutral-50 px-2 py-1.5 dark:bg-neutral-800/50"
-      data-machine={machine.name}
-      data-testid="machine-row"
-    >
+    <li className="space-y-1 rounded-md bg-subtle px-2 py-1.5" data-machine={machine.name} data-testid="machine-row">
       <div className="flex items-center gap-2">
-        <Machine aria-hidden className="shrink-0 text-neutral-400" size={16} stroke={1.75} />
+        <Machine aria-hidden className="shrink-0 text-muted-foreground" size={16} stroke={1.75} />
         {renaming === null ? (
           <span className="min-w-0 flex-1 truncate text-sm">
-            {machine.name} <span className="text-neutral-500">· {machine.home}</span>
+            {machine.name} <span className="text-muted-foreground">· {machine.home}</span>
           </span>
         ) : (
           <input
@@ -444,7 +437,7 @@ function MachineItem({ machine }: { machine: MachineRow }) {
           </>
         )}
       </div>
-      <p className="pl-6 text-xs text-neutral-500">{where}</p>
+      <p className="pl-6 text-xs text-muted-foreground">{where}</p>
       {removing && (
         <p className="flex flex-wrap items-center gap-2 pl-6 text-xs">
           {t.machines.removeConfirm(machine.name)}
@@ -469,7 +462,7 @@ function MachineItem({ machine }: { machine: MachineRow }) {
       )}
       {said && (
         <p
-          className={`pl-6 text-xs [overflow-wrap:anywhere] ${said.kind === 'failed' ? 'text-red-600' : 'text-neutral-500'}`}
+          className={`pl-6 text-xs [overflow-wrap:anywhere] ${said.kind === 'failed' ? 'text-failed-text' : 'text-muted-foreground'}`}
           data-kind={said.kind}
           data-testid="machine-said"
           role={said.kind === 'failed' ? 'alert' : 'status'}
@@ -492,7 +485,7 @@ function AddMachine({ onDone }: { onDone: () => void }) {
 
   return (
     <form
-      className="space-y-2 border-t border-neutral-200 pt-3 dark:border-neutral-800"
+      className="space-y-2 border-t border-border pt-3"
       data-testid="machine-add-form"
       onSubmit={event => {
         event.preventDefault()
@@ -524,7 +517,7 @@ function AddMachine({ onDone }: { onDone: () => void }) {
           type="password"
           value={code}
         />
-        <span className="block text-neutral-500">{t.machines.codeHint}</span>
+        <span className="block text-muted-foreground">{t.machines.codeHint}</span>
       </label>
       <label className="block space-y-1 text-xs">
         <span>{t.machines.name}</span>
@@ -572,7 +565,7 @@ function AddMachine({ onDone }: { onDone: () => void }) {
         </label>
       )}
       {problem && (
-        <p className="text-xs text-red-600 [overflow-wrap:anywhere]" data-testid="machine-add-problem" role="alert">
+        <p className="text-xs text-failed-text [overflow-wrap:anywhere]" data-testid="machine-add-problem" role="alert">
           {problem}
         </p>
       )}
@@ -594,9 +587,7 @@ function Notice() {
   return notice ? (
     <p
       className={`rounded-md px-2 py-1.5 text-xs [overflow-wrap:anywhere] ${
-        notice.kind === 'failed'
-          ? 'bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200'
-          : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200'
+        notice.kind === 'failed' ? 'bg-failed/10 text-failed-text' : 'bg-muted text-soft'
       }`}
       data-kind={notice.kind}
       data-testid="machines-notice"
@@ -608,8 +599,7 @@ function Notice() {
 }
 
 const BUTTON =
-  'flex items-center gap-1.5 rounded-md border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:hover:bg-neutral-800'
-const SMALL =
-  'shrink-0 rounded px-1.5 py-0.5 text-xs text-neutral-600 hover:bg-neutral-200 disabled:opacity-40 dark:text-neutral-300 dark:hover:bg-neutral-700'
+  'flex items-center gap-1.5 rounded-md border border-border-strong px-2 py-1 text-xs hover:bg-muted disabled:opacity-40'
+const SMALL = 'shrink-0 rounded px-1.5 py-0.5 text-xs text-soft hover:bg-selected disabled:opacity-40'
 const INPUT =
-  'rounded-md border border-neutral-300 bg-transparent px-2 py-1 text-sm outline-none focus:border-neutral-500 dark:border-neutral-700'
+  'rounded-md border border-border-strong bg-transparent px-2 py-1 text-sm outline-none focus:border-muted-foreground'

@@ -26,10 +26,10 @@ export function KeyScreen() {
       <div className="mt-[8vh] w-full max-w-lg space-y-5">
         <div className="space-y-1">
           <h1 className="text-xl font-semibold">{t.keys.title}</h1>
-          <p className="text-sm text-neutral-500">{t.keys.intro}</p>
+          <p className="text-sm text-muted-foreground">{t.keys.intro}</p>
         </div>
         {notice ? (
-          <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950">
+          <div className="space-y-3 rounded-lg border border-waiting/40 bg-waiting/10 p-4 text-sm">
             <p className="font-medium">{t.keys.saved}</p>
             <p data-testid="key-notice">{notice.detail}</p>
             <button className={PRIMARY} data-testid="key-continue" onClick={dismissKeyNotice} type="button">
@@ -42,7 +42,7 @@ export function KeyScreen() {
         {!notice && <ExecutorOffers />}
         {!notice && (
           <button
-            className="text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+            className="text-sm text-muted-foreground hover:text-foreground"
             data-testid="key-later"
             onClick={() => {
               chooseKeyLater(true)
@@ -106,9 +106,7 @@ function ProviderRow({ onPick, open, provider }: RowProps) {
 
   return (
     <div
-      className={`rounded-lg border p-3 ${
-        open ? 'border-violet-400 dark:border-violet-700' : 'border-neutral-200 dark:border-neutral-800'
-      }`}
+      className={`rounded-lg border p-3 ${open ? 'border-border-strong' : 'border-border'}`}
       data-testid={`key-provider-${provider.id}`}
     >
       <button
@@ -119,8 +117,8 @@ function ProviderRow({ onPick, open, provider }: RowProps) {
         type="button"
       >
         <span className="font-medium">{provider.name}</span>
-        {provider.stored && <span className="text-xs text-emerald-600">{t.keys.stored}</span>}
-        {description && <span className="truncate text-sm text-neutral-500">{description}</span>}
+        {provider.stored && <span className="text-xs text-muted-foreground">{t.keys.stored}</span>}
+        {description && <span className="truncate text-sm text-muted-foreground">{description}</span>}
       </button>
       {open && (
         <form
@@ -135,7 +133,7 @@ function ProviderRow({ onPick, open, provider }: RowProps) {
               aria-label={t.keys.placeholder}
               autoComplete="off"
               autoFocus
-              className="w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 font-mono text-sm dark:border-neutral-700 dark:bg-neutral-950"
+              className="w-full rounded-md border border-border-strong bg-background px-2 py-1.5 font-mono text-sm"
               data-testid="key-input"
               disabled={busy}
               onChange={event => {
@@ -152,17 +150,12 @@ function ProviderRow({ onPick, open, provider }: RowProps) {
           </div>
           {provider.key_page && (
             // The main process sends a link the page opens to the system browser.
-            <a
-              className="text-sm text-violet-700 hover:underline dark:text-violet-400"
-              href={provider.key_page}
-              rel="noreferrer"
-              target="_blank"
-            >
+            <a className="link text-sm" href={provider.key_page} rel="noreferrer" target="_blank">
               {t.keys.getKey}
             </a>
           )}
           {error && (
-            <p className="text-sm text-red-600" data-testid="key-error" role="alert">
+            <p className="text-sm text-failed-text" data-testid="key-error" role="alert">
               {error}
             </p>
           )}
@@ -176,7 +169,7 @@ function ProviderRow({ onPick, open, provider }: RowProps) {
 export function KeyBand() {
   return (
     <div
-      className="flex items-center gap-3 border-b border-violet-200 bg-violet-50 px-4 py-2 text-sm text-violet-900 dark:border-violet-900 dark:bg-violet-950 dark:text-violet-100"
+      className="flex items-center gap-3 border-b border-border bg-subtle px-4 py-2 text-sm text-foreground"
       data-testid="key-band"
       role="status"
     >
@@ -196,4 +189,4 @@ export function KeyBand() {
 }
 
 const PRIMARY =
-  'shrink-0 rounded-md bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-40'
+  'shrink-0 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40'

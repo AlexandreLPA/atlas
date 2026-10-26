@@ -5,12 +5,19 @@ import type { InstanceRow, SessionRow } from '@/protocol/protocol.generated'
 import { $cards, $live, $marks, $workbench, type Card } from '@/store/app'
 import { conversationDot, type Dot, instanceDot, instanceKey, worst } from '@/store/status'
 
+// One color for each state, as on the trail (decided with the user on 25/10/2026): blue and
+// pulsing at work, amber waiting for the user, red failed; unseen, a plain dot.
 const COLOR: Record<Exclude<Dot, ''>, string> = {
-  failed: 'bg-red-500',
-  unread: 'bg-blue-500',
-  waiting: 'bg-amber-500',
-  // Green, where grey was lost on a row's own grey (asked for by the user on 22/10/2026).
-  working: 'bg-emerald-500 motion-safe:animate-pulse'
+  failed: 'bg-failed',
+  unread: 'bg-foreground',
+  waiting: 'bg-waiting',
+  working: 'bg-working motion-safe:animate-pulse'
+}
+
+/** The dot a row shows: a row says it is unseen with its title in bold instead (decided with the
+ * user on 25/10/2026), and the dot is left to what gathers rows, a tab or a closed folder. */
+export function rowDot(dot: Dot): Dot {
+  return dot === 'unread' ? '' : dot
 }
 
 /**
@@ -26,7 +33,7 @@ export function StatusDot({ dot, ring = false, slot = false }: { dot: Dot; ring?
     <span
       aria-label={t.status[dot]}
       className={`block h-2 w-2 shrink-0 rounded-full ${COLOR[dot]} ${
-        ring ? 'absolute -right-0.5 -bottom-0.5 box-content border-2 border-neutral-50 dark:border-neutral-900' : ''
+        ring ? 'absolute -right-0.5 -bottom-0.5 box-content border-2 border-subtle' : ''
       }`}
       data-dot={dot}
       data-testid="status-dot"

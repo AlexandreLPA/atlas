@@ -33,7 +33,7 @@ export function ExecutorCardView({ card }: { card: ExecutorCard }) {
   )
 }
 
-const CARD = 'space-y-2 rounded-xl border-l-4 border-orange-500 bg-white p-3 text-sm shadow-md dark:bg-neutral-950'
+const CARD = 'enter space-y-2 rounded-xl border-l-4 border-waiting bg-background p-3 text-sm shadow-md'
 
 function ApprovalCard({ id, params }: { id: string; params: ExecutorApprovalParams }) {
   const [reason, setReason] = useState('')
@@ -41,13 +41,11 @@ function ApprovalCard({ id, params }: { id: string; params: ExecutorApprovalPara
   return (
     <div className={CARD} data-testid="executor-approval-card">
       <p className="font-semibold">{t.executor.wantsTo(params.executor_title, params.tool)}</p>
-      <pre className="overflow-x-auto rounded bg-neutral-100 px-2 py-1 text-xs whitespace-pre-wrap dark:bg-neutral-900">
-        {params.summary}
-      </pre>
-      {params.description && <p className="text-xs text-neutral-500">{params.description}</p>}
+      <pre className="overflow-x-auto rounded bg-muted px-2 py-1 text-xs whitespace-pre-wrap">{params.summary}</pre>
+      {params.description && <p className="text-xs text-muted-foreground">{params.description}</p>}
       <input
         aria-label={t.executor.reason}
-        className="w-full rounded border border-neutral-300 px-2 py-1 text-xs dark:border-neutral-700 dark:bg-neutral-900"
+        className="w-full rounded border border-border-strong px-2 py-1 text-xs bg-raised"
         onChange={event => {
           setReason(event.target.value)
         }}
@@ -56,7 +54,7 @@ function ApprovalCard({ id, params }: { id: string; params: ExecutorApprovalPara
       />
       <div className="flex gap-2">
         <button
-          className="rounded bg-orange-600 px-3 py-1 text-xs font-medium text-white"
+          className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"
           onClick={() => {
             answerExecutor(id, { allow: true })
           }}
@@ -65,7 +63,7 @@ function ApprovalCard({ id, params }: { id: string; params: ExecutorApprovalPara
           {t.executor.allow}
         </button>
         <button
-          className="rounded border border-neutral-300 px-3 py-1 text-xs dark:border-neutral-700"
+          className="rounded border border-border-strong px-3 py-1 text-xs"
           onClick={() => {
             answerExecutor(id, reason.trim() ? { allow: false, reason: reason.trim() } : { allow: false })
           }}
@@ -113,7 +111,7 @@ function QuestionCard({ id, params }: { id: string; params: ExecutorQuestionPara
       {params.questions.map(question => (
         <div className="space-y-1" key={question.question}>
           <p>
-            {question.header && <span className="mr-1 text-xs text-orange-700">{question.header}</span>}
+            {question.header && <span className="mr-1 text-xs text-waiting-text">{question.header}</span>}
             {question.question}
           </p>
           <div className="flex flex-wrap gap-1">
@@ -122,8 +120,8 @@ function QuestionCard({ id, params }: { id: string; params: ExecutorQuestionPara
                 aria-pressed={(picked[question.question] ?? []).includes(choice.label)}
                 className={`rounded border px-2 py-0.5 text-xs ${
                   (picked[question.question] ?? []).includes(choice.label)
-                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-950'
-                    : 'border-neutral-300 dark:border-neutral-700'
+                    ? 'border-waiting bg-waiting/10'
+                    : 'border-border-strong'
                 }`}
                 key={choice.label}
                 onClick={() => {
@@ -138,7 +136,7 @@ function QuestionCard({ id, params }: { id: string; params: ExecutorQuestionPara
           </div>
           <input
             aria-label={`${t.executor.other}: ${question.question}`}
-            className="w-full rounded border border-neutral-300 px-2 py-1 text-xs dark:border-neutral-700 dark:bg-neutral-900"
+            className="w-full rounded border border-border-strong px-2 py-1 text-xs bg-raised"
             onChange={event => {
               setOther({ ...other, [question.question]: event.target.value })
             }}
@@ -149,7 +147,7 @@ function QuestionCard({ id, params }: { id: string; params: ExecutorQuestionPara
       ))}
       <div className="flex gap-2">
         <button
-          className="rounded bg-orange-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+          className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground disabled:opacity-40"
           disabled={!complete}
           onClick={() => {
             answerExecutor(id, { answers })
@@ -159,7 +157,7 @@ function QuestionCard({ id, params }: { id: string; params: ExecutorQuestionPara
           {t.executor.answer}
         </button>
         <button
-          className="rounded border border-neutral-300 px-3 py-1 text-xs dark:border-neutral-700"
+          className="rounded border border-border-strong px-3 py-1 text-xs"
           onClick={() => {
             answerExecutor(id, {})
           }}

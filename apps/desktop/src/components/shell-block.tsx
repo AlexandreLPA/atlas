@@ -57,7 +57,7 @@ export function ShellBlock({ code, isIncomplete, language }: CustomRendererProps
         <CodeBlockCopyButton code={code} />
         <button
           aria-label={t.terminal.run}
-          className="rounded px-1.5 text-sm text-green-700 hover:bg-neutral-200 disabled:text-neutral-400 disabled:opacity-60 dark:text-green-400 dark:hover:bg-neutral-800"
+          className="rounded px-1.5 text-sm text-foreground hover:bg-selected disabled:text-muted-foreground disabled:opacity-60"
           data-testid="run-block"
           disabled={off}
           onClick={play}
@@ -69,18 +69,16 @@ export function ShellBlock({ code, isIncomplete, language }: CustomRendererProps
       </CodeBlock>
       {asking !== null && (
         <div
-          className="mt-2 space-y-2 rounded-lg border border-red-300 bg-red-50 p-3 text-sm dark:border-red-800 dark:bg-red-950"
+          className="mt-2 space-y-2 rounded-lg border border-danger/40 bg-danger/10 p-3 text-sm"
           data-testid="run-confirm"
           role="alertdialog"
         >
           <p className="font-semibold">{t.terminal.dangerous}</p>
-          {asking && <p className="text-xs text-neutral-600 dark:text-neutral-400">{asking}</p>}
-          <pre className="overflow-x-auto rounded bg-white p-2 font-mono text-xs whitespace-pre-wrap dark:bg-neutral-900">
-            {code}
-          </pre>
+          {asking && <p className="text-xs text-soft">{asking}</p>}
+          <pre className="overflow-x-auto rounded bg-raised p-2 font-mono text-xs whitespace-pre-wrap">{code}</pre>
           <div className="flex gap-2">
             <button
-              className="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white"
+              className="rounded bg-danger px-3 py-1 text-xs font-medium text-white"
               onClick={() => {
                 setAsking(null)
                 run()
@@ -90,7 +88,7 @@ export function ShellBlock({ code, isIncomplete, language }: CustomRendererProps
               {t.terminal.runAnyway}
             </button>
             <button
-              className="rounded border border-neutral-300 px-3 py-1 text-xs dark:border-neutral-700"
+              className="rounded border border-border-strong px-3 py-1 text-xs"
               onClick={() => {
                 setAsking(null)
               }}

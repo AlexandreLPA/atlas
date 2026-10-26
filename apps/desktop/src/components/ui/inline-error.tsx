@@ -21,7 +21,7 @@ export function InlineError({
 }) {
   return (
     <div
-      className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-100"
+      className="flex items-start gap-2 rounded-md border border-failed/30 bg-failed/10 px-3 py-2 text-sm text-failed-text"
       data-testid={testId}
       role={live ? 'alert' : undefined}
     >

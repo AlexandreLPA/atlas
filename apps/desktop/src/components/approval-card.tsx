@@ -29,17 +29,15 @@ export function ApprovalCard({ card }: ApprovalCardProps) {
   return (
     <section
       aria-label={t.approval.title(params.tool)}
-      className="space-y-3 rounded-lg border border-orange-300 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950/40"
+      className="enter space-y-3 rounded-lg border border-waiting/40 bg-waiting/10 p-4"
       data-testid="approval-card"
     >
       <h2 className="text-sm font-semibold">{t.approval.title(params.tool)}</h2>
-      <pre className="max-h-48 overflow-auto rounded bg-white p-2 font-mono text-xs whitespace-pre-wrap dark:bg-neutral-900">
+      <pre className="max-h-48 overflow-auto rounded bg-raised p-2 font-mono text-xs whitespace-pre-wrap">
         {params.target}
       </pre>
-      {params.reason && <p className="text-sm text-neutral-600 dark:text-neutral-300">{params.reason}</p>}
-      {params.guardian_denied && (
-        <p className="text-sm font-medium text-red-700 dark:text-red-400">{t.approval.guardianDenied}</p>
-      )}
+      {params.reason && <p className="text-sm text-soft">{params.reason}</p>}
+      {params.guardian_denied && <p className="text-sm font-medium text-failed-text">{t.approval.guardianDenied}</p>}
       <div className="flex flex-wrap gap-2">
         <Choice
           label={t.approval.once}
@@ -73,7 +71,7 @@ export function ApprovalCard({ card }: ApprovalCardProps) {
       </div>
       <input
         aria-label={t.approval.reasonPlaceholder}
-        className="w-full rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+        className="w-full rounded-md border border-border-strong bg-raised px-3 py-1.5 text-sm"
         onChange={event => {
           setReason(event.target.value)
         }}
@@ -88,9 +86,7 @@ function Choice({ label, onClick, primary = false }: { label: string; onClick: (
   return (
     <button
       className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-        primary
-          ? 'bg-orange-600 text-white'
-          : 'border border-neutral-300 bg-white hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900'
+        primary ? 'bg-primary text-primary-foreground' : 'border border-border-strong bg-raised hover:bg-muted'
       }`}
       onClick={onClick}
       type="button"

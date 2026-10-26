@@ -36,9 +36,9 @@ export function PluginsSection() {
     <div data-testid="plugins-view">
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-4">
-          <p className="text-sm text-neutral-500">{t.plugins.intro}</p>
+          <p className="text-sm text-muted-foreground">{t.plugins.intro}</p>
           <div className="flex shrink-0 items-center gap-2">
-            <a className="text-sm text-violet-600 hover:underline" href={PLUGIN_GUIDE} rel="noreferrer" target="_blank">
+            <a className="link text-sm" href={PLUGIN_GUIDE} rel="noreferrer" target="_blank">
               {t.plugins.guide}
             </a>
             <button
@@ -66,14 +66,11 @@ export function PluginsSection() {
           </div>
         </div>
         {error && (
-          <p
-            className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
-            role="alert"
-          >
+          <p className="rounded-md bg-failed/10 px-3 py-2 text-sm text-failed-text" role="alert">
             {error}
           </p>
         )}
-        {plugins.length === 0 && <p className="text-neutral-500">{t.plugins.empty}</p>}
+        {plugins.length === 0 && <p className="text-muted-foreground">{t.plugins.empty}</p>}
         {plugins.map(plugin => (
           <Plugin key={`${plugin.name}-${String(plugin.bundled)}`} plugin={plugin} />
         ))}
@@ -91,28 +88,22 @@ function Plugin({ plugin }: { plugin: PluginRow }) {
   const screenError = useStore($screenErrors)[plugin.name]
 
   return (
-    <div
-      className="rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
-      data-plugin={plugin.name}
-      data-testid="plugin-row"
-    >
+    <div className="rounded-lg border border-border p-4" data-plugin={plugin.name} data-testid="plugin-row">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="font-medium">
             {plugin.name}
-            {plugin.version && <span className="ml-2 text-sm font-normal text-neutral-500">{plugin.version}</span>}
+            {plugin.version && <span className="ml-2 text-sm font-normal text-muted-foreground">{plugin.version}</span>}
             <span
               className={`ml-2 rounded px-1.5 py-0.5 text-xs font-normal ${
-                plugin.running
-                  ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300'
-                  : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+                plugin.running ? 'bg-selected text-foreground' : 'bg-muted text-soft'
               }`}
               data-testid="plugin-state"
             >
               {state}
             </span>
           </p>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted-foreground">
             {plugin.description}
             {plugin.bundled ? ` · ${t.plugins.shipped}` : ''}
           </p>
@@ -144,17 +135,17 @@ function Plugin({ plugin }: { plugin: PluginRow }) {
         </div>
       </div>
       {plugin.problem && (
-        <p className="mt-2 text-sm text-amber-700 dark:text-amber-400" data-testid="plugin-problem">
+        <p className="mt-2 text-sm text-waiting-text" data-testid="plugin-problem">
           {plugin.problem}
         </p>
       )}
       {on && screenError && (
-        <p className="mt-2 text-sm text-amber-700 dark:text-amber-400" data-testid="plugin-screen-problem">
+        <p className="mt-2 text-sm text-waiting-text" data-testid="plugin-screen-problem">
           {t.plugins.screenNotLoaded(screenError)}
         </p>
       )}
       {asking && !on && (
-        <div className="mt-3 rounded-md bg-neutral-50 p-3 text-sm dark:bg-neutral-900" data-testid="plugin-consent">
+        <div className="mt-3 rounded-md bg-subtle p-3 text-sm" data-testid="plugin-consent">
           <p className="font-medium">{t.plugins.consentIntro}</p>
           <ul className="mt-1 list-disc space-y-1 pl-5">
             {plugin.declaration.map(line => (
@@ -163,7 +154,7 @@ function Plugin({ plugin }: { plugin: PluginRow }) {
           </ul>
           <div className="mt-3 flex gap-2">
             <button
-              className={`${BUTTON} bg-violet-600 text-white hover:bg-violet-700 dark:hover:bg-violet-700`}
+              className={`${BUTTON} bg-primary text-primary-foreground hover:bg-primary/90`}
               data-testid="plugin-consent-yes"
               onClick={() => {
                 setAsking(false)
@@ -190,7 +181,7 @@ function Plugin({ plugin }: { plugin: PluginRow }) {
       ))}
       {plugin.settings.length > 0 && (
         <details className="mt-3 text-sm">
-          <summary className="cursor-pointer text-neutral-500">{t.plugins.settings}</summary>
+          <summary className="cursor-pointer text-muted-foreground">{t.plugins.settings}</summary>
           {plugin.settings.map(setting => (
             <Setting key={setting.name} plugin={plugin.name} setting={setting} />
           ))}
@@ -211,10 +202,10 @@ function Secret({ plugin, secret }: { plugin: string; secret: PluginSecretRow })
     <div className="mt-3 text-sm" data-stored={secret.stored} data-testid="plugin-secret">
       <p>
         <span className="font-mono">{secret.name}</span>
-        <span className="ml-2 text-neutral-500">{secret.stored ? t.plugins.stored : t.plugins.notStored}</span>
+        <span className="ml-2 text-muted-foreground">{secret.stored ? t.plugins.stored : t.plugins.notStored}</span>
         {secret.stored && !changing && (
           <button
-            className="ml-2 text-violet-600 hover:underline"
+            className="link ml-2"
             data-testid="plugin-secret-change"
             onClick={() => {
               setChanging(true)
@@ -226,10 +217,10 @@ function Secret({ plugin, secret }: { plugin: string; secret: PluginSecretRow })
         )}
       </p>
       {secret.description && (
-        <p className="text-neutral-500">
+        <p className="text-muted-foreground">
           {secret.description}{' '}
           {secret.url && (
-            <a className="text-violet-600 hover:underline" href={secret.url} rel="noreferrer" target="_blank">
+            <a className="link" href={secret.url} rel="noreferrer" target="_blank">
               {secret.url}
             </a>
           )}
@@ -283,7 +274,7 @@ function Setting({ plugin, setting }: { plugin: string; setting: PluginSettingRo
       <label className="block font-mono" htmlFor={`${plugin}-${setting.name}`}>
         {setting.name}
       </label>
-      {setting.description && <p className="text-neutral-500">{setting.description}</p>}
+      {setting.description && <p className="text-muted-foreground">{setting.description}</p>}
       <div className="mt-1 flex gap-2">
         <input
           className={INPUT}
@@ -316,8 +307,8 @@ function People({ pairings }: { pairings: PairingRow[] }) {
   return (
     <section className="space-y-2" data-testid="pairings">
       <h2 className="font-semibold">{t.plugins.people}</h2>
-      <p className="text-sm text-neutral-500">{t.plugins.peopleIntro}</p>
-      {pairings.length === 0 && <p className="text-sm text-neutral-500">{t.plugins.noPeople}</p>}
+      <p className="text-sm text-muted-foreground">{t.plugins.peopleIntro}</p>
+      {pairings.length === 0 && <p className="text-sm text-muted-foreground">{t.plugins.noPeople}</p>}
       <ul className="space-y-1 text-sm">
         {pairings.map(pairing => (
           <li
@@ -326,9 +317,9 @@ function People({ pairings }: { pairings: PairingRow[] }) {
             key={`${pairing.channel}-${pairing.user}`}
           >
             <span className="min-w-0 truncate">
-              {pairing.name} <span className="text-neutral-500">· {pairing.channel} · </span>
+              {pairing.name} <span className="text-muted-foreground">· {pairing.channel} · </span>
               {pairing.approved ? (
-                <span className="text-neutral-500">{t.plugins.approved}</span>
+                <span className="text-muted-foreground">{t.plugins.approved}</span>
               ) : (
                 <span className="font-mono">{t.plugins.waits(pairing.code)}</span>
               )}
@@ -359,7 +350,5 @@ function People({ pairings }: { pairings: PairingRow[] }) {
   )
 }
 
-const BUTTON =
-  'rounded-md border border-neutral-300 px-2 py-1 hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:hover:bg-neutral-800'
-const INPUT =
-  'min-w-0 flex-1 rounded-md border border-neutral-300 bg-white px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900'
+const BUTTON = 'rounded-md border border-border-strong px-2 py-1 hover:bg-muted disabled:opacity-40'
+const INPUT = 'min-w-0 flex-1 rounded-md border border-border-strong bg-raised px-2 py-1'

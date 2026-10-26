@@ -32,17 +32,17 @@ export function ProposalsView() {
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-lg font-semibold">{t.proposals.title}</h1>
           <button
-            className="rounded-md px-3 py-1.5 text-sm text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            className="rounded-md px-3 py-1.5 text-sm text-soft hover:bg-muted"
             onClick={showConversation}
             type="button"
           >
             {t.proposals.back}
           </button>
         </div>
-        <p className="text-sm text-neutral-500">{t.proposals.intro}</p>
+        <p className="text-sm text-muted-foreground">{t.proposals.intro}</p>
         {failed && <ReadFailed error={failed} what="proposals" />}
         {!failed && proposals.length === 0 && done.length === 0 && (
-          <p className="text-neutral-500">{t.proposals.empty}</p>
+          <p className="text-muted-foreground">{t.proposals.empty}</p>
         )}
         {done.map(({ proposal, result }) => (
           <ProposalCard approved={result} key={proposal.id} proposal={proposal} />
@@ -78,10 +78,10 @@ function Source({ proposal }: { proposal: ProposalRow }) {
   const title = conversations.find(row => row.id === conversationId)?.title || t.conversations.untitled
 
   return (
-    <p className="text-xs text-neutral-500">
+    <p className="text-xs text-muted-foreground">
       {t.proposals.fromConversation}{' '}
       <button
-        className="underline hover:text-neutral-800 dark:hover:text-neutral-200"
+        className="underline hover:text-foreground"
         onClick={() => void selectConversation(conversationId)}
         type="button"
       >

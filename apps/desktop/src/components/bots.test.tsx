@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { BotDefinition, BotRow } from '@/protocol/protocol.generated'
@@ -13,6 +13,8 @@ afterEach(() => {
   vi.restoreAllMocks()
   app.$botDialog.set(null)
   app.$bots.set([])
+  app.$live.set({})
+  app.$marks.set({})
 })
 
 const row = (bot: Partial<BotRow> = {}): BotRow => ({
@@ -64,6 +66,21 @@ describe('the bots list', () => {
     ])
     fireEvent.click(rows[1] as HTMLElement)
     expect(opened).toHaveBeenCalledWith('work')
+  })
+
+  it("says a bot's unseen end with its title in bold, never a dot, and its turn at work in blue", () => {
+    app.$bots.set([row({ conversation_id: 'c1' }), row({ conversation_id: 'c2', name: 'work', title: 'Work' })])
+    app.$marks.setKey('c1', 'unread')
+    app.$live.setKey('c2', true)
+
+    render(<BotsList />)
+
+    const [unseen, working] = screen.getAllByTestId('bot-row') as [HTMLElement, HTMLElement]
+    expect(within(unseen).getByText('Finance').className).toContain('font-semibold')
+    expect(within(unseen).queryByTestId('status-dot')).toBeNull()
+    expect(within(working).getByText('Work').className).not.toContain('font-semibold')
+    expect(within(working).getByTestId('status-dot').getAttribute('data-dot')).toBe('working')
+    expect(within(working).getByTestId('status-dot').className).toContain('bg-working')
   })
 
   it('says what a bot is when there is none, once the list was read and never before', () => {

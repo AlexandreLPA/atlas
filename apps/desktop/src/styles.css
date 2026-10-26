@@ -6,12 +6,137 @@
    alone. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-:root {
+/* The app's colors, named (step 9d, decided with the user on 25/10/2026): black and white, light
+   and dark as they were, and one color for each state. A screen paints with these names, never
+   with a palette's own, so a user's own colors, later, change these values alone. They are also
+   the names the Markdown's blocks paint with (`border-border`, `bg-muted`…), which the app had
+   never defined: its code blocks and tables were drawn in black.
+
+   A part of the screen that keeps one look in both themes takes that theme's class: a terminal is
+   dark (`dark`), the preview of a page is light (`light`). */
+:root,
+.light {
   color-scheme: light;
+  --background: #fff;
+  --foreground: oklch(20.5% 0 0);
+  /* Words a step quieter than the text: a note, a tool's target. */
+  --soft: oklch(43.9% 0 0);
+  --muted-foreground: oklch(55.6% 0 0);
+  /* What only decorates: a chevron, a dot at rest, a word that cannot be used. */
+  --faint: oklch(70.8% 0 0);
+  /* The sidebar's ground, a side panel's, a page's navigation. */
+  --subtle: oklch(98.5% 0 0);
+  /* What lies above the ground: a dialog, a menu, a field. */
+  --raised: #fff;
+  /* The user's message, a code block, a chip. */
+  --muted: oklch(97% 0 0);
+  /* A row under the pointer. */
+  --hover: oklch(97% 0 0);
+  /* The row that is open, the segment that is chosen. */
+  --selected: oklch(92.2% 0 0);
+  --border: oklch(92.2% 0 0);
+  /* A field's edge, an outlined button's, the trail's line. */
+  --border-strong: oklch(87% 0 0);
+  --primary: oklch(20.5% 0 0);
+  --primary-foreground: #fff;
+  /* The keyboard's place. */
+  --ring: oklch(55.6% 0 0);
+  /* Behind a dialog. */
+  --scrim: oklch(0% 0 0 / 0.4);
+
+  /* The states, one meaning each: at work (blue, pulsing), waiting for the user (amber), done
+     (green), failed (red). The `-text` ones are the same color dark enough, or light enough, to be
+     read as words. */
+  --working: oklch(54.6% 0.245 262.881);
+  --waiting: oklch(76.9% 0.188 70.08);
+  --waiting-text: oklch(55.5% 0.163 48.998);
+  --waiting-foreground: oklch(27.9% 0.077 45.635);
+  --done: oklch(62.7% 0.194 149.214);
+  --done-text: oklch(52.7% 0.154 150.069);
+  --failed: oklch(57.7% 0.245 27.325);
+  --failed-text: oklch(50.5% 0.213 27.518);
+  /* A button that deletes. */
+  --danger: oklch(57.7% 0.245 27.325);
+  /* A change's lines: what it adds and what it removes. */
+  --added: oklch(62.7% 0.194 149.214);
+  --removed: oklch(57.7% 0.245 27.325);
 }
 
-:root.dark {
+.dark {
   color-scheme: dark;
+  --background: oklch(14.5% 0 0);
+  --foreground: oklch(97% 0 0);
+  --soft: oklch(87% 0 0);
+  --muted-foreground: oklch(70.8% 0 0);
+  --faint: oklch(55.6% 0 0);
+  --subtle: oklch(20.5% 0 0);
+  --raised: oklch(20.5% 0 0);
+  --muted: oklch(26.9% 0 0);
+  --hover: oklch(26.9% 0 0 / 0.6);
+  --selected: oklch(26.9% 0 0);
+  --border: oklch(26.9% 0 0);
+  --border-strong: oklch(37.1% 0 0);
+  --primary: oklch(97% 0 0);
+  --primary-foreground: oklch(20.5% 0 0);
+  --ring: oklch(70.8% 0 0);
+  --scrim: oklch(0% 0 0 / 0.4);
+  --working: oklch(70.7% 0.165 254.624);
+  --waiting: oklch(76.9% 0.188 70.08);
+  --waiting-text: oklch(82.8% 0.189 84.429);
+  --waiting-foreground: oklch(27.9% 0.077 45.635);
+  --done: oklch(72.3% 0.219 149.579);
+  --done-text: oklch(79.2% 0.209 151.711);
+  --failed: oklch(63.7% 0.237 25.331);
+  --failed-text: oklch(70.4% 0.191 22.216);
+  --danger: oklch(63.7% 0.237 25.331);
+  --added: oklch(72.3% 0.219 149.579);
+  --removed: oklch(63.7% 0.237 25.331);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-soft: var(--soft);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint: var(--faint);
+  --color-subtle: var(--subtle);
+  --color-sidebar: var(--subtle);
+  --color-raised: var(--raised);
+  --color-muted: var(--muted);
+  --color-hover: var(--hover);
+  --color-selected: var(--selected);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-scrim: var(--scrim);
+  --color-working: var(--working);
+  --color-waiting: var(--waiting);
+  --color-waiting-text: var(--waiting-text);
+  --color-waiting-foreground: var(--waiting-foreground);
+  --color-done: var(--done);
+  --color-done-text: var(--done-text);
+  --color-failed: var(--failed);
+  --color-failed-text: var(--failed-text);
+  --color-danger: var(--danger);
+  --color-added: var(--added);
+  --color-removed: var(--removed);
+}
+
+@theme {
+  /* The smallest words: a file's kind on its chip, a tool's field names, a terminal's footer. */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+}
+
+/* One curve and three lengths for every movement: short, and the same everywhere. */
+:root {
+  --motion-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 260ms;
+  interpolate-size: allow-keywords;
 }
 
 html,
@@ -23,6 +148,83 @@ body,
 body {
   margin: 0;
   font-family: ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* The keyboard's place, the same on every control, in the theme's own gray: never the system's
+   accent, which drew it orange on one machine and blue on another. */
+:where(a, button, input, select, textarea, summary, [role='tab'], [tabindex]):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* A field keeps the keyboard while it is typed in: its ring is a halo, not a second edge. */
+:where(input, select, textarea):focus-visible {
+  outline-color: color-mix(in oklab, var(--ring) 45%, transparent);
+  outline-offset: 0;
+}
+
+/* A control answers the pointer at once, and its colors move instead of jumping. */
+:where(a, button, summary, [role='tab'], [role='menuitem']) {
+  transition-property: color, background-color, border-color, text-decoration-color, opacity, box-shadow;
+  transition-duration: var(--motion-fast);
+  transition-timing-function: var(--motion-ease);
+}
+
+/* A link, in black and white: the words underlined, the line darkening under the pointer. */
+@utility link {
+  text-decoration-line: underline;
+  text-decoration-color: color-mix(in oklab, currentColor 35%, transparent);
+  text-underline-offset: 2px;
+
+  &:hover {
+    text-decoration-color: currentColor;
+  }
+}
+
+/* A tool, a reasoning, a summary: opened and closed, they slide instead of jumping. */
+details::details-content {
+  block-size: 0;
+  overflow-y: clip;
+  transition:
+    content-visibility var(--motion-base) allow-discrete,
+    block-size var(--motion-base) var(--motion-ease);
+}
+
+details[open]::details-content {
+  block-size: auto;
+}
+
+/* What comes onto the screen while it is watched (a part of a turn, a card, a message on its way,
+   an error) rises a little into place. A conversation that opens is already there: its parts
+   rise only once the thread has settled (`data-settled`, thread-view.tsx). */
+.enter {
+  transition:
+    opacity var(--motion-base) var(--motion-ease),
+    translate var(--motion-base) var(--motion-ease);
+
+  @starting-style {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+[data-thread]:not([data-settled]) .enter {
+  transition: none;
+}
+
+/* With "reduce motion" on in the system, nothing moves: no slide, no pulse, no smooth scroll. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after,
+  ::details-content {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* The sidebar and the side panel open at the same width and keep the one the user dragged them to

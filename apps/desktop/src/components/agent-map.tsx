@@ -68,7 +68,7 @@ export function AgentsButton() {
           }}
           type="button"
         >
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-violet-500" />
+          <span className="h-1.5 w-1.5 rounded-full bg-working motion-safe:animate-pulse" />
           {t.subagents.button(rows.length, running)}
         </button>
       )}
@@ -130,7 +130,7 @@ function AgentMap({ commands, onClose, rows }: { commands: CommandRow[]; onClose
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-6"
       onClick={event => {
         if (event.target === event.currentTarget) {
           onClose()
@@ -140,18 +140,18 @@ function AgentMap({ commands, onClose, rows }: { commands: CommandRow[]; onClose
       <section
         aria-label={t.subagents.map}
         aria-modal="true"
-        className="flex max-h-full w-full max-w-3xl flex-col rounded-xl border border-neutral-200 bg-white text-sm shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
+        className="flex max-h-full w-full max-w-3xl flex-col rounded-xl border border-border bg-raised text-sm shadow-xl"
         data-testid="agent-map"
         role="dialog"
       >
         <header className="flex items-start justify-between px-5 pt-4 pb-3">
           <div>
             <h2 className="text-base font-semibold">{t.subagents.map}</h2>
-            {rows.length > 0 && <p className="text-xs text-neutral-500">{t.subagents.hint(rows.length)}</p>}
+            {rows.length > 0 && <p className="text-xs text-muted-foreground">{t.subagents.hint(rows.length)}</p>}
           </div>
           <button
             aria-label={t.subagents.close}
-            className="rounded px-2 py-0.5 text-lg leading-none text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            className="rounded px-2 py-0.5 text-lg leading-none text-muted-foreground hover:bg-muted"
             onClick={onClose}
             type="button"
           >
@@ -161,17 +161,17 @@ function AgentMap({ commands, onClose, rows }: { commands: CommandRow[]; onClose
         <div className="min-h-0 overflow-y-auto px-5 pb-5">
           {rows.length > 0 && (
             <div className="flex items-center gap-0">
-              <div className="w-56 shrink-0 rounded-lg border border-neutral-300 px-3 py-2 dark:border-neutral-700">
+              <div className="w-56 shrink-0 rounded-lg border border-border-strong px-3 py-2">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground" />
                   <span className="truncate font-medium" title={title}>
                     {title}
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs text-neutral-500">{t.subagents.parent}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{t.subagents.parent}</p>
               </div>
-              <span className="h-px w-5 shrink-0 bg-neutral-300 dark:bg-neutral-700" />
-              <ul className="min-w-0 flex-1 space-y-2 border-l border-neutral-300 py-1 dark:border-neutral-700">
+              <span className="h-px w-5 shrink-0 bg-border-strong" />
+              <ul className="min-w-0 flex-1 space-y-2 border-l border-border-strong py-1">
                 {rows.map(row => (
                   <AgentNode
                     focused={focused === row.subagent_id}
@@ -188,7 +188,7 @@ function AgentMap({ commands, onClose, rows }: { commands: CommandRow[]; onClose
           )}
           {tasks.length > 0 && (
             <section className={rows.length > 0 ? 'mt-5' : ''}>
-              <p className="mb-2 text-xs text-neutral-500">{t.subagents.tasks(tasks.length)}</p>
+              <p className="mb-2 text-xs text-muted-foreground">{t.subagents.tasks(tasks.length)}</p>
               <ul className="space-y-2">
                 {tasks.map(row => (
                   <TaskNode
@@ -249,33 +249,33 @@ function AgentNode({
 
   return (
     <li className="flex items-start" data-testid="subagent-row">
-      <span className="mt-5 h-px w-4 shrink-0 bg-neutral-300 dark:bg-neutral-700" />
-      <div className="min-w-0 flex-1 rounded-lg border border-neutral-300 dark:border-neutral-700">
+      <span className="mt-5 h-px w-4 shrink-0 bg-border-strong" />
+      <div className="min-w-0 flex-1 rounded-lg border border-border-strong">
         <button
           aria-expanded={focused}
-          className="w-full px-3 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
+          className="w-full px-3 py-2 text-left hover:bg-hover"
           onClick={onFocus}
           type="button"
         >
           <span className="flex items-center gap-2">
-            <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-violet-500" />
+            <span className="h-2 w-2 shrink-0 rounded-full bg-working motion-safe:animate-pulse" />
             <span className="min-w-0 flex-1 truncate" title={row.goal}>
               {row.goal}
             </span>
           </span>
-          <span className="mt-0.5 block text-xs text-neutral-500">
+          <span className="mt-0.5 block text-xs text-muted-foreground">
             {elapsed(row.started_at, now)} · {t.subagents.tools(row.tools)}
           </span>
         </button>
         {focused && (
-          <div className="border-t border-neutral-200 px-3 py-2 dark:border-neutral-800">
-            <p className="text-xs whitespace-pre-wrap text-neutral-700 dark:text-neutral-300">{row.goal}</p>
-            <p className="mt-1 text-xs text-neutral-500">
+          <div className="border-t border-border px-3 py-2">
+            <p className="text-xs whitespace-pre-wrap text-soft">{row.goal}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
               {row.model} · {row.last_tool ?? t.subagents.noTool}
             </p>
             <div className="mt-2 flex gap-2">
               <button
-                className="rounded border border-neutral-300 px-2 py-0.5 text-xs dark:border-neutral-700"
+                className="rounded border border-border-strong px-2 py-0.5 text-xs"
                 onClick={() => {
                   setSteering(!steering)
                 }}
@@ -284,7 +284,7 @@ function AgentNode({
                 {t.subagents.steer}
               </button>
               <button
-                className="rounded border border-neutral-300 px-2 py-0.5 text-xs dark:border-neutral-700"
+                className="rounded border border-border-strong px-2 py-0.5 text-xs"
                 onClick={() => void stopSubagent(row.subagent_id)}
                 type="button"
               >
@@ -296,7 +296,7 @@ function AgentNode({
                 <input
                   aria-label={t.subagents.steer}
                   autoFocus
-                  className="flex-1 rounded border border-neutral-300 bg-white px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
+                  className="flex-1 rounded border border-border-strong bg-raised px-2 py-1"
                   onChange={event => {
                     setText(event.target.value)
                   }}
@@ -310,7 +310,7 @@ function AgentNode({
                   value={text}
                 />
                 <button
-                  className="rounded bg-neutral-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900"
+                  className="rounded bg-primary px-3 py-1 text-xs font-medium text-primary-foreground disabled:opacity-40"
                   disabled={!text.trim()}
                   onClick={steer}
                   type="button"
@@ -319,7 +319,7 @@ function AgentNode({
                 </button>
               </div>
             )}
-            {refused && <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">{t.subagents.refused}</p>}
+            {refused && <p className="mt-1 text-xs text-waiting-text">{t.subagents.refused}</p>}
           </div>
         )}
       </div>
@@ -348,7 +348,7 @@ function TaskNode({
   const running = row.status === 'running'
   const until = row.ended_at ? Date.parse(row.ended_at) : now
   const status = t.subagents.taskStatus(row.status, row.exit_code)
-  const dot = running ? 'animate-pulse bg-emerald-500' : row.status === 'failed' ? 'bg-red-500' : 'bg-neutral-400'
+  const dot = running ? 'bg-working motion-safe:animate-pulse' : row.status === 'failed' ? 'bg-failed' : 'bg-faint'
 
   useEffect(() => {
     if (!focused) {
@@ -398,10 +398,10 @@ function TaskNode({
   }
 
   return (
-    <li className="rounded-lg border border-neutral-300 dark:border-neutral-700" data-testid="task-row">
+    <li className="rounded-lg border border-border-strong" data-testid="task-row">
       <button
         aria-expanded={focused}
-        className="w-full px-3 py-2 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/60"
+        className="w-full px-3 py-2 text-left hover:bg-hover"
         onClick={onFocus}
         type="button"
       >
@@ -411,22 +411,20 @@ function TaskNode({
             {commandName(row)}
           </span>
         </span>
-        <span className="mt-0.5 block text-xs text-neutral-500">
+        <span className="mt-0.5 block text-xs text-muted-foreground">
           {row.command_id} · {running ? '' : `${status} · `}
           {elapsed(row.started_at, until)}
         </span>
       </button>
       {focused && (
-        <div className="border-t border-neutral-200 px-3 py-2 dark:border-neutral-800">
-          <p className="text-xs text-neutral-500">
+        <div className="border-t border-border px-3 py-2">
+          <p className="text-xs text-muted-foreground">
             {status} · {elapsed(row.started_at, until)}
           </p>
-          <pre className="mt-1 font-mono text-xs break-all whitespace-pre-wrap text-neutral-700 dark:text-neutral-300">
-            {row.command}
-          </pre>
+          <pre className="mt-1 font-mono text-xs break-all whitespace-pre-wrap text-soft">{row.command}</pre>
           <p className="mt-2 text-xs font-medium">{t.subagents.output}</p>
           <pre
-            className="mt-1 max-h-64 overflow-auto rounded bg-neutral-50 p-2 font-mono text-xs break-all whitespace-pre-wrap dark:bg-neutral-950"
+            className="mt-1 max-h-64 overflow-auto rounded bg-subtle p-2 font-mono text-xs break-all whitespace-pre-wrap"
             data-testid="task-output"
             ref={shown}
           >
@@ -434,14 +432,14 @@ function TaskNode({
           </pre>
           {running && (
             <button
-              className="mt-2 rounded border border-neutral-300 px-2 py-0.5 text-xs dark:border-neutral-700"
+              className="mt-2 rounded border border-border-strong px-2 py-0.5 text-xs"
               onClick={stop}
               type="button"
             >
               {t.subagents.stop}
             </button>
           )}
-          {gone && <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">{t.subagents.taskGone}</p>}
+          {gone && <p className="mt-1 text-xs text-waiting-text">{t.subagents.taskGone}</p>}
         </div>
       )}
     </li>

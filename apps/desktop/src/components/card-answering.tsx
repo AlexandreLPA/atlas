@@ -7,11 +7,11 @@ export function CardAnswering({ testId, title }: { testId: string; title: string
     <section
       aria-busy="true"
       aria-label={title}
-      className="rounded-lg border border-neutral-200 p-4 text-sm text-neutral-500 dark:border-neutral-800"
+      className="rounded-lg border border-border p-4 text-sm text-muted-foreground"
       data-answered="true"
       data-testid={testId}
     >
-      <p className="font-medium text-neutral-700 dark:text-neutral-300">{title}</p>
+      <p className="font-medium text-soft">{title}</p>
       <p className="mt-1" role="status">
         {t.card.answering}
       </p>

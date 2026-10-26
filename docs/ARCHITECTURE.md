@@ -1217,6 +1217,25 @@ Cut to what a first screen needs: about 6 runtime packages.
   is on its way until the server's `request.cancel` takes it down, never gone first as if it had
   arrived; a reconnect drops it, and the request, delivered again while it waits, takes an answer
   again.
+- **Colors with a name and one meaning each, and short movement** (step 9d; the review found green
+  meaning "at work" in the list and "done" on the trail, and the Markdown's code blocks drawn in
+  black: they paint with color names the app had never defined). The app paints with the colors
+  `src/styles.css` names for the light and the dark theme alike: grounds (`background`, `subtle`,
+  `raised`, `muted`, `hover`, `selected`), words (`foreground`, `soft`, `muted-foreground`,
+  `faint`), edges (`border`, `border-strong`, `ring`), `primary`, and one color per state: blue and
+  pulsing at work (`working`), amber waiting for the user (`waiting`), green done (`done`), red
+  failed (`failed`), with `danger` for a button that deletes and `added` and `removed` for a
+  change's lines. A screen never writes a palette's own color, nor a color for one theme alone
+  (`src/colors.test.ts`), so the user's own colors, later, change these values alone; a harness
+  maker's mark, a file's kind on its chip and a bot's face keep their own, being someone's colors
+  and not the theme's. A part that looks the same in both themes takes that theme's class: a
+  terminal is `dark`, a page's preview `light`. What is normal has no color: a server connected, a
+  key stored, "Auto" on (a full dot, no longer amber). A row not seen yet says so with its title in
+  bold; the dot is for what gathers rows. Movement is short, one curve and three lengths (120, 180
+  and 260 ms): a control's colors move instead of jumping, a `details` slides open, and what comes
+  onto a thread on screen, a card or a message on its way rises 4 px into place (`.enter`), while a
+  conversation that opens is there at once (`data-settled`); with the system's "reduce motion",
+  nothing moves.
 - **Memory proposals** (step 9b): the review's row offers to review the change; the proposal is a
   card in the conversation the review read, beside the other cards, until it is decided; and the
   sidebar counts the open proposals, only when there are some, and opens the list of all. A card
@@ -1254,8 +1273,8 @@ full weight; a click on a tool opens what went in and what came out. Roadmap ste
 - **The trail.** One dot per part, linked from the turn's first part to its last; the user's
   message stays off the line. The dot's color is the state: hollow for reasoning, muted for interim
   text, solid for the final answer, green for a completed tool, red for a failed one, muted for a
-  denied or cancelled one, and a pulsing accent for one that runs, which also shows an elapsed
-  timer. Success carries no mark. `tool.complete` carries `duration_s`.
+  denied or cancelled one, and blue and pulsing for one that runs, as a sidebar row at work, which
+  also shows an elapsed timer. Success carries no mark. `tool.complete` carries `duration_s`.
 - **A call a card holds waits; it does not run** (step 9d, found by the UI review on 25/10/2026:
   a command waiting for its approval read "Running"). Its dot is amber and still, as the sidebar's
   own waiting dot, and its line says what it waits for: the approval, the answers, the key. The

@@ -27,7 +27,7 @@ class Boundary extends Component<{ children: ReactNode; name: string }, Boundary
   override render(): ReactNode {
     if (this.state.error) {
       return (
-        <p className="p-3 text-sm text-red-700 dark:text-red-300" data-testid="plugin-failed" role="alert">
+        <p className="p-3 text-sm text-failed-text" data-testid="plugin-failed" role="alert">
           {t.plugins.screenFailed(this.props.name, this.state.error.message)}
         </p>
       )
@@ -57,7 +57,7 @@ export function PluginPage() {
   const item = useStore($contributions).find(found => found.key === key && found.area === 'page')
 
   if (!item) {
-    return <p className="p-6 text-sm text-neutral-500">{t.plugins.pageGone}</p>
+    return <p className="p-6 text-sm text-muted-foreground">{t.plugins.pageGone}</p>
   }
 
   return (

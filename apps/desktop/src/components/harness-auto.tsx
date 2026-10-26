@@ -43,7 +43,7 @@ export function HarnessAutoWarning({
 }) {
   return (
     <div
-      className="space-y-2 rounded-lg border border-yellow-500 bg-yellow-50 p-3 text-sm dark:border-yellow-700 dark:bg-yellow-950/40"
+      className="space-y-2 rounded-lg border border-waiting/40 bg-waiting/10 p-3 text-sm"
       data-testid="harness-auto-warning"
       role="alertdialog"
     >
@@ -51,7 +51,7 @@ export function HarnessAutoWarning({
       <p>{t.executors.autoWarningRules(title)}</p>
       <div className="flex flex-wrap gap-2">
         <button
-          className="rounded bg-yellow-500 px-3 py-1 font-medium text-neutral-900"
+          className="rounded bg-primary px-3 py-1 font-medium text-foreground"
           data-testid="harness-auto-confirm"
           onClick={onConfirm}
           type="button"
@@ -59,7 +59,7 @@ export function HarnessAutoWarning({
           {t.executors.autoWarningConfirm}
         </button>
         <button
-          className="rounded border border-neutral-300 bg-white px-3 py-1 dark:border-neutral-700 dark:bg-neutral-900"
+          className="rounded border border-border-strong bg-raised px-3 py-1"
           data-testid="harness-auto-cancel"
           onClick={onCancel}
           type="button"

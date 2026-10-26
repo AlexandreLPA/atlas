@@ -35,12 +35,12 @@ export function ToolRow({ tool, waiting }: { tool: Tool; waiting?: Waiting }) {
         {title ? (
           <span className="min-w-0 truncate">
             <span className="font-medium">{title.action}</span>{' '}
-            <span className="font-mono text-neutral-600 dark:text-neutral-400">{title.target}</span>
+            <span className="font-mono text-soft">{title.target}</span>
           </span>
         ) : (
           <>
             <span className="flex-none font-mono font-semibold">{tool.name}</span>
-            <span className="min-w-0 truncate font-mono text-neutral-500">{summarize(tool.args)}</span>
+            <span className="min-w-0 truncate font-mono text-muted-foreground">{summarize(tool.args)}</span>
           </>
         )}
         <span className={`ml-auto flex-none text-xs ${STATE_COLOR[shown]}`} data-testid="tool-state">
@@ -48,7 +48,7 @@ export function ToolRow({ tool, waiting }: { tool: Tool; waiting?: Waiting }) {
         </span>
         <OpenDelegated tool={tool} />
       </summary>
-      <div className="mt-2 rounded-lg border border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="mt-2 rounded-lg border border-border bg-subtle">
         {input.length > 0 && (
           <Io label={t.tool.input}>
             {input.length === 1 ? (
@@ -56,7 +56,7 @@ export function ToolRow({ tool, waiting }: { tool: Tool; waiting?: Waiting }) {
             ) : (
               input.map(field => (
                 <div className="grid gap-px" key={field.name}>
-                  <span className="font-mono text-[0.68rem] text-neutral-500">{field.name}</span>
+                  <span className="font-mono text-2xs text-muted-foreground">{field.name}</span>
                   <Pre text={field.value} />
                 </div>
               ))
@@ -88,7 +88,7 @@ function OpenDelegated({ tool }: { tool: Tool }) {
     <>
       {ids.map(id => (
         <button
-          className="flex-none rounded border border-orange-300 px-2 text-xs text-orange-700 dark:border-orange-800 dark:text-orange-400"
+          className="flex-none rounded border border-waiting/40 px-2 text-xs text-waiting-text"
           data-testid="open-delegated"
           key={id}
           onClick={event => {
@@ -127,12 +127,12 @@ export function delegatedTo(tool: Pick<Tool, 'args' | 'name' | 'result'>): strin
 }
 
 const STATE_COLOR: Record<Shown, string> = {
-  cancelled: 'text-neutral-500',
-  completed: 'text-neutral-500',
-  denied: 'text-neutral-500',
-  failed: 'text-red-600 dark:text-red-400',
-  running: 'text-blue-600 dark:text-blue-400',
-  waiting: 'text-amber-700 dark:text-amber-400'
+  cancelled: 'text-muted-foreground',
+  completed: 'text-muted-foreground',
+  denied: 'text-muted-foreground',
+  failed: 'text-failed-text',
+  running: 'text-working',
+  waiting: 'text-waiting-text'
 }
 
 /** How the call stands, beside its title; `titled`, the title already says it runs. */
@@ -166,9 +166,9 @@ function stateText(
 
 function Io({ children, failed = false, label }: { children: ReactNode; failed?: boolean; label: string }) {
   return (
-    <div className="grid grid-cols-[2.6em_minmax(0,1fr)] gap-2.5 px-3 py-2 [&+&]:border-t [&+&]:border-neutral-200 dark:[&+&]:border-neutral-800">
+    <div className="grid grid-cols-[2.6em_minmax(0,1fr)] gap-2.5 px-3 py-2 [&+&]:border-t [&+&]:border-border">
       <span
-        className={`pt-px font-mono text-[0.68rem] tracking-wider ${failed ? 'text-red-600 dark:text-red-400' : 'text-neutral-500'}`}
+        className={`pt-px font-mono text-2xs tracking-wider ${failed ? 'text-failed-text' : 'text-muted-foreground'}`}
       >
         {label}
       </span>
@@ -180,7 +180,7 @@ function Io({ children, failed = false, label }: { children: ReactNode; failed?:
 function Pre({ failed = false, text }: { failed?: boolean; text: string }) {
   return (
     <pre
-      className={`max-h-64 overflow-auto font-mono text-xs break-words whitespace-pre-wrap ${failed ? 'text-red-700 dark:text-red-400' : ''}`}
+      className={`max-h-64 overflow-auto font-mono text-xs break-words whitespace-pre-wrap ${failed ? 'text-failed-text' : ''}`}
     >
       {text}
     </pre>
@@ -192,7 +192,7 @@ function Output({ tool }: { tool: Tool }) {
   const text = tool.status === 'running' ? tool.progress.join('\n') : tool.result
 
   if (!text) {
-    return <p className="text-xs text-neutral-500 italic">{tool.status === 'running' ? t.tool.waiting : ''}</p>
+    return <p className="text-xs text-muted-foreground italic">{tool.status === 'running' ? t.tool.waiting : ''}</p>
   }
 
   const shown = clampForDisplay(text)
@@ -202,7 +202,7 @@ function Output({ tool }: { tool: Tool }) {
       <Pre failed={tool.status === 'failed'} text={shown} />
       {shown !== text && (
         <button
-          className="justify-self-start rounded border border-neutral-300 px-2 py-0.5 text-xs dark:border-neutral-700"
+          className="justify-self-start rounded border border-border-strong px-2 py-0.5 text-xs"
           onClick={() => {
             void navigator.clipboard.writeText(text).then(() => {
               setCopied(true)
@@ -213,7 +213,7 @@ function Output({ tool }: { tool: Tool }) {
           {copied ? t.tool.copied : t.tool.copyAll}
         </button>
       )}
-      {tool.spillPath && <p className="text-xs text-neutral-500">{t.tool.spilled(tool.spillPath)}</p>}
+      {tool.spillPath && <p className="text-xs text-muted-foreground">{t.tool.spilled(tool.spillPath)}</p>}
     </>
   )
 }

@@ -84,18 +84,15 @@ export function SidePanel() {
   return (
     <aside
       aria-label={t.terminal.panel}
-      className="side-panel-open flex shrink-0 flex-col border-l border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-900"
+      className="side-panel-open flex shrink-0 flex-col border-l border-border bg-subtle"
       data-testid="side-panel"
     >
       <RailEdge rail="panel" />
-      <div
-        className="flex items-center gap-1 border-b border-neutral-200 px-2 py-1.5 text-xs dark:border-neutral-800"
-        role="tablist"
-      >
+      <div className="flex items-center gap-1 border-b border-border px-2 py-1.5 text-xs" role="tablist">
         {executor && (
           <button
             aria-selected={showsExecutor}
-            className={`truncate rounded px-2 py-1 ${showsExecutor ? 'bg-white shadow-sm dark:bg-neutral-950' : 'text-neutral-500'}`}
+            className={`truncate rounded px-2 py-1 ${showsExecutor ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
             data-testid="executor-tab"
             onClick={() => {
               $panelTab.set(EXECUTOR_TAB)
@@ -111,7 +108,7 @@ export function SidePanel() {
           <div
             aria-selected={tab.id === selected}
             className={`flex items-center gap-1 rounded px-2 py-1 ${
-              tab.id === selected ? 'bg-white shadow-sm dark:bg-neutral-950' : 'text-neutral-500'
+              tab.id === selected ? 'bg-background shadow-sm' : 'text-muted-foreground'
             }`}
             data-testid="terminal-tab"
             key={tab.id}
@@ -128,7 +125,7 @@ export function SidePanel() {
             </button>
             <button
               aria-label={t.terminal.close}
-              className="text-neutral-400 hover:text-neutral-700"
+              className="text-muted-foreground hover:text-soft"
               onClick={() => {
                 closeTerminal(tab.id)
               }}
@@ -144,7 +141,7 @@ export function SidePanel() {
         {panels.map(item => (
           <button
             aria-selected={item === panel}
-            className={`truncate rounded px-2 py-1 ${item === panel ? 'bg-white shadow-sm dark:bg-neutral-950' : 'text-neutral-500'}`}
+            className={`truncate rounded px-2 py-1 ${item === panel ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
             data-testid={`plugin-panel-tab-${item.key}`}
             key={item.key}
             onClick={() => {
@@ -176,7 +173,9 @@ export function SidePanel() {
           testId="panel-hide"
         />
       </div>
-      <div className={`relative min-h-0 flex-1 ${showsExecutor || panel ? 'overflow-y-auto' : 'bg-neutral-950 p-2'}`}>
+      <div
+        className={`relative min-h-0 flex-1 ${showsExecutor || panel ? 'overflow-y-auto' : 'dark bg-background p-2'}`}
+      >
         {tabs.map(tab => (
           <TerminalView active={tab.id === selected} key={tab.id} tab={tab} />
         ))}
@@ -187,7 +186,7 @@ export function SidePanel() {
           </div>
         )}
         {tabs.length === 0 && !preview && !showsExecutor && !panel && (
-          <p className="p-2 text-xs text-neutral-400">{t.terminal.empty}</p>
+          <p className="p-2 text-xs text-muted-foreground">{t.terminal.empty}</p>
         )}
         {preview && (
           <div className="absolute inset-0" data-testid="preview-view">
@@ -211,7 +210,7 @@ function useOpenExecutor() {
 /** The hidden panel's strip on the right edge, which brings it back. */
 function PanelStrip() {
   return (
-    <div className="flex w-9 shrink-0 flex-col items-center border-l border-neutral-200 bg-neutral-50 py-1.5 dark:border-neutral-800 dark:bg-neutral-900">
+    <div className="flex w-9 shrink-0 flex-col items-center border-l border-border bg-subtle py-1.5">
       <IconButton
         icon={LayoutSidebarRight}
         label={t.layout.showPanel}
@@ -230,7 +229,7 @@ function PreviewTabButton({ current, tab }: { current: boolean; tab: PreviewTab 
     <div
       aria-selected={current}
       className={`flex max-w-48 items-center gap-1 rounded px-2 py-1 ${
-        current ? 'bg-white shadow-sm dark:bg-neutral-950' : 'text-neutral-500'
+        current ? 'bg-background shadow-sm' : 'text-muted-foreground'
       }`}
       data-testid="preview-tab"
       role="tab"
@@ -248,7 +247,7 @@ function PreviewTabButton({ current, tab }: { current: boolean; tab: PreviewTab 
       </button>
       <button
         aria-label={t.preview.close}
-        className="text-neutral-400 hover:text-neutral-700"
+        className="text-muted-foreground hover:text-soft"
         onClick={() => {
           closePreview(tab.owner, { id: tab.id })
         }}

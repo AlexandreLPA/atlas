@@ -43,7 +43,7 @@ export function UpdateBar() {
       {ended && <Ended ended={ended} />}
       {update?.available && (
         <button
-          className="flex w-full items-center gap-2 rounded-md bg-sky-600 px-2 py-1.5 text-left text-sm font-medium text-white hover:bg-sky-700"
+          className="flex w-full items-center gap-2 rounded-md bg-primary px-2 py-1.5 text-left text-sm font-medium text-primary-foreground hover:bg-primary/90"
           data-testid="update-button"
           onClick={() => {
             $updateOpen.set(true)
@@ -52,7 +52,7 @@ export function UpdateBar() {
         >
           <Update aria-hidden size={16} stroke={1.75} />
           <span className="min-w-0 flex-1 truncate">{t.updates.button}</span>
-          <span className="rounded-full bg-white/25 px-1.5 text-xs leading-4" data-testid="update-count">
+          <span className="rounded-full bg-primary-foreground/25 px-1.5 text-xs leading-4" data-testid="update-count">
             {update.behind}
           </span>
         </button>
@@ -73,7 +73,7 @@ export function UpdateStrip() {
   return (
     <>
       <IconButton
-        className="text-sky-600 dark:text-sky-400"
+        className="text-foreground"
         icon={Update}
         label={t.updates.button}
         onClick={() => {
@@ -146,10 +146,10 @@ function UpdateDialog() {
       open={open}
     >
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/30" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-scrim" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed top-1/2 left-1/2 z-50 flex max-h-[80vh] w-[28rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-xl border border-neutral-200 bg-white p-5 text-sm text-neutral-900 shadow-xl dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
+          className="fixed top-1/2 left-1/2 z-50 flex max-h-[80vh] w-[28rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-xl border border-border bg-raised p-5 text-sm text-foreground shadow-xl"
           data-testid="update-dialog"
         >
           <div className="flex items-start justify-between">
@@ -160,25 +160,22 @@ function UpdateDialog() {
               </Dialog.Close>
             )}
           </div>
-          <p className="text-neutral-600 dark:text-neutral-400">{t.updates.brings(update.behind)}</p>
+          <p className="text-soft">{t.updates.brings(update.behind)}</p>
           <ul className="min-h-0 list-disc space-y-1 overflow-y-auto pl-5" data-testid="update-commits">
             {subjects.map((subject, index) => (
               <li key={`${String(index)}-${subject}`}>{subject}</li>
             ))}
-            {more > 0 && <li className="list-none text-neutral-500">{t.updates.more(more)}</li>}
+            {more > 0 && <li className="list-none text-muted-foreground">{t.updates.more(more)}</li>}
           </ul>
-          <p className="text-neutral-600 dark:text-neutral-400">{server ? t.updates.howServer : t.updates.how}</p>
+          <p className="text-soft">{server ? t.updates.howServer : t.updates.how}</p>
           {stops.length > 0 && (
-            <p
-              className="rounded-md bg-amber-50 px-2 py-1.5 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
-              data-testid="update-underway"
-            >
+            <p className="rounded-md bg-waiting/10 px-2 py-1.5 text-waiting-text" data-testid="update-underway">
               {server ? t.updates.stopsServer(stops.join(', ')) : t.updates.stops(stops.join(', '))}
             </p>
           )}
           {unverified && (
             <div
-              className="space-y-1.5 rounded-md bg-amber-50 px-2 py-1.5 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+              className="space-y-1.5 rounded-md bg-waiting/10 px-2 py-1.5 text-waiting-text"
               data-testid="update-unverified"
             >
               <p>{t.updates.unverified(unverified)}</p>
@@ -196,27 +193,20 @@ function UpdateDialog() {
               </label>
             </div>
           )}
-          {update.dirty && (
-            <p className="rounded-md bg-red-50 px-2 py-1.5 text-red-800 dark:bg-red-950 dark:text-red-200">
-              {t.updates.dirty}
-            </p>
-          )}
+          {update.dirty && <p className="rounded-md bg-failed/10 px-2 py-1.5 text-failed-text">{t.updates.dirty}</p>}
           {error && (
-            <p
-              className="rounded-md bg-red-50 px-2 py-1.5 text-red-800 [overflow-wrap:anywhere] dark:bg-red-950 dark:text-red-200"
-              role="alert"
-            >
+            <p className="rounded-md bg-failed/10 px-2 py-1.5 text-failed-text [overflow-wrap:anywhere]" role="alert">
               {error}
             </p>
           )}
           <div className="flex justify-end gap-2">
             {(!updating || server) && (
-              <Dialog.Close className="rounded-md border border-neutral-300 px-3 py-1.5 hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800">
+              <Dialog.Close className="rounded-md border border-border-strong px-3 py-1.5 hover:bg-muted">
                 {t.updates.later}
               </Dialog.Close>
             )}
             <button
-              className="rounded-md bg-sky-600 px-3 py-1.5 font-medium text-white hover:bg-sky-700 disabled:opacity-50"
+              className="rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               data-testid="update-apply"
               disabled={updating || update.dirty || (unverified !== '' && !confirmed)}
               onClick={() => {
@@ -241,9 +231,7 @@ function Ended({ ended }: { ended: HandedOff }) {
   return (
     <div
       className={`flex items-start gap-2 rounded-md px-2 py-1.5 text-xs [overflow-wrap:anywhere] ${
-        ended.ok
-          ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200'
-          : 'bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200'
+        ended.ok ? 'bg-done/10 text-done-text' : 'bg-failed/10 text-failed-text'
       }`}
       data-ok={ended.ok}
       data-testid="update-ended"
@@ -265,7 +253,7 @@ function Ended({ ended }: { ended: HandedOff }) {
         )}
         {log !== null && (
           <pre
-            className="max-h-48 overflow-auto rounded bg-black/5 p-1 font-mono text-[10px] whitespace-pre-wrap dark:bg-white/10"
+            className="max-h-48 overflow-auto rounded bg-muted p-1 font-mono text-2xs whitespace-pre-wrap"
             data-testid="update-log"
           >
             {log}

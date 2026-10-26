@@ -105,7 +105,7 @@ function Dialog({ dialog }: { dialog: BotDialog }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-scrim p-4"
       data-testid="bot-dialog"
       onMouseDown={event => {
         if (event.target === event.currentTarget) {
@@ -116,7 +116,7 @@ function Dialog({ dialog }: { dialog: BotDialog }) {
     >
       <form
         aria-label={creating ? t.bots.newTitle : t.bots.editTitle}
-        className={`flex max-h-full w-full flex-col gap-3 overflow-y-auto rounded-xl border border-neutral-200 bg-white p-5 shadow-xl dark:border-neutral-800 dark:bg-neutral-900 ${
+        className={`flex max-h-full w-full flex-col gap-3 overflow-y-auto rounded-xl border border-border bg-raised p-5 shadow-xl ${
           advanced ? 'max-w-2xl' : 'max-w-md'
         }`}
         onSubmit={event => {
@@ -127,7 +127,7 @@ function Dialog({ dialog }: { dialog: BotDialog }) {
       >
         <div>
           <h2 className="text-base font-semibold">{creating ? t.bots.newTitle : t.bots.editTitle}</h2>
-          <p className="text-sm text-neutral-500">{t.bots.intro}</p>
+          <p className="text-sm text-muted-foreground">{t.bots.intro}</p>
         </div>
         <div className="flex justify-center py-1">
           <BotFace name={handle || 'bot'} size={56} title={title || name} />
@@ -171,7 +171,7 @@ function Dialog({ dialog }: { dialog: BotDialog }) {
         </Field>
         <button
           aria-expanded={advanced}
-          className="self-start text-sm text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+          className="self-start text-sm text-muted-foreground hover:text-foreground"
           data-testid="bot-advanced"
           onClick={openAdvanced}
           type="button"
@@ -179,7 +179,7 @@ function Dialog({ dialog }: { dialog: BotDialog }) {
           {advanced ? '▾' : '▸'} {t.bots.advanced}
         </button>
         {advanced && (
-          <div className="space-y-3 rounded-md border border-neutral-200 p-3 dark:border-neutral-800">
+          <div className="space-y-3 rounded-md border border-border p-3">
             <Field label={t.bots.model}>
               <select
                 className={INPUT}
@@ -230,7 +230,7 @@ function Dialog({ dialog }: { dialog: BotDialog }) {
           </div>
         )}
         {error && (
-          <p className="text-sm text-red-600" data-testid="bot-error" role="alert">
+          <p className="text-sm text-failed-text" data-testid="bot-error" role="alert">
             {error}
           </p>
         )}
@@ -239,7 +239,7 @@ function Dialog({ dialog }: { dialog: BotDialog }) {
             {!creating &&
               (deleting ? (
                 <button
-                  className={`${BUTTON} text-red-600`}
+                  className={`${BUTTON} text-failed-text`}
                   data-testid="bot-delete-confirm"
                   disabled={busy}
                   onClick={() => {
@@ -267,7 +267,7 @@ function Dialog({ dialog }: { dialog: BotDialog }) {
               {t.bots.cancel}
             </button>
             <button
-              className="rounded-md bg-violet-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-violet-700 disabled:opacity-40"
+              className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
               data-testid="bot-save"
               disabled={busy || !handle}
               type="submit"
@@ -290,7 +290,7 @@ function Field({ children, hint, label }: { children: ReactNode; hint?: string; 
     <label className="block space-y-1 text-sm">
       <span className="flex items-baseline justify-between gap-2">
         <span className="font-medium">{label}</span>
-        {hint && <span className="text-xs text-neutral-500">{hint}</span>}
+        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
       </span>
       {children}
     </label>
@@ -329,7 +329,7 @@ function Allowed({ all, label, onChange, picked, testId }: AllowedProps) {
       </label>
       {picked !== null && (
         <div className="grid max-h-40 grid-cols-2 gap-x-3 gap-y-1 overflow-y-auto pl-5 sm:grid-cols-3">
-          {names.length === 0 && <span className="text-neutral-500">{t.bots.nothingToPick}</span>}
+          {names.length === 0 && <span className="text-muted-foreground">{t.bots.nothingToPick}</span>}
           {names.map(name => (
             <label className="flex items-center gap-2 truncate" key={name} title={name}>
               <input
@@ -348,8 +348,6 @@ function Allowed({ all, label, onChange, picked, testId }: AllowedProps) {
   )
 }
 
-const INPUT =
-  'w-full rounded-md border border-neutral-300 bg-white px-2 py-1.5 text-sm disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-950'
+const INPUT = 'w-full rounded-md border border-border-strong bg-background px-2 py-1.5 text-sm disabled:opacity-60'
 
-const BUTTON =
-  'rounded-md border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-100 disabled:opacity-40 dark:border-neutral-700 dark:hover:bg-neutral-800'
+const BUTTON = 'rounded-md border border-border-strong px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-40'

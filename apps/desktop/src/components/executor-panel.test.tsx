@@ -118,7 +118,7 @@ describe("the side panel's plan usage", () => {
       ['model:Fable', '96', 'Current week (Fable)96% used']
     ])
     expect(screen.getByTestId('plan-usage').textContent).toContain('max')
-    expect(screen.getAllByRole('progressbar')[2]?.firstElementChild?.className).toContain('bg-red-500')
+    expect(screen.getAllByRole('progressbar')[2]?.firstElementChild?.className).toContain('bg-failed')
 
     // Shown again within two minutes: what was read stays; the ↻ reads again.
     act(() => {

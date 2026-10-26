@@ -43,26 +43,26 @@ export function SecretCard({ card }: SecretCardProps) {
   return (
     <section
       aria-label={t.secret.title(card.params.name)}
-      className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40"
+      className="enter space-y-3 rounded-lg border border-waiting/40 bg-waiting/10 p-4"
       data-testid="secret-card"
     >
       <header className="space-y-1">
         <h2 className="text-sm font-semibold">{t.secret.title(card.params.name)}</h2>
-        <p className="text-sm text-neutral-700 dark:text-neutral-300">{card.params.reason}</p>
+        <p className="text-sm text-soft">{card.params.reason}</p>
       </header>
       {card.params.exists && (
-        <p className="text-xs text-amber-800 dark:text-amber-200" data-testid="secret-overwrite">
+        <p className="text-xs text-waiting-text" data-testid="secret-overwrite">
           {t.secret.overwrite(card.params.updated_at)}
         </p>
       )}
-      {card.params.bot && <p className="text-xs text-neutral-500">{t.secret.byBot(card.params.bot)}</p>}
-      {!card.params.bot && <p className="text-xs text-neutral-500">{t.secret.sharedWithBots}</p>}
+      {card.params.bot && <p className="text-xs text-muted-foreground">{t.secret.byBot(card.params.bot)}</p>}
+      {!card.params.bot && <p className="text-xs text-muted-foreground">{t.secret.sharedWithBots}</p>}
       <div className="flex gap-2">
         <input
           aria-label={t.secret.title(card.params.name)}
           autoComplete="off"
           autoCorrect="off"
-          className="flex-1 rounded-md border border-neutral-300 bg-white px-3 py-1.5 font-mono text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          className="flex-1 rounded-md border border-border-strong bg-raised px-3 py-1.5 font-mono text-sm"
           data-testid="secret-input"
           onChange={event => {
             setValue(event.target.value)
@@ -81,7 +81,7 @@ export function SecretCard({ card }: SecretCardProps) {
         />
         <button
           aria-label={visible ? t.secret.hide : t.secret.show}
-          className="rounded-md border border-neutral-300 bg-white px-3 py-1.5 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          className="rounded-md border border-border-strong bg-raised px-3 py-1.5 text-sm"
           data-testid="secret-eye"
           onClick={() => {
             setVisible(current => !current)
@@ -93,7 +93,7 @@ export function SecretCard({ card }: SecretCardProps) {
       </div>
       <div className="flex gap-2">
         <button
-          className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
           data-testid="secret-save"
           disabled={value.length === 0}
           onClick={submit}
@@ -102,7 +102,7 @@ export function SecretCard({ card }: SecretCardProps) {
           {t.secret.save}
         </button>
         <button
-          className="rounded-md px-4 py-1.5 text-sm text-neutral-600 hover:bg-neutral-200 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          className="rounded-md px-4 py-1.5 text-sm text-soft hover:bg-selected"
           data-testid="secret-skip"
           onClick={skip}
           type="button"

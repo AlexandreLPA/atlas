@@ -22,7 +22,7 @@ export function ReviewRow({ review }: { review: Review }) {
 
   return (
     <div className="space-y-2">
-      <p className="text-center text-xs text-neutral-500" data-testid="review-summary">
+      <p className="text-center text-xs text-muted-foreground" data-testid="review-summary">
         {review.actions.map((action, index) => (
           <Fragment key={action}>
             {index > 0 && ' · '}
@@ -31,7 +31,7 @@ export function ReviewRow({ review }: { review: Review }) {
             ) : (
               <button
                 aria-expanded={open === action}
-                className="underline decoration-dotted underline-offset-2 hover:text-neutral-800 dark:hover:text-neutral-200"
+                className="underline decoration-dotted underline-offset-2 hover:text-foreground"
                 onClick={() => {
                   setOpen(open === action ? null : action)
                 }}
@@ -43,18 +43,14 @@ export function ReviewRow({ review }: { review: Review }) {
           </Fragment>
         ))}
         {review.proposals.length > 0 && (
-          <button
-            className="ml-2 font-medium text-violet-700 underline hover:text-violet-900 dark:text-violet-300"
-            onClick={showProposals}
-            type="button"
-          >
+          <button className="link ml-2 font-medium" onClick={showProposals} type="button">
             {t.proposals.review}
           </button>
         )}
       </p>
       {diff !== undefined && (
         <pre
-          className="max-h-96 overflow-auto rounded-md border border-neutral-200 py-1 font-mono text-xs whitespace-pre-wrap dark:border-neutral-800"
+          className="max-h-96 overflow-auto rounded-md border border-border py-1 font-mono text-xs whitespace-pre-wrap"
           data-testid="skill-diff"
           ref={shown}
         >
@@ -68,17 +64,17 @@ export function ReviewRow({ review }: { review: Review }) {
 }
 
 const LINE = {
-  file: 'mt-1 font-semibold text-neutral-700 first:mt-0 dark:text-neutral-200',
-  gap: 'text-neutral-400',
-  minus: 'bg-red-50 text-red-900 dark:bg-red-950/40 dark:text-red-200',
-  note: 'text-neutral-500 italic',
-  plus: 'bg-green-50 text-green-900 dark:bg-green-950/40 dark:text-green-200',
-  same: 'text-neutral-500'
+  file: 'mt-1 font-semibold text-soft first:mt-0',
+  gap: 'text-muted-foreground',
+  minus: 'bg-removed/10',
+  note: 'text-muted-foreground italic',
+  plus: 'bg-added/10',
+  same: 'text-muted-foreground'
 } as const
 
 const MARK = {
-  minus: 'bg-red-200 dark:bg-red-800/70',
-  plus: 'bg-green-200 dark:bg-green-800/70'
+  minus: 'bg-removed/30',
+  plus: 'bg-added/30'
 } as const
 
 function DiffLine({ row }: { row: DiffRow }) {
