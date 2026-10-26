@@ -652,7 +652,21 @@ const schema = [application(site), faqPage(site)]
     letter-spacing: -0.032em;
     line-height: 0.98;
     margin-bottom: 0.4rem;
+    text-wrap: balance;
     animation: unfold 1.6s var(--ease-out) both;
+  }
+
+  /* Wider than the text column so each sentence of the headline sits on its own line. */
+  @media (min-width: 861px) {
+    .chapter--hero h1 {
+      width: min(50vw, 44rem);
+    }
+  }
+
+  @media (max-width: 860px) {
+    .chapter--hero h1 {
+      font-size: clamp(2rem, 9vw, 2.6rem);
+    }
   }
 
   @keyframes unfold {
