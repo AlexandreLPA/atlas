@@ -71,20 +71,28 @@ const INSTANCE: InstanceRow = {
   waiting: 0
 }
 
-const route = (stops: SessionRouteRow['stops'], enabled = true): SessionRouteRow => ({
+const route = (stops: SessionRouteRow['stops'], enabled = true, compact = true): SessionRouteRow => ({
+  compact,
   enabled,
   instance_id: 'in-1',
   stops
 })
-const MAIN_STOP = {
+type Stop = SessionRouteRow['stops'][number]
+const MAIN_STOP: Stop = {
   account_id: '',
+  effort: null,
   executor: 'claude-code',
   installed: true,
+  limited: false,
+  model: null,
   name: 'claude-code',
   nickname: '',
   title: 'Claude Code'
 }
-const CODEX_STOP = { account_id: '', executor: 'codex', installed: true, name: 'codex', nickname: '', title: 'Codex' }
+const WORK_STOP: Stop = { ...MAIN_STOP, account_id: 'ab12cd34', name: 'claude-code@ab12cd34', nickname: 'work' }
+const CODEX_STOP: Stop = { ...MAIN_STOP, executor: 'codex', name: 'codex', title: 'Codex' }
+/** What a stop is called on the path, as its row says it. */
+const names = () => screen.getAllByTestId('session-route-name').map(name => name.textContent)
 
 let stop: () => void = () => undefined
 
@@ -140,7 +148,7 @@ async function openSessionOn(answer: (method: string, params: unknown) => unknow
 const listed = (calls: [string, unknown][], method: string) => calls.filter(([called]) => called === method)
 
 describe("a session's route across executors (asked for by the user on 21/10/2026)", () => {
-  it('reads the route, adds a destination of another harness, orders it and turns it off', async () => {
+  it('reads the route as a path, adds a stop of another harness, orders it and turns it off', async () => {
     let kept = route([MAIN_STOP])
     const calls = await openSessionOn((method, params) => {
       if (method === 'workbench.route') {
@@ -164,38 +172,36 @@ describe("a session's route across executors (asked for by the user on 21/10/202
     })
     fireEvent.click(pill)
     const editor = screen.getByTestId('session-route-editor')
-    expect(
-      within(editor)
-        .getAllByTestId('session-route-stop')
-        .map(row => row.textContent)
-    ).toEqual(['1.Claude Code · main account'])
-    const others = within(screen.getByTestId('session-route-others'))
-      .getAllByRole('checkbox')
-      .map(box => box.getAttribute('aria-label'))
-    expect(others).toEqual(['Add Claude Code · work to the route', 'Add Codex · main account to the route'])
+    expect(names()).toEqual(['1. Claude Code · main account'])
+    // The stop it runs on now is marked on the path.
+    expect(within(editor).getByTestId('session-route-ready').textContent).toBe('here')
+    const others = screen.getByTestId<HTMLSelectElement>('session-route-others')
+    expect([...others.options].map(option => option.textContent)).toEqual([
+      'Add a stop…',
+      'Claude Code · work',
+      'Codex · main account'
+    ])
 
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Add Codex · main account to the route' }))
+    fireEvent.change(others, { target: { value: 'codex' } })
     await vi.waitFor(() => {
       expect(screen.getAllByTestId('session-route-stop')).toHaveLength(2)
     })
     expect(listed(calls, 'workbench.set_route')[0]).toEqual([
       'workbench.set_route',
       {
+        compact: true,
         enabled: true,
         instance_id: 'in-1',
         targets: [
-          { account_id: '', executor: 'claude-code' },
-          { account_id: '', executor: 'codex' }
+          { account_id: '', effort: null, executor: 'claude-code', model: null },
+          { account_id: '', effort: null, executor: 'codex', model: null }
         ]
       }
     ])
 
     fireEvent.click(screen.getByRole('button', { name: 'Codex · main account sooner' }))
     await vi.waitFor(() => {
-      expect(screen.getAllByTestId('session-route-stop').map(row => row.textContent)).toEqual([
-        '1.Codex · main account',
-        '2.Claude Code · main account'
-      ])
+      expect(names()).toEqual(['1. Codex · main account', '2. Claude Code · main account'])
     })
     expect(screen.getByTestId('session-route').textContent).toBe('Route · 2')
 
@@ -207,6 +213,113 @@ describe("a session's route across executors (asked for by the user on 21/10/202
     await vi.waitFor(() => {
       expect(screen.getByTestId('session-route').textContent).toBe('Route')
     })
+  })
+
+  it('gives each stop the model and effort it goes on with, says whether it can take over and how much of its plan is used, and compacts first unless turned off', async () => {
+    let kept = route([MAIN_STOP, { ...WORK_STOP, limited: true }, CODEX_STOP])
+    const calls = await openSessionOn((method, params) => {
+      if (method === 'workbench.route') {
+        return kept
+      }
+
+      if (method === 'workbench.set_route') {
+        const given = params as {
+          compact: boolean
+          enabled: boolean
+          targets: { effort: null | string; model: null | string }[]
+        }
+        kept = route(
+          kept.stops.map((stop, index) => ({
+            ...stop,
+            effort: given.targets[index]?.effort ?? null,
+            model: given.targets[index]?.model ?? null
+          })),
+          given.enabled,
+          given.compact
+        )
+
+        return kept
+      }
+
+      return undefined
+    })
+    const session = current()
+    session.$workbench.set({
+      executors: [ROW, WORK, { ...CODEX, logged_in: false }, OFF],
+      instances: [INSTANCE]
+    })
+    const model = (id: string, efforts: string[]) => ({
+      default_effort: '',
+      description: '',
+      efforts,
+      id,
+      name: id === 'default' ? 'Default' : 'Sonnet',
+      resolved: ''
+    })
+    for (const name of ['claude-code', WORK.name, 'codex']) {
+      session.$executorModels.setKey(name, [
+        model('default', ['low', 'medium', 'high', 'max']),
+        model('sonnet', ['low', 'high'])
+      ])
+    }
+    session.$executorUsage.setKey(WORK.name, {
+      error: null,
+      reading: false,
+      usage: {
+        executor: WORK.name,
+        extra_usage: null,
+        listed: true,
+        plan: 'max',
+        read_at: new Date().toISOString(),
+        unavailable: '',
+        windows: [{ id: 'five', minutes: 300, model: '', resets_at: '', title: 'Current session', used: 81.6 }]
+      }
+    })
+
+    fireEvent.click(await screen.findByTestId('session-route'))
+    await vi.waitFor(() => {
+      expect(screen.getAllByTestId('session-route-ready').map(state => state.textContent)).toEqual([
+        'here',
+        'at its limit · 82% used',
+        'not logged in'
+      ])
+    })
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Model on Claude Code · work' }), {
+      target: { value: 'sonnet' }
+    })
+    await vi.waitFor(() => {
+      expect(screen.getByRole<HTMLSelectElement>('combobox', { name: 'Model on Claude Code · work' }).value).toBe(
+        'sonnet'
+      )
+    })
+    fireEvent.change(screen.getByRole('combobox', { name: 'Effort on Claude Code · work' }), {
+      target: { value: 'high' }
+    })
+    await vi.waitFor(() => {
+      expect(listed(calls, 'workbench.set_route')).toHaveLength(2)
+    })
+    expect(listed(calls, 'workbench.set_route')[1]?.[1]).toMatchObject({
+      targets: [
+        { effort: null, model: null },
+        { effort: 'high', model: 'sonnet' },
+        { effort: null, model: null }
+      ]
+    })
+    // On another harness, "as now" is its own default model.
+    expect(
+      [...screen.getByRole<HTMLSelectElement>('combobox', { name: 'Model on Codex · main account' }).options].map(
+        option => option.textContent
+      )[0]
+    ).toBe('its default')
+
+    const compact = screen.getByTestId<HTMLInputElement>('session-route-compact')
+    expect(compact.checked).toBe(true)
+    fireEvent.click(compact)
+    await vi.waitFor(() => {
+      expect(listed(calls, 'workbench.set_route')).toHaveLength(3)
+    })
+    expect(listed(calls, 'workbench.set_route')[2]?.[1]).toMatchObject({ compact: false })
   })
 
   it('closes on a click outside it, on Escape and on its own button (asked for on 22/10/2026)', async () => {
@@ -265,9 +378,29 @@ describe("a session's route across executors (asked for by the user on 21/10/202
       0
     )
 
-    expect(stuck.items).toEqual([
+    const noted = applyActivity(
+      stuck,
+      {
+        attachments: [],
+        call_id: '',
+        failed: false,
+        instance_id: 'in-1',
+        kind: 'note',
+        text: 'Codex · main account does not offer opus: the session goes on on its default model.',
+        tool: ''
+      },
+      3,
+      0
+    )
+
+    expect(noted.items).toEqual([
       { key: 'a1', kind: 'status', text: 'The plan limit was reached: it went on on Codex · main account.' },
-      { key: 'a2', kind: 'status', text: "No destination in the session's route can go on now." }
+      { key: 'a2', kind: 'status', text: "No destination in the session's route can go on now." },
+      {
+        key: 'a3',
+        kind: 'status',
+        text: 'Codex · main account does not offer opus: the session goes on on its default model.'
+      }
     ])
   })
 })

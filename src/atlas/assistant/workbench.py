@@ -99,6 +99,7 @@ from atlas.jobs import (
     SessionRoute,
 )
 from atlas.models import (
+    EFFORT_LADDER,
     AssistantMessage,
     Attachment,
     Message,
@@ -107,6 +108,7 @@ from atlas.models import (
     ModelsError,
     SystemMessage,
     UserMessage,
+    clamp_effort,
 )
 from atlas.plugins import (
     Connector,
@@ -570,11 +572,14 @@ class Workbench:
                     told = "No other account can go on now."
                     self.notify(InstanceActivity(run.id, "account", told, failed=True))
                 return
-            switched = await self.use_account(run.id, account)
+            name = account_name(split_account(run.name)[0], account)
+            model, effort, note = await self.carried(run, name)
+            switched = await self.use_account(run.id, account, carried=(model, effort))
             self.notify(InstanceActivity(switched.id, "account", switched.account or account))
+            if note:
+                self.notify(InstanceActivity(switched.id, "note", note))
             _logger.info("A session went on on another account after a plan limit.")
-            if self.failover(run.name).compact:
-                await switched.turn("/compact")
+            await self._compact(switched, run, self.failover(run.name).compact)
             await switched.prompt(CONTINUE)
         except ExecutorError as error:
             _logger.warning("A session could not go on on another account: %s", error)
@@ -590,15 +595,21 @@ class Workbench:
         if route is None:
             return RouteView(found.id)
         stops = [await asyncio.to_thread(self._stop, target) for target in route.targets]
-        return RouteView(found.id, tuple(stops), enabled=route.enabled)
+        return RouteView(found.id, tuple(stops), enabled=route.enabled, compact=route.compact)
 
     async def set_route(
-        self, instance_id: str, targets: Sequence[RouteTarget], *, enabled: bool
+        self,
+        instance_id: str,
+        targets: Sequence[RouteTarget],
+        *,
+        enabled: bool,
+        compact: bool = True,
     ) -> RouteView:
         """The destinations the instance's session goes on to at a plan's limit, in order, each an
-        executor installed here and one of its accounts (the main one as `""`), and whether it
-        does. Kept for its card, so the instances that take its place follow it too. Raises
-        `ExecutorError` for an executor or an account Atlas does not know."""
+        executor installed here and one of its accounts (the main one as `""`) with the model and
+        the effort it goes on with there, whether it does, and whether a copy on another account
+        compacts first. Kept for its card, so the instances that take its place follow it too.
+        Raises `ExecutorError` for an executor, an account or an effort Atlas does not know."""
         found = self.get(instance_id)
         store = self._assistant.account_store
         for target in targets:
@@ -610,7 +621,11 @@ class Workbench:
             )
             if not known:
                 raise ExecutorError(f"{executor.title} has no account {target.account!r}.")
-        route = SessionRoute(found.transcript.id, tuple(dict.fromkeys(targets)), enabled=enabled)
+            if target.effort is not None and target.effort not in EFFORT_LADDER:
+                raise ExecutorError(f"There is no effort {target.effort!r}.")
+        route = SessionRoute(
+            found.transcript.id, tuple(dict.fromkeys(targets)), enabled=enabled, compact=compact
+        )
         await asyncio.to_thread(store.set_route, route)
         return await self.route(instance_id)
 
@@ -631,7 +646,15 @@ class Workbench:
         title = target.executor if executor is None else executor.title
         nickname = "" if kept is None else kept.name
         return RouteStop(
-            target.executor, target.account, name, title, nickname, installed=executor is not None
+            target.executor,
+            target.account,
+            name,
+            title,
+            nickname,
+            installed=executor is not None,
+            model=target.model,
+            effort=target.effort,
+            limited=self.limited(name),
         )
 
     async def next_target(
@@ -665,13 +688,16 @@ class Workbench:
             told = "No destination in the session's route can go on now."
             self.notify(InstanceActivity(run.id, "route", told, failed=True))
             return
+        name = account_name(target.executor, target.account)
+        model, effort, note = await self.carried(run, name, target)
         if target.executor == split_account(run.name)[0]:
-            switched = await self.use_account(run.id, target.account)
+            switched = await self.use_account(run.id, target.account, carried=(model, effort))
             told = switched.account or target.account
             self.notify(InstanceActivity(switched.id, "account", told))
+            if note:
+                self.notify(InstanceActivity(switched.id, "note", note))
             _logger.info("A session went on on another account by its route.")
-            if self.failover(switched.name).compact:
-                await switched.turn("/compact")
+            await self._compact(switched, run, route.compact)
             await switched.prompt(CONTINUE)
             return
         packet = await self._packet(run, target)
@@ -682,13 +708,70 @@ class Workbench:
             transcript=run.transcript,
             auto=run.auto,
             instance_id=run.id,
+            model=model,
+            effort=effort,
             account=target.account,
         )
         switched.set_atlas_answers(run.atlas_answers)
         destination = await asyncio.to_thread(self.label, switched.name)
         self.notify(InstanceActivity(switched.id, "route", destination))
+        if note:
+            self.notify(InstanceActivity(switched.id, "note", note))
         _logger.info("A session went on on another executor by its route.")
         await switched.prompt(packet)
+
+    async def carried(
+        self, run: ExecutorRun, name: str, target: RouteTarget | None = None
+    ) -> tuple[str | None, str | None, str]:
+        """The model and the effort `run`'s session goes on with on `name` at a switch, kept at
+        every one (decided with the user on 25/10/2026), and what the screen says when they
+        change: the destination's own when its route gives them; else, on the same harness, the
+        model the user chose, or the one it ran as when it ran on the harness's default, which may
+        be another model on another account's plan, and on another harness its default; and the
+        effort it ran on, onto the levels the model takes there. A model the destination does not
+        offer gives way to its default. When its models cannot be read, the user's own choices go
+        as they were, and the effort it ran on only where it ran."""
+        same = split_account(name)[0] == split_account(run.name)[0]
+        given = target is not None and target.model is not None
+        chosen = target.model if target is not None and target.model else None
+        if not given and same:
+            chosen = run.chosen_model
+        stop_effort = target.effort if target is not None and target.effort else None
+        effort = stop_effort or run.effort
+        executor = self._assistant.executor(name)
+        if executor is None or not executor.capabilities().models:
+            return None, None, ""
+        try:
+            offered = await self.models(name)
+        except ExecutorError as error:
+            _logger.warning("A switch could not read its destination's models: %s", error)
+            offered = []
+        if not offered:
+            return chosen, (effort if same or stop_effort else None), ""
+        # On its harness's default, it keeps the model it ran as.
+        wanted = chosen or (run.model if same and run.model else None)
+        found = next((m for m in offered if wanted in (m.id, m.resolved)), None) if wanted else None
+        note = ""
+        if wanted is not None and found is None:
+            label = await asyncio.to_thread(self.label, name)
+            note = f"{label} does not offer {wanted}: the session goes on on its default model."
+        # Its default is the first listed: found there, it goes on on the default, as it ran.
+        model = found or offered[0]
+        if effort is not None:
+            effort = clamp_effort(effort, model.efforts) if model.efforts else None
+        return (None if found is None or found is offered[0] else found.id), effort, note
+
+    async def _compact(self, switched: ExecutorRun, before: ExecutorRun, wanted: bool) -> None:
+        """Compact the copy on another account before it goes on, when the user wants it (on by
+        default, decided with the user on 25/10/2026: at the switch, never before the limit) and
+        its harness has `/compact`; one that fails is said, and the session goes on as it was."""
+        if not wanted or "compact" not in before.commands:
+            return
+        try:
+            await switched.turn("/compact")
+        except ExecutorError as error:
+            _logger.warning("A switched session could not be compacted: %s", error)
+            self.notify(InstanceActivity(switched.id, "note", not_compacted(error)))
 
     async def _packet(self, run: ExecutorRun, target: RouteTarget) -> str:
         """The handoff packet for `run`'s session going on on `target`."""
@@ -905,12 +988,19 @@ class Workbench:
         self._usage.pop(found.name, None)
         return await self._go_on(found)
 
-    async def use_account(self, instance_id: str, account: str) -> ExecutorRun:
+    async def use_account(
+        self,
+        instance_id: str,
+        account: str,
+        *,
+        carried: tuple[str | None, str | None] | None = None,
+    ) -> ExecutorRun:
         """Go on with the instance's conversation in the same folder on another account of its
         executor (empty, the main one), only when the user asks: that account's harness reads
         this one's session and keeps a copy of its own (decided with the user on 19/10/2026), the
         original deleted once the copy is kept (`copy_kept`), and the card stays. Never while it
-        works; the instances on other accounts go on as they are."""
+        works; the instances on other accounts go on as they are. On the model and the effort
+        `carried`, a plan limit's switch's (`carried`), else on the ones chosen for it."""
         found = self._idle(instance_id, "switch accounts")
         base, current = split_account(found.name)
         if account == current and found.live:
@@ -920,6 +1010,7 @@ class Workbench:
         if not other.capabilities().account_folders:
             raise ExecutorError(f"{other.title} runs on no account but its own.")
         session = found.session_id
+        model, effort = carried if carried is not None else (found.chosen_model, found.effort)
         await self._end(found)
         switched = await self.start(
             target,
@@ -928,8 +1019,8 @@ class Workbench:
             transcript=found.transcript,
             auto=found.auto,
             instance_id=found.id,
-            model=found.chosen_model,
-            effort=found.effort,
+            model=model,
+            effort=effort,
             account=account,
             resume_from=None if session is None else found.executor.account_folder(),
         )
@@ -1283,6 +1374,11 @@ def limit_reason(source: str, limit: LimitReached | None, by: str) -> str:
         f"{source} reached its plan's limit in the middle of this task, so Atlas moved it here by "
         f"{by}.{when}"
     )
+
+
+def not_compacted(error: ExecutorError) -> str:
+    """What the session says when its copy on another account could not be compacted first."""
+    return f"It could not be compacted first ({error}); it goes on as it was."
 
 
 def _in_order[T](

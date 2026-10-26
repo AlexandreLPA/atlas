@@ -2052,24 +2052,40 @@ def test_a_sessions_route_over_the_socket(
             "instance_id": instance,
             "stops": [],
             "enabled": True,
+            "compact": True,
         }
         refused = client.call(
             "workbench.set_route",
             {"instance_id": instance, "targets": [{"executor": "codex"}]},
         )
         assert "not installed" in refused["error"]["message"]
+        unknown = client.call(
+            "workbench.set_route",
+            {"instance_id": instance, "targets": [{"executor": "claude-code", "effort": "turbo"}]},
+        )
+        assert "no effort 'turbo'" in unknown["error"]["message"]
         targets = [
-            {"executor": "claude-code", "account_id": added["account_id"]},
+            {
+                "executor": "claude-code",
+                "account_id": added["account_id"],
+                "model": "opus",
+                "effort": "high",
+            },
             {"executor": "claude-code"},
         ]
         route = client.result(
-            "workbench.set_route", {"instance_id": instance, "targets": targets, "enabled": True}
+            "workbench.set_route",
+            {"instance_id": instance, "targets": targets, "enabled": True, "compact": False},
         )
         read = client.result("workbench.route", {"instance_id": instance})
         client.result("workbench.stop", {"instance_id": instance})
 
     assert route == read
-    assert [(s["name"], s["title"], s["nickname"], s["installed"]) for s in route["stops"]] == [
-        (added["name"], "Claude Code", "work", True),
-        ("claude-code", "Claude Code", "", True),
+    assert route["compact"] is False, "compacting first turned off, and kept"
+    assert [
+        (s["name"], s["title"], s["nickname"], s["installed"], s["model"], s["effort"])
+        for s in route["stops"]
+    ] == [
+        (added["name"], "Claude Code", "work", True, "opus", "high"),
+        ("claude-code", "Claude Code", "", True, None, None),
     ]

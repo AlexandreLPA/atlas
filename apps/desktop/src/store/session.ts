@@ -130,6 +130,8 @@ export function applyActivity(
 
     case 'answered':
     case 'compacted':
+    case 'note':
+      // `note`: what the screen says of a switch, such as the model it went on with.
       return { ...thread, items: [...thread.items, { key, kind: 'status', text: activity.text }] }
 
     case 'account':

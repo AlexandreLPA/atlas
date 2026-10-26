@@ -1036,6 +1036,8 @@ export interface SessionRouteRow {
   instance_id: string
   stops: RouteStopRow[]
   enabled: boolean
+  /** A copy on another account compacts first, where its harness has `/compact`. */
+  compact: boolean
 }
 export interface RouteStopRow {
   executor: string
@@ -1047,17 +1049,26 @@ export interface RouteStopRow {
   nickname: string
   /** Its executor is installed here; one that is not is passed over. */
   installed: boolean
+  /** The model and the effort the session goes on with there; `None`, the ones it ran on. */
+  model: string | null
+  effort: string | null
+  /** It reached its plan's limit and has not reset: passed over until it does. */
+  limited: boolean
 }
 export interface WorkbenchRouteParams {
   instance_id: string
   /** In the order the session goes on to them at a plan's limit; empty, none. */
   targets: RouteTargetParams[]
   enabled?: boolean
+  /** A copy on another account of the same executor compacts first, where its harness has `/compact` (on by default). */
+  compact?: boolean
 }
-/** One destination of a session's route: an executor's own name and one of its `executor.accounts` ids (empty, the main account). */
+/** One destination of a session's route: an executor's own name and one of its `executor.accounts` ids (empty, the main account), and the model (an `executor.models` id) and the effort the session goes on with there; `None`, the ones it ran on. */
 export interface RouteTargetParams {
   executor: string
   account_id?: string
+  model?: string | null
+  effort?: string | null
 }
 /** What changes if an instance goes on on another account (step 16h). */
 export interface AccountSwitchRow {
@@ -1520,7 +1531,7 @@ export interface MarketplaceChanged {
 }
 export interface InstanceActivityPayload {
   instance_id: string
-  /** `said`, `thought`, `called` (`text` is the tool and its input), `returned`, `prompted`, `steered` (a prompt that entered the turn running), `answered` (Atlas answered for the user), `compacted` (the harness compacted its session, `text` says how much), `account` (at a plan's limit it went on on the account `text` names) or `route` (at a plan's limit it went on, by its session's route, on the executor and account `text` names); a `failed` `account` or `route` says why it could not. */
+  /** `said`, `thought`, `called` (`text` is the tool and its input), `returned`, `prompted`, `steered` (a prompt that entered the turn running), `answered` (Atlas answered for the user), `compacted` (the harness compacted its session, `text` says how much), `account` (at a plan's limit it went on on the account `text` names), `route` (at a plan's limit it went on, by its session's route, on the executor and account `text` names), or `note` (what the screen says of such a switch: another model, a compaction that failed); a `failed` `account` or `route` says why it could not. */
   kind: string
   text: string
   failed: boolean

@@ -3282,8 +3282,9 @@ conversation to project B's account and go on. The switch is the exception.
 - **The next account, at a plan's limit** (asked for by the user on 21/10/2026, in place of
   "only when the user asks"): a session its account's limit stops goes on by itself in a copy on
   the next account logged in, as a switch does, in the order the user set under the main
-  account's row (the main one first until then), and, if the user said so, compacts there before
-  it goes on; its conversation says which account took over or why none could. Since 22/10/2026
+  account's row (the main one first until then), and compacts there before it goes on unless the
+  user turned that off (on by default since 25/10/2026); its conversation says which account took
+  over or why none could. Since 22/10/2026
   that order is no longer on screen (asked for by the user: it crowded the sidebar, and each
   session's route does it per session); a session with no route keeps the one saved. Turned off
   (`executor.failover`, kept in `jobs_account_failover`), a delegation stops
@@ -3337,11 +3338,25 @@ Codex · main). The route is the session's, not the executor's.
   installed, not logged in, or at its own limit (reached here, or as its usage says) is passed
   over, as an account's hand-over does. With none left, the session's conversation says so, and
   the session waits where it stopped.
-- **Within one executor**, a `session copy` on the other account, compacted first when the
-  executor's own setting says so, then told to continue: what an account switch does.
+- **Within one executor**, a `session copy` on the other account, compacted first unless the
+  route says not to (on by default, decided with the user on 25/10/2026: at the switch, never
+  before the limit), then told to continue: what an account switch does. It compacts only where
+  the harness has `/compact` among its commands (Claude Code's; Codex's and DeepSeek's take no
+  slash command, and the Gemini CLI's is another), and a compaction that fails is said (a `note`
+  activity) and the copy goes on as it was, never left stopped.
+- **The model and the effort are kept at every switch** (decided with the user on 25/10/2026): a
+  stop may name the model and the effort the session goes on with there (`RouteTarget.model` and
+  `effort`, kept in the stop's JSON, never part of what tells two stops apart); with none, the
+  session keeps the model the user chose, or, on the harness's default, the one it ran as, since
+  another account's default may be another model, and the effort it ran on, onto the levels the
+  model takes there (`clamp_effort`). Across executors the effort goes on the same way and the
+  model is the destination's default unless the stop names one. A model the destination does not
+  offer gives way to its default, and the session says so (`note`). A delegated task's switch
+  does the same.
 - **Across executors, a new session.** A Claude Code session cannot be resumed as a Codex one, nor
   the other way round, so the destination starts a session of its own in the same folder, on the
-  same card, its model its own default, its automatic mode and "Atlas answers" kept. Its first
+  same card, its model the stop's or its own default, its effort kept onto its levels, its
+  automatic mode and "Atlas answers" kept. Its first
   prompt is the `handoff packet` (`assistant/handoff.py`): the normal call that goes on with the
   work, with no model call before it to summarize (Principle 1: the destination's model reads and
   does the work). The packet is put together deterministically, from the source harness's own
@@ -3354,9 +3369,14 @@ Codex · main). The route is the session's, not the executor's.
 - **On screen** (`workbench.route`, `workbench.set_route`): one pill below the session's box for
   its account and its route (one pill since 22/10/2026, the route's first stop being the account):
   the account it runs on, once its executor has another, and how many destinations the route has.
-  It opens the account's choice and the route's editor: which executors and accounts take part,
-  their order, and whether it is followed; each change is saved at once. The session's
-  conversation says where it went on (`route` and `account` activities).
+  It opens the account's choice and the route drawn as a path (25/10/2026): its stops in order,
+  joined, the one it runs on marked, each saying whether it can take over (installed, logged in,
+  not at its own limit, which the server tells as `limited`) and how much of its plan is used, as
+  last read, with the model and the effort it goes on with there ("as now" unless chosen; on
+  another harness, "its default"); a stop is added, moved and taken out there, and two switches say
+  whether the route is followed and whether a copy compacts first. Each change is saved at once.
+  The session's conversation says where it went on (`route` and `account` activities) and what
+  changed on the way (`note`).
 - **Not yet:** a session not started yet has no card, so its route is set from its first prompt on; the session's screen,
   after it crosses executors, reads the new session's own steps, which begin from the packet
   (the card's conversation in Atlas keeps both); a compaction of the packet by a model, should a

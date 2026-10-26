@@ -258,6 +258,13 @@ CREATE TABLE jobs_session_routes (
 ) STRICT;
 """,
         ),
+        Migration(
+            11,
+            "whether a session's route compacts its copy before it goes on, on by default",
+            """
+ALTER TABLE jobs_session_routes ADD COLUMN compact INTEGER NOT NULL DEFAULT 1;
+""",
+        ),
     ),
 )
 
@@ -624,7 +631,7 @@ class AccountStore:
         connection = self._database.connect()
         try:
             row = connection.execute(
-                "SELECT enabled, targets FROM jobs_session_routes WHERE conversation = ?",
+                "SELECT enabled, targets, compact FROM jobs_session_routes WHERE conversation = ?",
                 (conversation,),
             ).fetchone()
         finally:
@@ -635,21 +642,43 @@ class AccountStore:
         for found in json.loads(str(row[1])):
             if isinstance(found, dict):
                 kept = cast("dict[str, object]", found)
+                model, effort = kept.get("model"), kept.get("effort")
                 targets.append(
-                    RouteTarget(str(kept.get("executor", "")), str(kept.get("account", "")))
+                    RouteTarget(
+                        str(kept.get("executor", "")),
+                        str(kept.get("account", "")),
+                        model=model if isinstance(model, str) and model else None,
+                        effort=effort if isinstance(effort, str) and effort else None,
+                    )
                 )
-        return SessionRoute(conversation, tuple(targets), enabled=bool(row[0]))
+        return SessionRoute(
+            conversation, tuple(targets), enabled=bool(row[0]), compact=bool(row[2])
+        )
 
     def set_route(self, route: SessionRoute) -> None:
-        targets = [{"executor": t.executor, "account": t.account} for t in route.targets]
+        targets = [
+            {
+                "executor": t.executor,
+                "account": t.account,
+                **({"model": t.model} if t.model else {}),
+                **({"effort": t.effort} if t.effort else {}),
+            }
+            for t in route.targets
+        ]
         connection = self._database.connect()
         try:
             with transaction(connection):
                 connection.execute(
-                    "INSERT INTO jobs_session_routes (conversation, enabled, targets) "
-                    "VALUES (?, ?, ?) ON CONFLICT (conversation) DO UPDATE SET "
-                    "enabled = excluded.enabled, targets = excluded.targets",
-                    (route.conversation, int(route.enabled), json.dumps(targets)),
+                    "INSERT INTO jobs_session_routes (conversation, enabled, targets, compact) "
+                    "VALUES (?, ?, ?, ?) ON CONFLICT (conversation) DO UPDATE SET "
+                    "enabled = excluded.enabled, targets = excluded.targets, "
+                    "compact = excluded.compact",
+                    (
+                        route.conversation,
+                        int(route.enabled),
+                        json.dumps(targets),
+                        int(route.compact),
+                    ),
                 )
         finally:
             connection.close()

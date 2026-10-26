@@ -12,7 +12,8 @@ import sys
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
@@ -27,6 +28,7 @@ from atlas.assistant import (
     WorkbenchEvent,
 )
 from atlas.assistant.model import UsageWindowView
+from atlas.assistant.workbench import not_compacted
 from atlas.conversations import WORKBENCH
 from atlas.home import Database, Home, ModelSettings, Settings, WorkspaceSettings, migrate
 from atlas.jobs import InstanceRecord, RouteTarget
@@ -1254,7 +1256,8 @@ def test_a_session_at_its_plan_limit_goes_on_by_itself_on_the_next_account_in_a_
     assert original == [], "the original, dead on the main account, is gone"
     assert _said(moved) == "All of it is done."
     prompts = [e["message"]["content"] for e in b.log() if e.get("type") == "user"]
-    assert prompts == ["Build the site.", "Continue the task from where you stopped."]
+    # Compacted first, by default, its harness having `/compact` (decided on 25/10/2026).
+    assert prompts == ["Build the site.", "/compact", "Continue the task from where you stopped."]
     assert ("account", "other@example.com") in b.activity(moved.id), "the card says where"
     resumed = _started(b, "site")[-1]["argv"]
     assert "--fork-session" in resumed
@@ -1406,9 +1409,99 @@ def test_a_route_inside_one_executor_goes_to_the_account_it_names_not_the_execut
     assert moved.session_id != "s-site", "a copy of its own there"
     assert _said(moved) == "Done on the route's account."
     prompts = [e["message"]["content"] for e in b.log() if e.get("type") == "user"]
-    assert prompts == ["Build the site.", "Continue the task from where you stopped."]
+    # A route compacts the copy first, by default (decided on 25/10/2026).
+    assert prompts == ["Build the site.", "/compact", "Continue the task from where you stopped."]
     assert "--fork-session" in _started(b, "site")[-1]["argv"], "the same harness: a copy"
-    assert kept.stops == route.stops, "kept for the card, which goes on"
+    assert [s.name for s in kept.stops] == [s.name for s in route.stops], "kept for the card"
+    # The account at its limit is said to be, passed over until it resets.
+    assert [s.limited for s in kept.stops] == [True, False]
+
+
+@pytest.mark.parametrize(
+    ("started", "stop", "model", "effort", "note"),
+    [
+        # The stop's own choices; a model that takes no effort goes on with none.
+        (None, {"model": "haiku", "effort": "high"}, "haiku", None, ""),
+        # The effort it ran on, onto the levels the stop's model takes.
+        ("max", {"model": "sonnet"}, "sonnet", "high", ""),
+        # A model the destination does not offer gives way to its default, which is said.
+        ("low", {"model": "mythos"}, None, "low", "does not offer mythos"),
+        # None chosen anywhere: it goes on on the harness's default, as it ran, and its effort.
+        ("xhigh", {}, None, "xhigh", ""),
+    ],
+)
+def test_a_switch_keeps_the_model_and_effort_or_takes_the_stops_own(
+    bench: Callable[[Screen | None], Bench],
+    monkeypatch: pytest.MonkeyPatch,
+    started: str | None,
+    stop: dict[str, str],
+    model: str | None,
+    effort: str | None,
+    note: str,
+) -> None:
+    """Decided with the user on 25/10/2026: the model and the effort are kept at every switch, or
+    are the ones the route's stop gives."""
+    _main_sessions(monkeypatch)
+    monkeypatch.setenv("FAKE_CLAUDE_SESSION", "s-{folder}")
+    b = bench(Screen())
+    site = b.script("site", {"say": "Half done."}, {"limit": LATER})
+    b.script("site", {"account": True}, {"result": "Done there."}, resumed=True)
+
+    async def scenario() -> str:
+        workbench = b.workbench
+        second = await workbench.add_account("claude-code", "second")
+        await workbench.switch_executor_account(second.name, "")
+        run = await workbench.start("claude-code", site, effort=started)
+        other = RouteTarget("claude-code", second.account_id, **stop)
+        targets = [RouteTarget("claude-code"), other]
+        await workbench.set_route(run.id, targets, enabled=True)
+        await workbench.prompt(run.id, "Build the site.")
+        await _told(b, run.id, "account")
+        await b.assistant.close()
+        return run.id
+
+    instance = _run(scenario)
+
+    argv: list[str] = _started(b, "site")[-1]["argv"]
+    assert "--fork-session" in argv, "the copy on the other account"
+    assert (argv[argv.index("--model") + 1] if "--model" in argv else None) == model
+    assert (argv[argv.index("--effort") + 1] if "--effort" in argv else None) == effort
+    notes = [text for kind, text in b.activity(instance) if kind == "note"]
+    assert notes == [] if not note else note in notes[0]
+
+
+def test_a_copy_compacts_first_only_where_its_harness_can_and_goes_on_when_that_fails(
+    bench: Callable[[Screen | None], Bench],
+) -> None:
+    b = bench(Screen())
+    asked: list[str] = []
+
+    class Copy:
+        id = "copy"
+
+        def __init__(self, fails: bool = False) -> None:
+            self.fails = fails
+
+        async def turn(self, text: str) -> None:
+            asked.append(text)
+            if self.fails:
+                raise ExecutorError("the harness stopped")
+
+    def before(*commands: str) -> ExecutorRun:
+        return cast("ExecutorRun", SimpleNamespace(commands=commands))
+
+    async def scenario() -> None:
+        compact = b.workbench._compact  # pyright: ignore[reportPrivateUsage]
+        await compact(cast("ExecutorRun", Copy()), before("review"), True)
+        await compact(cast("ExecutorRun", Copy()), before("compact"), False)
+        await compact(cast("ExecutorRun", Copy()), before("compact"), True)
+        await compact(cast("ExecutorRun", Copy(fails=True)), before("compact"), True)
+        await b.assistant.close()
+
+    _run(scenario)
+
+    assert asked == ["/compact", "/compact"], "only where it has /compact, and only when wanted"
+    assert b.activity("copy") == [("note", not_compacted(ExecutorError("the harness stopped")))]
 
 
 def test_a_route_across_executors_starts_a_new_session_there_with_the_handoff_packet(
@@ -1429,7 +1522,7 @@ def test_a_route_across_executors_starts_a_new_session_there_with_the_handoff_pa
 
     async def scenario() -> tuple[Any, ...]:
         workbench = b.workbench
-        run = await workbench.start("claude-code", site)
+        run = await workbench.start("claude-code", site, effort="max")
         transcript = run.transcript.id
         await workbench.set_route(
             run.id, [RouteTarget("claude-code"), RouteTarget("codex")], enabled=True
@@ -1466,6 +1559,10 @@ def test_a_route_across_executors_starts_a_new_session_there_with_the_handoff_pa
     prompts = [e["message"]["content"] for e in b.log() if e.get("type") == "user"]
     assert prompts == ["Fix the header and the footer."], "Claude Code is not prompted again"
     assert _said(moved) == "Read the packet; finishing the footer."
+    # Its default model there, and the effort it ran on, onto Codex's levels (25/10/2026).
+    first = _codex_sent(log, "turn/start")[0]
+    assert "model" not in first
+    assert first["effort"] == "high"
 
 
 def test_a_route_passes_over_a_destination_not_logged_in_and_says_when_none_can_go_on(

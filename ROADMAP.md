@@ -3738,6 +3738,26 @@ confiança. **Sem redesenho:** polimento, fluidez, percepção de velocidade e i
   passagem e a seguinte tomando o lugar, a mensagem que a fixa, Ctrl+1, Ctrl+Tab, Ctrl+W e o
   arrasto; e, reaberto, as mesmas abas, a da tela lida, a fechada fora). Fiscais: 2.692 testes do
   Python com 91,49% de cobertura, o `npm run check` (444 do Vitest), o do site e os 76 do e2e.
+- **Entrega 7, conta e rota da sessão (26/10):** a rota da sessão virou um caminho, acima da caixa:
+  as paradas em ordem, ligadas, a de agora marcada, cada uma dizendo se pode assumir (instalada, com
+  login, fora do próprio limite, que o servidor agora diz como `limited`) e quanto do plano já foi
+  usado, com o modelo e o esforço que a sessão leva para lá ("como agora" até escolher; noutro
+  harness, "o padrão dele"), e duas chaves: seguir o caminho no limite, e "compactar antes de
+  seguir", ligada por padrão (migração 11). O modelo e o esforço atravessam toda troca: a parada
+  pode nomear os seus; sem isso, a sessão fica no modelo escolhido ou, no padrão do harness, no
+  modelo em que rodava, porque o padrão de outra conta pode ser outro, e no esforço em que rodava,
+  encaixado nos níveis do modelo de lá; noutro harness, o esforço segue do mesmo jeito e o modelo é
+  o padrão de lá. Um modelo que o destino não oferece cede ao padrão, e a sessão diz isso. A
+  compactação roda só onde o harness tem `/compact` (o Claude Code; o Codex e o DeepSeek não recebem
+  comando de barra, e o do Gemini CLI é outro), na troca e nunca antes do limite; se falhar, a
+  sessão diz e segue como estava, em vez de parar. A troca de uma tarefa delegada faz o mesmo, e
+  depois de atravessar de harness a caixa já oferece os modelos do novo. Provado no pytest (a parada
+  dando o modelo e o esforço, o esforço encaixado, o modelo não oferecido cedendo ao padrão com o
+  aviso, o padrão mantido; a compactação só onde há `/compact` e a falha que não para; a ida ao
+  Codex levando o esforço; a rota guardada com modelo, esforço e compactar), no Vitest (o caminho
+  com prontidão, uso, modelo, esforço e compactar) e no e2e (a parada adicionada dizendo que está
+  pronta, com compactar ligado). Fiscais: 2.700 testes do Python com 91,45% de cobertura, o `npm run
+  check` (445 do Vitest), o do site e os 76 do e2e.
 
 ## Assuntos de desenho ainda abertos
 

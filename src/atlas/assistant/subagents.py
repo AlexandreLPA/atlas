@@ -49,7 +49,7 @@ from atlas.assistant.model import (
     Owner,
     SubagentChanged,
 )
-from atlas.assistant.workbench import MAIN_ACCOUNT, limit_reason
+from atlas.assistant.workbench import MAIN_ACCOUNT, limit_reason, not_compacted
 from atlas.conversations import APP, SUBAGENT, ConversationNotFoundError, title_from
 from atlas.home import format_utc, time_zone
 from atlas.hooks import CLAUDE_CODE_NAMES
@@ -436,7 +436,8 @@ class Subagents:
                 )
             target = RouteTarget(chosen_base, chosen)
         elif workbench.limited(record.executor):
-            target = await self._next(record.executor, record.conversation_id, None)
+            found_next = await self._next(record.executor, record.conversation_id, None)
+            target = None if found_next is None else found_next[0]
         name = record.executor if target is None else account_name(target.executor, target.account)
         crossing = split_account(name)[0] != base
         resume_from = None
@@ -899,17 +900,20 @@ class Subagents:
 
     async def _next(
         self, name: str, conversation_id: str, limit: LimitReached | None
-    ) -> RouteTarget | None:
-        """Where a delegated task goes on after `name` reached its plan's limit: the next
-        destination of its route, when it has one on, else the next of its executor's accounts
-        in the user's order; `None` when none can."""
+    ) -> tuple[RouteTarget, bool] | None:
+        """Where a delegated task goes on after `name` reached its plan's limit, and whether a
+        copy there compacts first: the next destination of its route, when it has one on, else
+        the next of its executor's accounts in the user's order; `None` when none can."""
         workbench = self._assistant.workbench
         store = self._assistant.account_store
         route = await asyncio.to_thread(store.route, conversation_id)
         if route is not None and route.enabled and route.targets:
-            return await workbench.next_target(name, route, limit)
+            target = await workbench.next_target(name, route, limit)
+            return None if target is None else (target, route.compact)
         account = await workbench.next_account(name, limit)
-        return None if account is None else RouteTarget(split_account(name)[0], account)
+        if account is None:
+            return None
+        return RouteTarget(split_account(name)[0], account), workbench.failover(name).compact
 
     async def _hand_over(
         self, child: _Child, heard: Callable[[ExecutorEvent], None]
@@ -924,15 +928,18 @@ class Subagents:
         old = child.run
         if old is None or old.session_id is None:
             return None
-        target = await self._next(old.name, child.record.conversation_id, old.limited)
-        if target is None:
+        found_next = await self._next(old.name, child.record.conversation_id, old.limited)
+        if found_next is None:
             return None
+        target, compact = found_next
         name = account_name(target.executor, target.account)
         found = assistant.executor(name)
         logged = None if found is None else await _logged_in(found)
         if found is None or logged is None:
             return None
         crossing = target.executor != split_account(old.name)[0]
+        # The model and the effort it ran on go on with it (decided with the user on 25/10/2026).
+        model, effort, note = await workbench.carried(old, name, target)
         packet = ""
         if crossing:
             source = await asyncio.to_thread(workbench.label, old.name)
@@ -954,15 +961,18 @@ class Subagents:
             spec = ExecutorSpec(
                 old.spec.folder,
                 auto=old.auto and _may_auto(found, name),
-                effort=await default_executor_effort(found, None),
+                model=model,
+                effort=effort
+                if effort is not None
+                else await default_executor_effort(found, model),
             )
         else:
             spec = ExecutorSpec(
                 old.spec.folder,
                 resume=old.session_id,
                 auto=old.auto,
-                model=old.chosen_model,
-                effort=old.effort,
+                model=model,
+                effort=effort,
                 resume_from=old.executor.account_folder(),
             )
         run = self._executor_run(
@@ -971,6 +981,8 @@ class Subagents:
         child.run, child.last_activity = run, assistant.clock()
         workbench.adopt(run)
         self._changed(child)
+        if note:
+            workbench.notify(InstanceActivity(run.id, "note", note))
         if crossing:
             destination = await asyncio.to_thread(workbench.label, name)
             workbench.notify(InstanceActivity(run.id, "route", destination))
@@ -978,12 +990,16 @@ class Subagents:
             return run, await run.run(packet, heard)
         workbench.notify(InstanceActivity(run.id, "account", logged.login or target.account))
         _logger.info("A delegated task went on on another account after a plan limit.")
-        if workbench.failover(name).compact:
+        # It compacts first where its harness has `/compact`; one that fails leaves it as it was.
+        if not (compact and "compact" in old.commands):
+            return run, await run.run(CONTINUE, heard)
+        try:
             await run.run("/compact", heard)
-            finished = await run.turn(CONTINUE)
-        else:
-            finished = await run.run(CONTINUE, heard)
-        return run, finished
+        except ExecutorError as error:
+            if run.instance is None:
+                raise
+            workbench.notify(InstanceActivity(run.id, "note", not_compacted(error)))
+        return run, await run.turn(CONTINUE)
 
     def _executor_ended(
         self,

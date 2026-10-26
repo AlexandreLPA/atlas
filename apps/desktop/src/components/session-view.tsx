@@ -8,13 +8,15 @@ import type {
   ExecutorModel,
   ExecutorRow,
   InstanceRow,
-  RouteTargetParams
+  RouteTargetParams,
+  SessionRouteRow
 } from '@/protocol/protocol.generated'
 import {
   $cards,
   $connection,
   $executorAccounts,
   $executorModels,
+  $executorUsage,
   $openSession,
   $remote,
   $sessionError,
@@ -28,7 +30,9 @@ import {
   chooseElsewhere,
   type OpenSession,
   readExecutorCommands,
+  readExecutorModels,
   readSessionRoute,
+  readUsageIfStale,
   runUserCommand,
   sendToSession,
   sessionOwner,
@@ -41,6 +45,7 @@ import {
 } from '@/store/app'
 import { fromNames } from '@/store/slash'
 import { EMPTY_THREAD } from '@/store/thread'
+import type { UsageRead } from '@/store/usage'
 import { waitingCalls } from '@/store/waiting'
 
 import { type ExecutorCard, ExecutorCardView } from './executor-cards'
@@ -459,7 +464,7 @@ function SessionAccountRouteEditor({
           <p className="text-muted-foreground">{locked ? t.accounts.sessionBusy : t.accounts.session}</p>
         </fieldset>
       )}
-      {instance && <SessionRouteEditor instanceId={instance.instance_id} />}
+      {instance && <SessionRouteEditor instance={instance} />}
     </div>
   )
 }
@@ -481,22 +486,36 @@ function routeChoices(executors: ExecutorRow[]): RouteChoice[] {
       return {
         key: row.name,
         label: row.base ? row.title : `${row.title} · ${t.route.main}`,
-        target: { account_id: row.account_id, executor }
+        target: { account_id: row.account_id, effort: null, executor, model: null }
       }
     })
 }
 
 /**
- * The session's route (asked for by the user on 21/10/2026): the destinations it goes on to when
- * the one it runs on reaches its plan's limit, in the user's order, accounts of its own harness
- * and of others; which take part, their order, and whether it is followed. Each change is saved
- * at once, for the session's card.
+ * The session's route as a path (asked for by the user on 21/10/2026, redone as a path on
+ * 25/10/2026): the stops it goes on to, in order, when the account it runs on reaches its plan's
+ * limit, the one it runs on marked; each with whether it can take over (installed, logged in, not at
+ * its own limit), how much of its plan is used, and the model and the effort the session goes on
+ * with there, kept as they are unless one is chosen; whether the path is followed, and whether a
+ * copy on another account compacts first (on by default). Each change is saved at once, for the
+ * session's card.
  */
-function SessionRouteEditor({ instanceId }: { instanceId: string }) {
+function SessionRouteEditor({ instance }: { instance: InstanceRow }) {
   const route = useStore($sessionRoute)
   const { executors } = useStore($workbench)
+  const instanceId = instance.instance_id
+  const stops = route?.instance_id === instanceId ? route.stops : null
 
-  if (route?.instance_id !== instanceId) {
+  // What each stop offers and how much of its plan is used, read as the path opens.
+  const names = stops?.map(stop => (stop.installed ? stop.name : '')).join('\n') ?? ''
+  useEffect(() => {
+    for (const name of names.split('\n').filter(Boolean)) {
+      readExecutorModels(name)
+      readUsageIfStale(name)
+    }
+  }, [names])
+
+  if (!route || !stops) {
     return (
       <p className="text-xs text-muted-foreground" role="status">
         …
@@ -504,98 +523,233 @@ function SessionRouteEditor({ instanceId }: { instanceId: string }) {
     )
   }
 
-  const chosen: RouteChoice[] = route.stops.map(stop => ({
-    key: stop.name,
-    label: `${stop.nickname ? `${stop.title} · ${stop.nickname}` : `${stop.title} · ${t.route.main}`}${stop.installed ? '' : ` (${t.route.notInstalled})`}`,
-    target: { account_id: stop.account_id, executor: stop.executor }
+  const targets = stops.map(stop => ({
+    account_id: stop.account_id,
+    effort: stop.effort ?? null,
+    executor: stop.executor,
+    model: stop.model ?? null
   }))
-  const others = routeChoices(executors).filter(choice => !chosen.some(found => found.key === choice.key))
-  const save = (changed: RouteChoice[], enabled: boolean): void => {
-    void setSessionRoute(
-      instanceId,
-      changed.map(choice => choice.target),
-      enabled
-    )
+  const save = (changed: RouteTargetParams[], switches: { compact?: boolean; enabled?: boolean } = {}): void => {
+    void setSessionRoute(instanceId, {
+      compact: switches.compact ?? route.compact,
+      enabled: switches.enabled ?? route.enabled,
+      targets: changed
+    })
   }
   const move = (index: number, by: number): void => {
-    const changed = [...chosen]
+    const changed = [...targets]
     const [row] = changed.splice(index, 1)
 
     if (row) {
       changed.splice(index + by, 0, row)
-      save(changed, route.enabled)
+      save(changed)
     }
   }
+  const others = routeChoices(executors).filter(choice => !stops.some(stop => stop.name === choice.key))
 
   return (
-    <div className="space-y-1 text-xs" data-testid="session-route-editor">
+    <div className="space-y-2 text-xs" data-testid="session-route-editor">
       <p className="font-medium">{t.route.title}</p>
+      <p className="text-muted-foreground">{stops.length ? t.route.note : t.route.empty}</p>
+      <ol className="space-y-1.5" data-testid="session-route-stops">
+        {stops.map((stop, index) => (
+          <PathStop
+            here={stop.name === instance.executor}
+            index={index}
+            key={stop.name}
+            last={index === stops.length - 1}
+            onChange={(model, effort) => {
+              save(targets.map((target, at) => (at === index ? { ...target, effort, model } : target)))
+            }}
+            onMove={by => {
+              move(index, by)
+            }}
+            onRemove={() => {
+              save(targets.filter((_, at) => at !== index))
+            }}
+            row={executors.find(row => row.name === stop.name)}
+            sameHarness={stop.executor === (instance.executor.split('@')[0] ?? instance.executor)}
+            stop={stop}
+          />
+        ))}
+      </ol>
+      {others.length > 0 && (
+        <select
+          aria-label={t.route.addStop}
+          className="w-full rounded-md border border-border-strong bg-raised px-2 py-1"
+          data-testid="session-route-others"
+          onChange={event => {
+            const choice = others.find(found => found.key === event.target.value)
+
+            if (choice) {
+              save([...targets, choice.target])
+            }
+          }}
+          value=""
+        >
+          <option value="">{t.route.addStop}</option>
+          {others.map(choice => (
+            <option key={choice.key} value={choice.key}>
+              {choice.label}
+            </option>
+          ))}
+        </select>
+      )}
       <label className="flex items-center gap-2">
         <input
           checked={route.enabled}
           data-testid="session-route-enabled"
           onChange={event => {
-            save(chosen, event.target.checked)
+            save(targets, { enabled: event.target.checked })
           }}
           type="checkbox"
         />
         {t.route.enabled}
       </label>
-      <p className="text-muted-foreground">{chosen.length ? t.route.note : t.route.empty}</p>
-      <ol className="space-y-0.5" data-testid="session-route-stops">
-        {chosen.map((choice, index) => (
-          <li className="flex items-center gap-1" data-testid="session-route-stop" key={choice.key}>
-            <input
-              aria-label={t.route.remove(choice.label)}
-              checked
-              onChange={() => {
-                save(
-                  chosen.filter(found => found.key !== choice.key),
-                  route.enabled
-                )
-              }}
-              type="checkbox"
-            />
-            <span className="w-4 text-muted-foreground">{index + 1}.</span>
-            <span className="min-w-0 flex-1 truncate">{choice.label}</span>
-            <IconButton
-              disabled={index === 0}
-              icon={ArrowUp}
-              label={t.route.up(choice.label)}
-              onClick={() => {
-                move(index, -1)
-              }}
-            />
-            <IconButton
-              disabled={index === chosen.length - 1}
-              icon={ArrowDown}
-              label={t.route.down(choice.label)}
-              onClick={() => {
-                move(index, 1)
-              }}
-            />
-          </li>
-        ))}
-      </ol>
-      {others.length > 0 && (
-        <ul className="space-y-0.5 text-muted-foreground" data-testid="session-route-others">
-          {others.map(choice => (
-            <li className="flex items-center gap-1" key={choice.key}>
-              <input
-                aria-label={t.route.add(choice.label)}
-                checked={false}
-                onChange={() => {
-                  save([...chosen, choice], route.enabled)
-                }}
-                type="checkbox"
-              />
-              <span className="min-w-0 flex-1 truncate pl-5">{choice.label}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <label className="flex items-start gap-2">
+        <input
+          checked={route.compact}
+          className="mt-0.5"
+          data-testid="session-route-compact"
+          onChange={event => {
+            save(targets, { compact: event.target.checked })
+          }}
+          type="checkbox"
+        />
+        <span>
+          {t.route.compact}
+          <span className="block text-muted-foreground">{t.route.compactHint}</span>
+        </span>
+      </label>
     </div>
   )
+}
+
+type PathStopProps = {
+  /** The stop the session runs on now. */
+  here: boolean
+  index: number
+  last: boolean
+  onChange: (model: null | string, effort: null | string) => void
+  onMove: (by: number) => void
+  onRemove: () => void
+  /** Its executor's row, which says whether it is logged in; none, not installed. */
+  row: ExecutorRow | undefined
+  /** On the harness the session runs on: "as now" keeps the model it runs on there. */
+  sameHarness: boolean
+  stop: SessionRouteRow['stops'][number]
+}
+
+/** One stop of the path: its place, whether it can take over, how much of its plan is used, and
+ * the model and the effort the session goes on with there. */
+function PathStop({ here, index, last, onChange, onMove, onRemove, row, sameHarness, stop }: PathStopProps) {
+  const offered = useStore($executorModels)[stop.name] ?? []
+  const used = usedOf(useStore($executorUsage)[stop.name])
+  const label = stop.nickname ? `${stop.title} · ${stop.nickname}` : `${stop.title} · ${t.route.main}`
+  const state = here
+    ? t.route.here
+    : !stop.installed || !row
+      ? t.route.notInstalled
+      : !row.logged_in
+        ? t.route.notLoggedIn
+        : stop.limited
+          ? t.route.atLimit
+          : t.route.ready
+  const ready = here || state === t.route.ready
+  const model = offered.find(found => found.id === stop.model)
+  const efforts = (model ?? offered[0])?.efforts ?? []
+
+  return (
+    <li
+      className={`relative space-y-1 pl-5 ${ready ? '' : 'text-muted-foreground'}`}
+      data-here={here || undefined}
+      data-testid="session-route-stop"
+    >
+      {/* The path: a dot per stop, joined to the next. */}
+      {!last && <span aria-hidden className="absolute top-3 bottom-[-0.5rem] left-[0.3rem] w-px bg-border-strong" />}
+      <span
+        aria-hidden
+        className={`absolute top-1 left-0 h-2.5 w-2.5 rounded-full border-2 ${
+          here
+            ? 'border-foreground bg-foreground'
+            : ready
+              ? 'border-foreground bg-background'
+              : 'border-faint bg-background'
+        }`}
+      />
+      <div className="flex items-center gap-1">
+        <span className="min-w-0 flex-1 truncate font-medium" data-testid="session-route-name">
+          {index + 1}. {label}
+        </span>
+        <span className="shrink-0" data-testid="session-route-ready">
+          {used === null ? state : `${state} · ${t.route.used(used)}`}
+        </span>
+        <IconButton
+          disabled={index === 0}
+          icon={ArrowUp}
+          label={t.route.up(label)}
+          onClick={() => {
+            onMove(-1)
+          }}
+        />
+        <IconButton
+          disabled={last}
+          icon={ArrowDown}
+          label={t.route.down(label)}
+          onClick={() => {
+            onMove(1)
+          }}
+        />
+        <IconButton icon={Close} label={t.route.remove(label)} onClick={onRemove} />
+      </div>
+      {offered.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          <PillSelect
+            aria-label={t.route.model(label)}
+            data-testid="session-route-model"
+            onChange={event => {
+              const next = offered.find(found => found.id === event.target.value)
+              // An effort the model does not take goes back to "as now".
+              const kept = stop.effort && next?.efforts.includes(stop.effort) ? stop.effort : null
+              onChange(event.target.value || null, kept)
+            }}
+            value={stop.model ?? ''}
+          >
+            <option value="">{sameHarness ? t.route.same : t.route.itsDefault}</option>
+            {offered.map(found => (
+              <option key={found.id} title={found.description} value={found.id}>
+                {found.name}
+              </option>
+            ))}
+          </PillSelect>
+          {efforts.length > 0 && (
+            <PillSelect
+              aria-label={t.route.effort(label)}
+              data-testid="session-route-effort"
+              onChange={event => {
+                onChange(stop.model ?? null, event.target.value || null)
+              }}
+              value={stop.effort ?? ''}
+            >
+              <option value="">{t.route.same}</option>
+              {efforts.map(level => (
+                <option key={level} value={level}>
+                  {t.composer.effortLevel(level)}
+                </option>
+              ))}
+            </PillSelect>
+          )}
+        </div>
+      )}
+    </li>
+  )
+}
+
+/** How much of a stop's plan is used: its most used limit of every model, as last read. */
+function usedOf(read: undefined | UsageRead): null | number {
+  const windows = read?.usage?.windows.filter(window => !window.model) ?? []
+
+  return windows.length ? Math.round(Math.max(...windows.map(window => window.used))) : null
 }
 
 /** A switch of the session's account asked for, while what changes is read and then shown. */

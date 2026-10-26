@@ -36,10 +36,12 @@ Claude Code's own login in your browser. The same holds for Codex, the Gemini CL
 
 ## What happens when a coding agent hits its usage limit?
 
-With a **route**, the session goes on by itself: within one coding agent it continues in a copy on
-the next account; across coding agents a new session starts with a handoff of the task, your latest
-instruction, the steps not done and the files changed. Without a route, it goes on with the coding
-agent's other accounts. You can also switch a session's account yourself at any time. See
+With a **route**, the session goes on by itself, on the model and the effort it ran on unless a
+stop names others: within one coding agent it continues in a copy on the next account, compacted
+first where the agent has `/compact`; across coding agents a new session starts with a handoff of
+the task, your latest instruction, the steps not done and the files changed. Without a route, it
+goes on with the coding agent's other accounts. You can also switch a session's account yourself
+at any time. See
 [A route for each session](/docs/guides/coding-agents/#a-route-for-each-session).
 
 ## Does my code or data go to Atlas's servers?

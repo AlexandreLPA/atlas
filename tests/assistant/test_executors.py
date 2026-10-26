@@ -944,7 +944,7 @@ def test_executor_accounts_tells_each_accounts_login_usage_limit_and_folders(
 
     [executor] = json.loads(listed)["executors"]
     assert executor["executor"] == CLAUDE_CODE
-    assert executor["hand_over"] == {"on": True, "compacts_first": False}
+    assert executor["hand_over"] == {"on": True, "compacts_first": True}
     main, work = executor["accounts"]
     assert (main["name"], main["login"], main["logged_in"]) == (
         "claude-code@main",

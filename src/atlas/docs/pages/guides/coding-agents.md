@@ -33,10 +33,11 @@ A session's **route** says where it goes on when its plan's limit is reached: wh
 Claude Code · personal  →  Claude Code · company  →  Codex · main
 ```
 
-- **Within one harness**, the session itself moves: it goes on in a copy on the next account.
+- **Within one harness**, the session itself moves: it goes on in a copy on the next account. It compacts there first (`/compact`), so the copy reads less on the new account's plan, wherever the harness has that command; you can turn it off.
 - **Across harnesses**, a new session starts on the next one with a handoff: the task, your latest instruction, the steps not done, the files changed and what happened so far. Atlas puts it together from the session itself, with no model call.
+- **The model and the effort go on with it.** The session keeps the model and the effort it ran on, the effort fitted to what the next model takes; on another harness, it runs on that harness's default model. A stop can name its own model and effort instead. If the next account does not offer the model, the session goes on on its default and says so.
 
-With no route, the harness's own accounts take over at a plan's limit. Going on at a limit is on by default, and you can turn it off.
+The route is drawn as a path above the session's box, from its pill: each stop in order, the one it runs on marked, whether each can take over (installed, logged in, not at its own limit) and how much of its plan is used. With no route, the harness's own accounts take over at a plan's limit. Going on at a limit is on by default, and you can turn it off.
 
 ## Questions and permissions
 

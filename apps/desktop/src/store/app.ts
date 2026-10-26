@@ -205,6 +205,15 @@ export interface OpenSession {
   title: string
 }
 
+/** A session's route as the screen sets it: its stops in order, each with the model and the
+ * effort the session goes on with there, whether it is followed, and whether a copy compacts
+ * first. */
+export interface SessionRouteSet {
+  compact: boolean
+  enabled: boolean
+  targets: RouteTargetParams[]
+}
+
 /** What opening a session needs to know of it: its row in the list, its tab, or its instance. */
 type SessionShown = Pick<SessionRow, 'elsewhere' | 'executor' | 'folder' | 'instance_id' | 'session_id' | 'title'>
 
@@ -945,6 +954,11 @@ export class HomeSession {
     }
 
     this.$openSession.set(next)
+
+    // Gone on to another harness by its route: the box offers that one's models.
+    if (next.executor !== before?.executor && this.$executorModels.get()[next.executor] === undefined) {
+      void this.refreshExecutorModels(next.executor).catch(() => undefined)
+    }
   }
 
   /** Show a session, in its tab or the passing one: what its harness kept, read by its plugin;
@@ -1203,11 +1217,12 @@ export class HomeSession {
     }
   }
 
-  /** The session's route, in order, and whether it is followed: kept for its card, so the
-   * instances that take its place follow it too. */
-  async setSessionRoute(instanceId: string, targets: RouteTargetParams[], enabled: boolean): Promise<void> {
+  /** The session's route, in order, each stop with the model and the effort it goes on with,
+   * whether it is followed and whether a copy compacts first: kept for its card, so the instances
+   * that take its place follow it too. */
+  async setSessionRoute(instanceId: string, route: SessionRouteSet): Promise<void> {
     const row = await this.onSession(client =>
-      client.call('workbench.set_route', { enabled, instance_id: instanceId, targets })
+      client.call('workbench.set_route', { ...route, instance_id: instanceId })
     )
 
     if (row) {
@@ -3108,6 +3123,20 @@ export function refreshExecutorUsage(executor: string): Promise<void> {
   return current().refreshExecutorUsage(executor)
 }
 
+/** Read an executor's plan usage when the last read is old: a route's stops as it opens. */
+export function readUsageIfStale(executor: string): void {
+  current().readUsageIfStale(executor)
+}
+
+/** Read the models an executor offers, once: a route's stops as it opens. */
+export function readExecutorModels(executor: string): void {
+  const session = current()
+
+  if (session.$executorModels.get()[executor] === undefined) {
+    void session.refreshExecutorModels(executor).catch(() => undefined)
+  }
+}
+
 export function addAccount(executor: string, nickname: string): Promise<boolean> {
   return current().addAccount(executor, nickname)
 }
@@ -3132,8 +3161,8 @@ export function readSessionRoute(instanceId: string): Promise<void> {
   return current().readSessionRoute(instanceId)
 }
 
-export function setSessionRoute(instanceId: string, targets: RouteTargetParams[], enabled: boolean): Promise<void> {
-  return current().setSessionRoute(instanceId, targets, enabled)
+export function setSessionRoute(instanceId: string, route: SessionRouteSet): Promise<void> {
+  return current().setSessionRoute(instanceId, route)
 }
 
 export function deleteSession(row: SessionRow): Promise<boolean> {

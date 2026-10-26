@@ -2413,9 +2413,19 @@ class Gateway:
     async def _workbench_set_route(
         self, connection: Connection, params: WorkbenchRouteParams
     ) -> SessionRouteRow:
-        targets = [RouteTarget(given.executor, given.account_id) for given in params.targets]
+        targets = [
+            RouteTarget(
+                given.executor,
+                given.account_id,
+                model=given.model or None,
+                effort=given.effort or None,
+            )
+            for given in params.targets
+        ]
         found = await self._on_workbench(
-            self.assistant.workbench.set_route(params.instance_id, targets, enabled=params.enabled)
+            self.assistant.workbench.set_route(
+                params.instance_id, targets, enabled=params.enabled, compact=params.compact
+            )
         )
         return _route_of(found)
 
@@ -2809,7 +2819,7 @@ def _said_kind(text: str) -> Literal["message", "notice", "terminal", "skill"]:
 
 def _route_of(found: RouteView) -> SessionRouteRow:
     stops = [RouteStopRow(**dump(stop)) for stop in found.stops]
-    return SessionRouteRow(found.instance_id, stops, found.enabled)
+    return SessionRouteRow(found.instance_id, stops, found.enabled, found.compact)
 
 
 def _accounts_of(listed: AccountList) -> ExecutorAccounts:

@@ -14,7 +14,7 @@ subagents: their tasks, their summaries and the notice that brings them back. Pu
 import json
 import re
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta, tzinfo
 from decimal import Decimal
 from enum import StrEnum
@@ -872,11 +872,12 @@ class ExecutorAccount:
 class AccountFailover:
     """How an executor's accounts take over from one another when one reaches its plan's limit
     (asked for by the user on 21/10/2026): the session goes on in a copy on the next account, in
-    the user's order, and, with `compact`, compacts there before it goes on."""
+    the user's order, and, with `compact`, compacts there before it goes on (on unless the user
+    turned it off, decided with the user on 25/10/2026)."""
 
     executor: str
     enabled: bool = True
-    compact: bool = False
+    compact: bool = True
     #: The accounts' ids in the order they take over, the main one as `""`; an account missing
     #: from it comes after, in the accounts' own order.
     order: tuple[str, ...] = ()
@@ -885,10 +886,14 @@ class AccountFailover:
 @dataclass(frozen=True, slots=True)
 class RouteTarget:
     """One destination of a `SessionRoute`: an executor and one of its accounts together (the main
-    one as `""`), so two executors' accounts never collide."""
+    one as `""`), so two executors' accounts never collide, and the model and the effort the session
+    goes on with there (asked for by the user on 25/10/2026); `None`, the ones it ran on. A
+    destination is its executor and account: two with the same differ only in what they choose."""
 
     executor: str
     account: str = ""
+    model: str | None = field(default=None, compare=False)
+    effort: str | None = field(default=None, compare=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -902,6 +907,10 @@ class SessionRoute:
     conversation: str
     targets: tuple[RouteTarget, ...] = ()
     enabled: bool = True
+    #: Compact the copy on another account of the same executor before it goes on, where the
+    #: harness has `/compact` (on by default, decided with the user on 25/10/2026): at the switch,
+    #: never before the limit.
+    compact: bool = True
 
 
 @dataclass(frozen=True, slots=True)

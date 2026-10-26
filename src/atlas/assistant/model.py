@@ -209,8 +209,9 @@ class InstanceActivity:
     `steered` (a prompt that entered the turn running), `answered` (Atlas answered one of its
     requests for the user), `compacted` (it compacted its session), `account` (its account
     reached its plan's limit and it went on on the account `text` names or, `failed`, why it
-    could not) or `route` (it went on, by its session's route, in a new session of the executor
-    and account `text` names or, `failed`, why none could)."""
+    could not), `route` (it went on, by its session's route, in a new session of the executor
+    and account `text` names or, `failed`, why none could) or `note` (what the screen says of
+    such a switch: the model it went on with, a compaction that failed)."""
 
     instance_id: str
     kind: str
@@ -388,6 +389,11 @@ class RouteStop:
     nickname: str = ""
     #: Its executor is installed here: one that is not is passed over.
     installed: bool = True
+    #: The model and the effort the session goes on with there; `None`, the ones it ran on.
+    model: str | None = None
+    effort: str | None = None
+    #: It reached its plan's limit and has not reset: passed over until it does.
+    limited: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -399,6 +405,8 @@ class RouteView:
     instance_id: str
     stops: tuple[RouteStop, ...] = ()
     enabled: bool = True
+    #: It compacts the copy on another account of the same executor before it goes on.
+    compact: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -412,8 +420,8 @@ class AccountList:
     can_add: bool = False
     #: A session at its account's limit goes on on the next account (on by default).
     failover: bool = True
-    #: It compacts there before it goes on.
-    compact: bool = False
+    #: It compacts there before it goes on (on by default).
+    compact: bool = True
 
 
 class Decides(StrEnum):

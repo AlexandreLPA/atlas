@@ -1534,10 +1534,13 @@ class WorkbenchUseAccountParams:
 @dataclass(frozen=True, slots=True)
 class RouteTargetParams:
     """One destination of a session's route: an executor's own name and one of its
-    `executor.accounts` ids (empty, the main account)."""
+    `executor.accounts` ids (empty, the main account), and the model (an `executor.models` id)
+    and the effort the session goes on with there; `None`, the ones it ran on."""
 
     executor: str
     account_id: str = ""
+    model: str | None = None
+    effort: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -1546,6 +1549,9 @@ class WorkbenchRouteParams:
     #: In the order the session goes on to them at a plan's limit; empty, none.
     targets: list[RouteTargetParams]
     enabled: bool = True
+    #: A copy on another account of the same executor compacts first, where its harness has
+    #: `/compact` (on by default).
+    compact: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -1559,6 +1565,11 @@ class RouteStopRow:
     nickname: str = ""
     #: Its executor is installed here; one that is not is passed over.
     installed: bool = True
+    #: The model and the effort the session goes on with there; `None`, the ones it ran on.
+    model: str | None = None
+    effort: str | None = None
+    #: It reached its plan's limit and has not reset: passed over until it does.
+    limited: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -1570,6 +1581,8 @@ class SessionRouteRow:
     instance_id: str
     stops: list[RouteStopRow] = field(default_factory=list[RouteStopRow])
     enabled: bool = True
+    #: A copy on another account compacts first, where its harness has `/compact`.
+    compact: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -1675,9 +1688,10 @@ class InstanceActivityPayload:
     #: `said`, `thought`, `called` (`text` is the tool and its input), `returned`, `prompted`,
     #: `steered` (a prompt that entered the turn running), `answered` (Atlas answered for the
     #: user), `compacted` (the harness compacted its session, `text` says how much), `account`
-    #: (at a plan's limit it went on on the account `text` names) or `route` (at a plan's limit
-    #: it went on, by its session's route, on the executor and account `text` names); a `failed`
-    #: `account` or `route` says why it could not.
+    #: (at a plan's limit it went on on the account `text` names), `route` (at a plan's limit
+    #: it went on, by its session's route, on the executor and account `text` names), or `note`
+    #: (what the screen says of such a switch: another model, a compaction that failed); a
+    #: `failed` `account` or `route` says why it could not.
     kind: str
     text: str
     failed: bool = False

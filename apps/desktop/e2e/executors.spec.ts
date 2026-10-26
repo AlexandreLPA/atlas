@@ -649,6 +649,12 @@ test('another account is added by its nickname, logs in in its own folder, and a
   const original = path.join(claude, 'projects', projectFolder(folder), `${SESSION}.jsonl`)
   // The account is chosen with the route, from one pill by the box.
   await page.getByTestId('session-route').click()
+  // The route is a path: a stop added says whether it can take over, and a copy compacts first.
+  const route = page.getByTestId('session-route-editor')
+  await route.getByTestId('session-route-others').selectOption({ label: 'Claude Code · work' })
+  await expect(route.getByTestId('session-route-name')).toHaveText(['1. Claude Code · work'], STARTED)
+  await expect(route.getByTestId('session-route-ready')).toContainText('ready')
+  await expect(route.getByTestId('session-route-compact')).toBeChecked()
   const workAccount = page.getByTestId('session-account').getByRole('radio', { name: 'work' })
   await expect(workAccount).toBeEnabled(STARTED)
   const before = readFileSync(original, 'utf8')
