@@ -27,7 +27,13 @@ export const collections = {
       date: z.coerce.date(),
       source: z.string(),
       url: z.url(),
-      atlas: z.string().optional()
+      // A story is news, a model or a repository.
+      // The story's picture, as its publisher serves it.
+      image: z.url().optional(),
+      kind: z.enum(['news', 'model', 'repo']).default('news'),
+      atlas: z.string().optional(),
+      // What the story is about, for the tabs on the news page.
+      topics: z.array(z.string()).default([])
     })
   })
 }

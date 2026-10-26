@@ -24,6 +24,12 @@ export const proof = [
   { label: 'Local or remote', detail: 'Your laptop, a home lab, a VPS' }
 ]
 
+/** The line under the wordmark that opens the home. */
+export const opening = {
+  line: 'The open-source home for Claude Code, Codex, the Gemini CLI and DeepSeek.',
+  cue: 'See how it works'
+}
+
 export interface Chapter {
   id: 'accounts' | 'route' | 'machines' | 'memory' | 'close'
   title: string

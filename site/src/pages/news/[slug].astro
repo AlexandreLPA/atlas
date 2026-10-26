@@ -1,0 +1,225 @@
+---
+import type { GetStaticPaths } from 'astro'
+import { getCollection, render } from 'astro:content'
+
+import NewsPicture from '../../components/NewsPicture.astro'
+import Site from '../../layouts/Site.astro'
+
+export const getStaticPaths = (async () =>
+  (await getCollection('news')).map(item => ({ params: { slug: item.id }, props: { item } }))) satisfies GetStaticPaths
+
+const { item } = Astro.props
+const { Content } = await render(item)
+const { title, date, source, url, atlas, kind, topics, image } = item.data
+const words = (item.body ?? '').split(/\s+/).filter(Boolean).length
+const minutes = Math.max(1, Math.round(words / 220))
+const lede =
+  (item.body ?? '')
+    .trim()
+    .split(/\n\s*\n/)[0]
+    ?.replace(/\s+/g, ' ') ?? ''
+const published = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
+---
+
+<Site title={`${title}: Atlas news`} description={lede} markdown={`/news/${item.id}.md`} current="news">
+  <article class="story">
+    <a class="back" href="/news/">
+      <span aria-hidden="true">←</span>Back to News
+    </a>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/news/">News</a>
+      {topics[0] && (
+        <>
+          <span aria-hidden="true">/</span>
+          <span>{topics[0]}</span>
+        </>
+      )}
+    </nav>
+    <p class="tags">
+      <span class="kind">{kind}</span>
+      {topics.map(topic => (
+        <span>{topic}</span>
+      ))}
+    </p>
+    <h1>{title}</h1>
+    <p class="lede">{lede}</p>
+    <figure class="hero">
+      <NewsPicture image={image} seed={title} eager />
+    </figure>
+    <dl class="facts">
+      <div>
+        <dt>Source</dt>
+        <dd>{source}</dd>
+      </div>
+      <div>
+        <dt>Published</dt>
+        <dd>
+          <time datetime={date.toISOString().slice(0, 10)}>{published}</time>
+        </dd>
+      </div>
+      <div>
+        <dt>Type</dt>
+        <dd>{kind}</dd>
+      </div>
+      <div>
+        <dt>Read</dt>
+        <dd>{minutes} min read</dd>
+      </div>
+    </dl>
+    <div class="content">
+      <div class="prose">
+        <Content />
+      </div>
+      {atlas && (
+        <p class="for-atlas">
+          <span class="label">For Atlas</span>
+          {atlas}
+        </p>
+      )}
+      <div class="original">
+        <p>Summarized by Atlas from {source}. Rights remain with the original publisher.</p>
+        <a class="button button--solid" href={url} rel="nofollow noopener noreferrer" target="_blank">
+          Read original report <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </div>
+  </article>
+</Site>
+
+<style>
+  .story {
+    width: min(100% - 2 * var(--gutter), 90rem);
+    margin-inline: auto;
+    padding: 9rem 0 7rem;
+  }
+
+  .back {
+    display: inline-flex;
+    gap: 0.5rem;
+    margin-bottom: 2.5rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 0;
+    background: rgb(var(--fg-rgb) / 0.06);
+    color: rgb(var(--fg-rgb) / 0.8);
+    font-size: var(--step--1);
+    text-decoration: none;
+    transition: background 0.2s;
+  }
+
+  .back:hover {
+    background: rgb(var(--fg-rgb) / 0.14);
+  }
+
+  .crumbs,
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.9rem;
+    color: var(--haze);
+    font-size: var(--step--1);
+  }
+
+  .crumbs {
+    margin-bottom: 1.75rem;
+  }
+
+  .crumbs a {
+    text-decoration: none;
+  }
+
+  .tags {
+    margin-bottom: 1.25rem;
+  }
+
+  .kind {
+    padding: 0.1rem 0.7rem;
+    border-radius: 0;
+    background: var(--brass-soft);
+    color: var(--brass);
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  h1 {
+    max-width: 20ch;
+    font-size: clamp(2.75rem, 7vw, 6.5rem);
+    line-height: 0.98;
+    letter-spacing: -0.04em;
+  }
+
+  .lede {
+    max-width: 44rem;
+    margin-top: 1.5rem;
+    color: rgb(var(--fg-rgb) / 0.8);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  .hero {
+    aspect-ratio: 16 / 7;
+    margin: 3rem 0 0;
+    overflow: hidden;
+    border-radius: 0;
+    background: var(--night-lift);
+  }
+
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem 4rem;
+    margin: 2.5rem 0 0;
+  }
+
+  .facts dt {
+    color: var(--haze);
+    font-size: var(--step--1);
+  }
+
+  .facts dd {
+    margin: 0.2rem 0 0;
+    font-size: var(--step-1);
+    font-weight: 560;
+    text-transform: capitalize;
+  }
+
+  .content {
+    display: grid;
+    gap: 2rem;
+    max-width: 44rem;
+    margin: 3.5rem auto 0;
+  }
+
+  .prose {
+    color: rgb(var(--fg-rgb) / 0.86);
+    font-size: var(--step-0);
+    line-height: 1.75;
+  }
+
+  .prose :global(p + p) {
+    margin-top: 1.25rem;
+  }
+
+  .for-atlas {
+    display: grid;
+    gap: 0.35rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--brass);
+    font-size: var(--step--1);
+  }
+
+  .label {
+    color: var(--brass);
+    font-size: var(--step--1);
+    font-weight: 600;
+  }
+
+  .original {
+    display: grid;
+    justify-items: start;
+    gap: 1rem;
+    padding: 1.75rem 0 0;
+    color: var(--haze);
+    font-size: var(--step--1);
+  }
+</style>

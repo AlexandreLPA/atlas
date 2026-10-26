@@ -44,8 +44,19 @@ const graph = jsonLd([organization(site), website(site), ...schema])
       content={noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large, max-snippet:-1'}
     />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <meta name="theme-color" content="#05070f" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="color-scheme" content="dark light" />
+    <script is:inline>
+      // The theme: what the visitor chose, on any page of the site and of the documentation, or
+      // else what the system prefers. Set before the page paints, so it never flashes.
+      try {
+        const stored = localStorage.getItem('starlight-theme')
+        const light = stored ? stored === 'light' : matchMedia('(prefers-color-scheme: light)').matches
+        document.documentElement.dataset.theme = light ? 'light' : 'dark'
+      } catch {
+        document.documentElement.dataset.theme = 'dark'
+      }
+    </script>
     <link rel="preload" href={monaLatin} as="font" type="font/woff2" crossorigin />
     {markdown && <link rel="alternate" type="text/markdown" href={markdown} />}
     <link rel="alternate" type="application/rss+xml" title="Atlas news" href="/news/rss.xml" />
@@ -77,5 +88,17 @@ const graph = jsonLd([organization(site), website(site), ...schema])
       <slot />
     </main>
     <Footer />
+    <script>
+      import '../scripts/ascii-field'
+      import '../scripts/scramble'
+      import '../scripts/chrome'
+    </script>
   </body>
 </html>
+
+<style>
+  main {
+    position: relative;
+    z-index: 1;
+  }
+</style>

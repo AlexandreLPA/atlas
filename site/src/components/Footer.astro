@@ -43,6 +43,10 @@ const columns = [
 ---
 
 <footer class="footer">
+  <div class="page wordmark" data-wordmark="Atlas">
+    <canvas aria-hidden="true"></canvas>
+    <p class="visually-hidden">Atlas</p>
+  </div>
   <div class="page footer-grid">
     <div class="footer-brand">
       <a class="footer-home" href="/" aria-label="Atlas, home">
@@ -78,11 +82,22 @@ const columns = [
 </footer>
 
 <style>
+  .wordmark {
+    margin-bottom: 4rem;
+    padding-bottom: 2.5rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .wordmark canvas {
+    width: 100%;
+    min-height: 6rem;
+  }
+
   .footer {
     position: relative;
     padding: 5.5rem 0 2.5rem;
     border-top: 1px solid var(--rule);
-    background: radial-gradient(60% 80% at 0% 0%, rgb(28 40 82 / 0.28), transparent 70%), var(--night);
+    background: var(--night);
     color: var(--haze);
     font-size: var(--step--1);
   }

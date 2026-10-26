@@ -21,7 +21,7 @@ import { cameraFor, CHAPTERS, shotAt, storyPosition } from './story'
 
 const STARLIGHT = hex('#e8ecf4')
 const MOONLIGHT = hex('#b9c3da')
-const BRASS = hex('#e7b36a')
+const BRASS = hex('#ff5a1f')
 const SIGNAL = hex('#86b6ff')
 const WARM = hex('#fff0d8')
 const CORE: Vec3 = [0, 0, 0]
