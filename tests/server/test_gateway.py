@@ -886,6 +886,27 @@ def test_the_picker_lists_the_keyed_providers_and_a_pick_runs_the_next_turn(
     assert missing["code"] == NOT_FOUND
 
 
+def test_a_new_conversation_is_listed_as_its_first_turn_starts(
+    serve: Serve, fake: FakeModelServer
+) -> None:
+    # The screens read the list as a turn starts: a new conversation stayed out of it until its
+    # first save, a whole turn later (found by the UI review on 25/10/2026, while it waited for an
+    # approval).
+    fake.reply(FakeReply(text="Here.", wait_before=2))
+    server = serve()
+    with server.client() as client, server.client() as sidebar:
+        conversation = _conversation(client)
+        text = "Plan a trip\nto Lisbon"
+        client.result("conversation.send", {"conversation_id": conversation, "text": text})
+        assert sidebar.event("conversations.changed")["payload"]["status"] == "started"
+        listed = sidebar.result("conversation.list")["conversations"]
+        client.event("message.complete")
+
+    assert [(row["id"], row["title"], row["running"]) for row in listed] == [
+        (conversation, "Plan a trip", True)
+    ]
+
+
 def test_every_client_hears_a_turn_begin_and_end_and_the_list_says_which_runs(
     serve: Serve, fake: FakeModelServer
 ) -> None:

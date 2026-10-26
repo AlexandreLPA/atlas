@@ -11,6 +11,7 @@ import {
   $conversations,
   $pairings,
   $proposals,
+  $read,
   $selected,
   $sidebarTab,
   $used,
@@ -34,6 +35,7 @@ import { HomeBar } from './home-bar'
 import { RailEdge } from './rail-edge'
 import { StatusDot, useConversationDot, useConversationsDot, useInstancesDot } from './status-dot'
 import { Bulb, CalendarTime, LayoutSidebar, MessagePlus, Messages, Plug, Robot, Store, Terminal } from './ui/icons'
+import { SkeletonRows } from './ui/skeleton'
 import { IconButton, Tip } from './ui/tip'
 import { UpdateBar, UpdateStrip } from './update-bar'
 import { when } from './when'
@@ -297,6 +299,7 @@ function Conversations() {
   const conversations = byLastUse(useStore($conversations), row => lastUse(row.updated_at, used[row.id]))
   const selected = useStore($selected)
   const view = useStore($view)
+  const read = useStore($read).conversations
 
   return (
     <>
@@ -311,7 +314,14 @@ function Conversations() {
         </button>
       </div>
       <ul className="flex-1 overflow-y-auto px-2 pb-3">
-        {conversations.length === 0 && <li className="px-2 py-1 text-sm text-neutral-500">{t.conversations.empty}</li>}
+        {!read && conversations.length === 0 && (
+          <li>
+            <SkeletonRows label={t.conversations.reading} />
+          </li>
+        )}
+        {read && conversations.length === 0 && (
+          <li className="px-2 py-1 text-sm text-neutral-500">{t.conversations.empty}</li>
+        )}
         {conversations.map(conversation => (
           <li key={conversation.id}>
             <button

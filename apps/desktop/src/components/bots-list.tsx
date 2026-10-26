@@ -2,12 +2,13 @@ import { useStore } from '@nanostores/react'
 
 import { t } from '@/i18n'
 import type { BotRow } from '@/protocol/protocol.generated'
-import { $bots, $selected, $used, $view, newBot, openBot } from '@/store/app'
+import { $bots, $read, $selected, $used, $view, newBot, openBot } from '@/store/app'
 import { byLastUse, lastUse } from '@/store/status'
 
 import { BotFace } from './bot-face'
 import { StatusDot, useConversationDot } from './status-dot'
 import { Plus } from './ui/icons'
+import { SkeletonRows } from './ui/skeleton'
 import { when } from './when'
 
 /**
@@ -21,6 +22,7 @@ export function BotsList() {
   const bots = byLastUse(useStore($bots), bot => lastUse(bot.updated_at, used[bot.conversation_id ?? '']))
   const selected = useStore($selected)
   const view = useStore($view)
+  const read = useStore($read).bots
 
   return (
     <>
@@ -36,7 +38,12 @@ export function BotsList() {
         </button>
       </div>
       <ul className="flex-1 overflow-y-auto px-2 pb-3">
-        {bots.length === 0 && <li className="px-2 py-1 text-sm text-neutral-500">{t.bots.empty}</li>}
+        {!read && bots.length === 0 && (
+          <li>
+            <SkeletonRows label={t.bots.reading} />
+          </li>
+        )}
+        {read && bots.length === 0 && <li className="px-2 py-1 text-sm text-neutral-500">{t.bots.empty}</li>}
         {bots.map(bot => (
           <li key={bot.name}>
             <Row bot={bot} current={view === 'conversation' && selected !== null && selected === bot.conversation_id} />

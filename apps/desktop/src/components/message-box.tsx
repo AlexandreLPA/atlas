@@ -1,10 +1,21 @@
 import { useStore } from '@nanostores/react'
-import { type DragEvent, type KeyboardEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import {
+  type DragEvent,
+  type KeyboardEvent,
+  type ReactNode,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react'
 
 import { t } from '@/i18n'
 import { $boxInsert } from '@/plugins/registry'
 import type { AttachmentRow, SlashCommandRow } from '@/protocol/protocol.generated'
 import { $pending, attach, detach, type Pending, putBack, takeReady } from '@/store/attachments'
+import { $drafts, draftOf, setDraft } from '@/store/drafts'
 import { offered, slashQuery } from '@/store/slash'
 
 import { AttachmentChip } from './attachment-chip'
@@ -34,6 +45,9 @@ export interface MessageBoxProps {
   onCommand?: (command: string) => void
   /** Whose chips the box holds; unset, the box takes no files. */
   owner?: string
+  /** Whose words the box holds: kept per conversation while unsent, so switching to another
+   * conversation leaves them in theirs (store/drafts.ts); unset, the box keeps its own. */
+  draftKey?: string
   /** What sits below the box: the model, its effort, the terminal, what is particular to the screen. */
   toolbar: ReactNode
   /** A line above the box, such as a note on what the next prompt starts. */
@@ -75,6 +89,7 @@ export function MessageBox(props: MessageBoxProps) {
     blocked = false,
     commands = [],
     connected,
+    draftKey,
     label,
     note,
     onSlashOpen,
@@ -83,7 +98,7 @@ export function MessageBox(props: MessageBoxProps) {
     placeholder
   } = props
   const pending = useStore($pending)
-  const [text, setText] = useState('')
+  const [text, setText] = useWords(draftKey)
   const [dragging, setDragging] = useState(false)
   const picker = useRef<HTMLInputElement>(null)
   const box = useRef<HTMLTextAreaElement>(null)
@@ -111,6 +126,12 @@ export function MessageBox(props: MessageBoxProps) {
     }
   }, [listing, onSlashOpen])
 
+  // Another conversation's box: its own words, and the `/` list as it was never opened.
+  useEffect(() => {
+    setHidden(null)
+    setActive(0)
+  }, [draftKey])
+
   // The box grows with what is typed, up to its most, then scrolls (asked for by the user on
   // 22/10/2026, where a long prompt read through one line).
   useLayoutEffect(() => {
@@ -128,7 +149,7 @@ export function MessageBox(props: MessageBoxProps) {
     if (back) {
       setText(current => (current ? `${back}\n\n${current}` : back))
     }
-  }, [restore])
+  }, [restore, setText])
 
   // Words a plugin's screen puts in from now on (a dictation): after what the box holds.
   const takesWords = actions !== undefined
@@ -144,7 +165,7 @@ export function MessageBox(props: MessageBoxProps) {
         box.current?.focus()
       }
     })
-  }, [takesWords])
+  }, [takesWords, setText])
 
   const submit = () => {
     const message = text.trim()
@@ -170,11 +191,13 @@ export function MessageBox(props: MessageBoxProps) {
 
     setText('')
     const attachments = owner === undefined ? [] : takeReady(owner)
+    const sentFrom = draftKey
 
-    // A message that did not reach the server comes back to the box, its files too.
+    // A message that did not reach the server comes back to the box it left, its files too, also
+    // when another conversation is on screen by then.
     void props.onSend(message, attachments).then(sent => {
       if (!sent) {
-        setText(current => current || message)
+        setText(current => current || message, sentFrom)
 
         if (owner !== undefined) {
           putBack(owner, attachments)
@@ -437,4 +460,25 @@ function detail(chip: Pending): string {
     case 'ready':
       return t.attachments.size(chip.size)
   }
+}
+
+/** The box's words: its conversation's draft when it says whose they are (`draftKey`), else its
+ * own; the setter writes another conversation's when given its key. */
+function useWords(draftKey: string | undefined): [string, (next: SetStateAction<string>, key?: string) => void] {
+  const [own, setOwn] = useState('')
+  const drafts = useStore($drafts)
+  const set = useCallback(
+    (next: SetStateAction<string>, key = draftKey) => {
+      if (key === undefined) {
+        setOwn(next)
+
+        return
+      }
+
+      setDraft(key, typeof next === 'function' ? next(draftOf(key)) : next)
+    },
+    [draftKey]
+  )
+
+  return [draftKey === undefined ? own : (drafts[draftKey] ?? ''), set]
 }

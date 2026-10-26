@@ -1194,6 +1194,19 @@ Cut to what a first screen needs: about 6 runtime packages.
   approval card (once, this conversation, always, deny with a reason), answered within the server's
   300 seconds; the review's summary as a quiet row; a band while the connection comes
   back; and a system notification when a turn ends in a conversation not on screen.
+- **What the screen says while it reads, sends and switches** (step 9d; the UI review of
+  25/10/2026 found the window saying "No conversations yet" to someone with conversations while
+  the server started, and a new conversation out of the list while its first turn waited for an
+  approval). A list says it is being read until it was (`$read`), with a skeleton after 400 ms, so a
+  quick read never flashes one; the window says Atlas opens until its home first answered, and the
+  band is left for a connection lost or a failure; a conversation opened for the first time shows a
+  skeleton, never the invitation to start. The server writes a new conversation's title, its first
+  message's, as its first turn starts (`ConversationStore.name_untitled`): the list shows only
+  titled conversations, and the screens read it as a turn starts. A message shows at once, lighter,
+  until the server's own `message.start` or `message.steered` takes its place (`$sending`); one the
+  server has, in a turn that runs, says it enters once the current step ends, and goes when the
+  turn ends (its words back in the box when it never entered). The words typed in a box stay with
+  their conversation (`store/drafts.ts`), and so does where the user read to in it.
 - **Memory proposals** (step 9b): the review's row offers to review the change; the proposal is a
   card in the conversation the review read, beside the other cards, until it is decided; and the
   sidebar counts the open proposals, only when there are some, and opens the list of all. A card

@@ -66,10 +66,16 @@ describe('the bots list', () => {
     expect(opened).toHaveBeenCalledWith('work')
   })
 
-  it('says what a bot is when there is none', () => {
-    render(<BotsList />)
+  it('says what a bot is when there is none, once the list was read and never before', () => {
+    app.$read.setKey('bots', false)
+    const { rerender } = render(<BotsList />)
+    expect(screen.queryByText(/No bots yet/)).toBeNull()
+    expect(screen.getByTestId('skeleton').getAttribute('aria-label')).toBe('Reading the bots…')
 
+    app.$read.setKey('bots', true)
+    rerender(<BotsList />)
     expect(screen.getByText(/No bots yet/)).toBeTruthy()
+    expect(screen.queryByTestId('skeleton')).toBeNull()
   })
 })
 

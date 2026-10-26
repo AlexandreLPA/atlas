@@ -126,6 +126,25 @@ def test_the_title_is_the_first_thing_the_user_said(store: ConversationStore) ->
     assert store.info(conversation.id).title == "Plan the trip"
 
 
+def test_the_first_message_names_the_conversation_as_its_turn_starts(
+    store: ConversationStore,
+) -> None:
+    conversation = store.create()
+
+    # Atlas's own words name nothing; the user's first words do, once, as the save would.
+    assert not store.name_untitled(conversation.id, UserMessage("[IMPORTANT: a command ended]"))
+    assert store.name_untitled(conversation.id, UserMessage("Plan the trip\nwith details"))
+    assert not store.name_untitled(conversation.id, UserMessage("Something else"))
+    conversation.history += [UserMessage("Plan the trip\nwith details")]
+    conversation.save()
+    assert store.info(conversation.id).title == "Plan the trip"
+    # Still the title a model may replace.
+    assert store.title_source(conversation.id) is TitleSource.DERIVED
+    named = store.create(title="My trip")
+    assert not store.name_untitled(named.id, UserMessage("Plan the trip"))
+    assert store.info(named.id).title == "My trip"
+
+
 def _compact(history: list[Message], keep: int) -> AssistantMessage:
     """What the loop does: the leading instructions stay, the middle becomes a summary."""
     summary = AssistantMessage(f"{SUMMARY_MARK}\n\nThey talked about the trip.")

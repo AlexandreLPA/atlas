@@ -146,3 +146,48 @@ describe("the box's plugin buttons (screen version 2)", () => {
     expect(text.value).toBe('')
   })
 })
+
+describe("each conversation's words (the UI review, 25/10/2026)", () => {
+  function owned(draftKey: string, onSend = vi.fn(() => Promise.resolve(true))) {
+    return (
+      <MessageBox
+        connected
+        draftKey={draftKey}
+        label="Message"
+        onSend={onSend}
+        placeholder="Message"
+        testId="box"
+        toolbar={null}
+      />
+    )
+  }
+
+  it('stay in their conversation when another comes on screen, and wait there', () => {
+    const { rerender } = render(owned('c-words-a'))
+    fireEvent.change(screen.getByTestId('box'), { target: { value: 'For the first one' } })
+
+    rerender(owned('c-words-b'))
+    expect(screen.getByTestId<HTMLTextAreaElement>('box').value).toBe('')
+    rerender(owned('c-words-a'))
+    expect(screen.getByTestId<HTMLTextAreaElement>('box').value).toBe('For the first one')
+  })
+
+  it('that did not reach the server come back to the conversation they left', async () => {
+    let refuse: (sent: boolean) => void = () => undefined
+    const onSend = vi.fn(() => new Promise<boolean>(resolve => (refuse = resolve)))
+    const { rerender } = render(owned('c-back-a', onSend))
+    const text = screen.getByTestId('box')
+    fireEvent.change(text, { target: { value: 'Lost on the way' } })
+    fireEvent.keyDown(text, { key: 'Enter' })
+    expect(onSend).toHaveBeenCalled()
+
+    rerender(owned('c-back-b', onSend))
+    await act(async () => {
+      refuse(false)
+      await Promise.resolve()
+    })
+    expect(screen.getByTestId<HTMLTextAreaElement>('box').value).toBe('')
+    rerender(owned('c-back-a', onSend))
+    expect(screen.getByTestId<HTMLTextAreaElement>('box').value).toBe('Lost on the way')
+  })
+})

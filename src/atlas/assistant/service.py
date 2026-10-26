@@ -1070,6 +1070,8 @@ class OpenConversation:
         self._turn: asyncio.Task[None] | None = None
         self._review: asyncio.Task[None] | None = None
         self._titling: asyncio.Task[None] | None = None
+        #: It has a title, so the list shows it: once named, a turn needs no write for it.
+        self._named = False
         self._client: ModelClient | None = None
         self._loop: AgentLoop | None = None
         self._gate: ApprovalGate | None = None
@@ -1375,6 +1377,15 @@ class OpenConversation:
         self._emit(TurnEnded(outcome, reply, 0, Decimal(0)))
         self._shared.active()
 
+    def _name_before_start(self, message: UserMessage) -> None:
+        """A conversation with no title takes its first message's before the turn starts: the
+        screens read the list as a turn starts, and the list shows only titled conversations."""
+        if self._named:
+            return
+        named = self._shared.conversations.name_untitled(self.id, message)
+        # The user's own words that named nothing found a title already there.
+        self._named = named or not from_atlas(message)
+
     def _skill_used(self, name: str) -> None:
         """A skill was loaded: the monitors waiting for it start."""
         if self._monitors is not None:
@@ -1388,6 +1399,7 @@ class OpenConversation:
     async def _run_turn(self, message: UserMessage) -> None:
         # The turn runs in a task of its own, so this reaches its tool calls and no other turn's.
         _CONVERSATION.set(self.id)
+        self._name_before_start(message)
         command, arguments = self._plugin_command(message.text)
         if command is not None:
             await self._run_plugin_command(command, arguments, message)

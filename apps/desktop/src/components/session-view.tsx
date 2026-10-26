@@ -40,6 +40,7 @@ import {
   switchSessionAccount
 } from '@/store/app'
 import { fromNames } from '@/store/slash'
+import { EMPTY_THREAD } from '@/store/thread'
 import { waitingCalls } from '@/store/waiting'
 
 import { type ExecutorCard, ExecutorCardView } from './executor-cards'
@@ -97,6 +98,9 @@ export function SessionView() {
             {open.sessionId ? '' : t.executors.emptySession(title, baseName(open.folder))}
           </p>
         }
+        // A session kept by its harness is read as it opens: never shown as an empty one meanwhile.
+        loading={open.sessionId !== '' && thread === EMPTY_THREAD && !error}
+        place={sessionOwner(open)}
         thread={thread}
         waiting={waitingCalls(asked, thread.items)}
       />
@@ -268,6 +272,8 @@ function SessionComposer({
       blocked={working && !instance.steer}
       commands={commands}
       connected={state === 'open'}
+      // A new session's words are its folder's until it has an id.
+      draftKey={open.sessionId || open.instanceId ? sessionOwner(open) : `session-new:${open.executor}:${open.folder}`}
       label={t.executors.placeholder(title)}
       note={
         auto.asking ? (

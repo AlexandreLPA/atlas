@@ -12,11 +12,14 @@ import {
   $keyNotice,
   $modelOptions,
   $proposals,
+  $read,
   $selected,
+  $sending,
   $session,
   $threads,
   $view,
   currentFolder,
+  DRAFT,
   keyScreenShown
 } from '@/store/app'
 import { $panelWidth, $sidebarWidth, toggleSidebar } from '@/store/layout'
@@ -51,6 +54,10 @@ export function App() {
   const approved = useStore($approved)
   const view = useStore($view)
   const thread = (selected ? threads[selected] : undefined) ?? EMPTY_THREAD
+  // A conversation opened for the first time is read before it shows: never as an empty one.
+  const reading = selected !== null && threads[selected] === undefined
+  const sending = useStore($sending)[selected ?? DRAFT]
+  const read = useStore($read)
   // An executor's cards are in its session's conversation, in the executors tab (step 16f).
   const shown = cards.filter(
     (card): card is Extract<typeof card, { kind: 'approval' | 'ask' | 'secret' }> =>
@@ -64,6 +71,8 @@ export function App() {
   const proposed = proposals.filter(fromHere)
   const done = approvedHere(approved, proposals, fromHere)
   const { state } = useStore($connection)
+  // Until the home first answered, the window says Atlas opens, not that it has nothing.
+  const opening = state !== 'open' && !read.conversations
   const session = useStore($session)
   // A bot's fixed conversation says whose it is.
   const bot = useStore($bots).find(row => selected !== null && row.conversation_id === selected)
@@ -138,7 +147,14 @@ export function App() {
         ) : (
           <>
             {bot && <BotHeader bot={bot} />}
-            <ThreadView empty={bot ? <BotEmpty bot={bot} /> : undefined} thread={thread} waiting={waiting} />
+            <ThreadView
+              empty={opening ? <Opening /> : bot ? <BotEmpty bot={bot} /> : undefined}
+              loading={reading}
+              place={selected ?? DRAFT}
+              sending={sending}
+              thread={thread}
+              waiting={waiting}
+            />
             {shown.length + proposed.length + done.length > 0 && (
               <div className="mx-auto max-h-[50vh] w-full max-w-3xl space-y-3 overflow-y-auto px-6 pb-3">
                 {shown.map(card => {
@@ -172,15 +188,22 @@ export function App() {
   )
 }
 
-/** A band while the connection is not open, with why the last dial failed. */
+/** A band while the connection is not open, with why the last dial failed. Opening, the window
+ * says so in the conversation's place and the band shows only a failure: a warning at every start
+ * read as something wrong (the UI review, 25/10/2026). */
 function ConnectionBand() {
   const { error, state } = useStore($connection)
+  const opened = useStore($read).conversations
 
-  if (state === 'open') {
+  if (state === 'open' || (!opened && !error)) {
     return null
   }
 
-  const text = state === 'connecting' || state === 'idle' ? t.connection.connecting : t.connection.closed
+  const text = !opened
+    ? t.connection.opening
+    : state === 'connecting' || state === 'idle'
+      ? t.connection.connecting
+      : t.connection.closed
 
   return (
     <div
@@ -191,5 +214,14 @@ function ConnectionBand() {
       {text}
       {error && <span className="ml-2 opacity-75">{t.connection.failed(error)}</span>}
     </div>
+  )
+}
+
+/** The conversation's place while the home's server starts: what happens, never "nothing here". */
+function Opening() {
+  return (
+    <p className="pt-24 text-center text-neutral-500" data-testid="opening" role="status">
+      {t.connection.opening}
+    </p>
   )
 }

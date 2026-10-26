@@ -71,6 +71,8 @@ async function app(answer: (method: string) => Promise<unknown>, rows: ExecutorR
   })
   await openHome('work')
   current().$workbench.set({ executors: rows, instances: [] })
+  // As a read of the server's workbench leaves it.
+  current().$read.setKey('workbench', true)
 
   return calls
 }

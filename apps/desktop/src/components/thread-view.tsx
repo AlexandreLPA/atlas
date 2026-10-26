@@ -1,10 +1,10 @@
 import { useStore } from '@nanostores/react'
-import { type ReactNode, useEffect, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Streamdown } from 'streamdown'
 
 import { t } from '@/i18n'
 import type { AttachmentRow } from '@/protocol/protocol.generated'
-import { $remote, currentOwner } from '@/store/app'
+import { $remote, currentOwner, type Sending } from '@/store/app'
 import { openPreview, targetOf } from '@/store/previews'
 import { isPart, type Item, type Part, reasoningAbout, type Thread } from '@/store/thread'
 import type { Waiting } from '@/store/waiting'
@@ -15,6 +15,7 @@ import { ReviewRow } from './review-row'
 import { AnswerStreaming, SHELL_RENDERERS } from './shell-block'
 import { ToolRow } from './tool-row'
 import { ArrowDown } from './ui/icons'
+import { SkeletonThread } from './ui/skeleton'
 import { elapsed, useNow } from './use-now'
 
 // A code block in a reply only copies: saving a command as `file.ps1` is no use.
@@ -29,15 +30,30 @@ const ANSWER_PLUGINS = {
 const NEAR_END = 48
 
 const NONE_WAITING: ReadonlyMap<string, Waiting> = new Map()
+const NONE_SENDING: readonly Sending[] = []
 
-/** `empty` is what an empty thread shows in place of the invitation: a bot's face and name;
- * `waiting`, the calls the open cards hold, by call id (store/waiting.ts). */
+/** Where the user was in each thread they left, by its `place`, found again when it comes back:
+ * read up a conversation, look at another and return, and the reading goes on there. */
+const PLACES = new Map<string, { following: boolean; top: number }>()
+
+/**
+ * A conversation's thread. `empty` is what an empty thread shows in place of the invitation (a
+ * bot's face and name); `loading`, that it is being read, which shows a skeleton and never the
+ * invitation; `place`, whose thread it is, for where the user was in it; `sending`, the user's
+ * messages on their way; `waiting`, the calls the open cards hold, by call id (store/waiting.ts).
+ */
 export function ThreadView({
   empty,
+  loading = false,
+  place,
+  sending = NONE_SENDING,
   thread,
   waiting = NONE_WAITING
 }: {
   empty?: ReactNode
+  loading?: boolean
+  place?: string
+  sending?: readonly Sending[]
   thread: Thread
   waiting?: ReadonlyMap<string, Waiting>
 }) {
@@ -50,14 +66,28 @@ export function ThreadView({
   const [away, setAway] = useState(false)
   const last = thread.items.at(-1)
   const size = last ? growth(last) : 0
-  const sent = last?.kind === 'user'
+  const sent = last?.kind === 'user' || sending.length > 0
+
+  // Another thread on screen: the user's place in it, or its end the first time.
+  useLayoutEffect(() => {
+    const kept = place === undefined ? undefined : PLACES.get(place)
+    following.current = kept?.following ?? true
+    lastTop.current = kept?.top ?? 0
+    setAway(kept ? !kept.following : false)
+
+    if (kept && !kept.following && scroller.current) {
+      scroller.current.scrollTop = kept.top
+    } else {
+      end.current?.scrollIntoView({ block: 'end' })
+    }
+  }, [place])
 
   useEffect(() => {
     // What the user sends, they want to see go out; at the end, the thread follows again.
     if (sent || following.current) {
       end.current?.scrollIntoView({ block: 'end' })
     }
-  }, [thread.items.length, size, sent])
+  }, [thread.items.length, size, sent, sending.length])
 
   function onScroll() {
     const element = scroller.current
@@ -73,6 +103,10 @@ export function ThreadView({
     }
     lastTop.current = element.scrollTop
     setAway(!near)
+
+    if (place !== undefined) {
+      PLACES.set(place, { following: following.current, top: element.scrollTop })
+    }
   }
 
   function toLatest() {
@@ -86,7 +120,12 @@ export function ThreadView({
         <AnswerStreaming.Provider value={thread.running}>
           <div className="mx-auto max-w-3xl space-y-4 px-6 py-6">
             {thread.items.length === 0 &&
-              (empty ?? <p className="pt-24 text-center text-neutral-500">{t.thread.empty}</p>)}
+              sending.length === 0 &&
+              (loading ? (
+                <SkeletonThread label={t.thread.reading} />
+              ) : (
+                (empty ?? <p className="pt-24 text-center text-neutral-500">{t.thread.empty}</p>)
+              ))}
             {segments(thread.items).map(segment =>
               Array.isArray(segment) ? (
                 <Trail key={segment[0]?.key} parts={segment} waiting={waiting} />
@@ -94,6 +133,9 @@ export function ThreadView({
                 <ItemView item={segment} key={segment.key} />
               )
             )}
+            {sending.map(row => (
+              <SendingView key={row.key} row={row} />
+            ))}
             {/* Only where nothing on the trail shows the turn at work: between a call's end and
                 the model's next words. */}
             {thread.running && !atWork(thread.items) && <Working />}
@@ -372,6 +414,30 @@ function ItemView({ item }: { item: Exclude<Item, Part> }) {
         </p>
       )
   }
+}
+
+/** A message of the user on its way: drawn as theirs at once, lighter, saying where it is, until
+ * the conversation's own takes its place. */
+function SendingView({ row }: { row: Sending }) {
+  return (
+    <div className="flex flex-col items-end" data-state={row.state} data-testid="sending-message">
+      {row.attachments.length > 0 && (
+        <div className="mb-1.5 flex max-w-[85%] flex-wrap justify-end gap-2 opacity-60">
+          {row.attachments.map(attachment => (
+            <SentAttachment attachment={attachment} key={attachment.id} />
+          ))}
+        </div>
+      )}
+      {row.text && (
+        <div className="max-w-[85%] rounded-2xl bg-neutral-100 px-4 py-2 whitespace-pre-wrap opacity-60 dark:bg-neutral-800">
+          {row.text}
+        </div>
+      )}
+      <span className="mt-1 text-xs text-neutral-500" role="status">
+        {row.state === 'queued' ? t.thread.queued : t.thread.sending}
+      </span>
+    </div>
+  )
 }
 
 /** A file the user sent (step 16g), as its chip was in the box; a click opens it beside, when the

@@ -90,16 +90,14 @@ export function Composer({ connected, running, to }: { connected: boolean; runni
       }}
       commands={commands}
       connected={connected}
+      draftKey={owner}
       label={label}
       // Off only once the server said it opens no terminal: asked as the connection opens, it may not
       // have answered yet when the first `!` is sent (found by the e2e, 19/10/2026: the command went
       // to the model as a message).
       onCommand={terminal === false ? undefined : command => void runUserCommand(command)}
       onSend={(text, attachments) =>
-        send(
-          text,
-          attachments.map(attachment => attachment.id)
-        ).then(
+        send(text, attachments).then(
           () => true,
           () => false
         )

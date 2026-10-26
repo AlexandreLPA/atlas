@@ -455,9 +455,12 @@ def test_every_conversation_s_title_shares_one_quarantine(
         first = assistant.conversations.create()
         assistant.conversation(first.id).send("Plan my week")
         deadline = time.monotonic() + 10
-        while assistant.conversations.info(first.id).title != "Plan my week":
+        # The model's title, past Haiku's refusal: the first message's own, the same words, is
+        # written as the turn starts.
+        while assistant.conversations.title_source(first.id) is not TitleSource.LLM:
             assert time.monotonic() < deadline, "the first title never came"
             await asyncio.sleep(0.02)
+        assert assistant.conversations.info(first.id).title == "Plan my week"
         second = assistant.conversation(assistant.conversations.create().id)
         second.send("Book a dentist for Tuesday")
         await second.wait()

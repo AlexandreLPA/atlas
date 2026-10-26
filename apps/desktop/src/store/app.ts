@@ -71,7 +71,8 @@ import type {
   SlashCommandRow,
   Soul,
   SubagentRow,
-  TitleChanged
+  TitleChanged,
+  UserSaid
 } from '@/protocol/protocol.generated'
 
 import { applyCommand } from './commands'
@@ -90,6 +91,16 @@ import {
   stale as usageStale,
   told as usageTold
 } from './usage'
+
+/** A message of the user on its way to the server: `sending` until the server answered the send,
+ * then `queued` while it waits to enter the turn that runs (a correction enters once the current
+ * step ends). */
+export interface Sending {
+  attachments: AttachmentRow[]
+  key: string
+  state: 'queued' | 'sending'
+  text: string
+}
 
 export type Card =
   | { conversationId: string; id: string; kind: 'approval'; params: ApprovalParams }
@@ -241,9 +252,16 @@ export interface Shell {
   remember?: (home: string) => void
 }
 
+/** A list of the sidebar, read from the server. */
+export type Listed = 'bots' | 'conversations' | 'workbench'
+
 /** One open home: its client, and the copy of its server's state. */
 export class HomeSession {
   readonly $connection = atom<Connection>({ error: null, state: 'idle' })
+  /** The lists read since the home opened: until one is, it says it is being read, never that it
+   * is empty (found by the UI review on 25/10/2026: "No conversations yet" while the server
+   * started, to someone with conversations). */
+  readonly $read = map<Record<Listed, boolean>>({ bots: false, conversations: false, workbench: false })
   readonly $conversations = atom<ConversationRow[]>([])
   readonly $selected = atom<null | string>(null)
   readonly $threads = map<Record<string, Thread>>({})
@@ -261,6 +279,11 @@ export class HomeSession {
   readonly $keyNotice = atom<null | ProviderConnected>(null)
   /** Text for a conversation's box: the messages a stop handed back. The box takes it once. */
   readonly $restored = map<Record<string, string | undefined>>({})
+  /** The user's messages on their way, by conversation (`DRAFT` for a new one): drawn at once,
+   * marked as such, until the server's own `message.start` or `message.steered` has them (the
+   * UI review, 25/10/2026: the words showed only once the server answered, a moment later on
+   * another machine). */
+  readonly $sending = map<Record<string, Sending[] | undefined>>({})
   readonly $cards = atom<Card[]>([])
   /**
    * The memory proposals waiting for the user, as the server listed them: each tried against the
@@ -367,6 +390,8 @@ export class HomeSession {
   workspace = ''
   /** Numbers the live steps of the session on screen, for their keys. */
   private activitySeq = 0
+  /** Numbers the messages sent from here, for their bubbles' keys. */
+  private sendSeq = 0
   /** What the screen said in each card's session that its harness keeps nowhere, as a switch of
    * account (asked for by the user on 22/10/2026): kept with the place it was said, so a read of
    * the session again shows it there too. */
@@ -448,6 +473,7 @@ export class HomeSession {
   async refreshList(): Promise<void> {
     const { conversations } = await this.client.call('conversation.list', {})
     this.$conversations.set(conversations)
+    this.$read.setKey('conversations', true)
     this.readLive(conversations.map(row => [row.id, row.running] as const))
     // A home made in the terminal meanwhile shows up too.
     void readHomes(this).catch(() => undefined)
@@ -527,6 +553,7 @@ export class HomeSession {
     // Its open requests come back as cards through the channel, as a conversation's do.
     const { executors, instances } = await this.client.call('workbench.list', {})
     this.$workbench.set({ executors, instances: instances.filter(row => row.state !== 'ended') })
+    this.$read.setKey('workbench', true)
   }
 
   /** The executors alone, read again when the plugins changed: the instances are the events'. A
@@ -1375,6 +1402,7 @@ export class HomeSession {
   async refreshBots(): Promise<void> {
     const { bots } = await this.client.call('bot.list', {})
     this.$bots.set(bots)
+    this.$read.setKey('bots', true)
     this.readLive(bots.flatMap(bot => (bot.conversation_id ? [[bot.conversation_id, bot.running] as const] : [])))
   }
 
@@ -1755,10 +1783,60 @@ export class HomeSession {
   }
 
   /** Start a turn, or steer the one running, with the files attached (step 16g). A first message
-   * makes the conversation first. */
-  async send(text: string, attachments: string[] = []): Promise<void> {
-    const conversationId = this.$selected.get() ?? (await this.makeConversation())
-    await this.client.call('conversation.send', { attachments, conversation_id: conversationId, text })
+   * makes the conversation first. Its bubble shows at once, marked as on its way (`$sending`). */
+  async send(text: string, attachments: AttachmentRow[] = []): Promise<void> {
+    const selected = this.$selected.get()
+    this.sendSeq += 1
+    const sending: Sending = { attachments, key: `sending-${String(this.sendSeq)}`, state: 'sending', text }
+    let owner = selected ?? DRAFT
+    this.holdSending(owner, sending)
+
+    try {
+      const conversationId = selected ?? (await this.makeConversation())
+
+      if (conversationId !== owner) {
+        this.dropSending(owner, sending.key)
+        owner = conversationId
+        this.holdSending(owner, sending)
+      }
+
+      await this.client.call('conversation.send', {
+        attachments: attachments.map(row => row.id),
+        conversation_id: conversationId,
+        text
+      })
+    } catch (error) {
+      this.dropSending(owner, sending.key)
+      throw error
+    }
+
+    // The server has it: in a turn that runs, it waits to enter once the current step ends.
+    if (this.$threads.get()[owner]?.running) {
+      this.$sending.setKey(
+        owner,
+        this.$sending.get()[owner]?.map(row => (row.key === sending.key ? { ...row, state: 'queued' as const } : row))
+      )
+    }
+  }
+
+  private holdSending(owner: string, sending: Sending): void {
+    this.$sending.setKey(owner, [...(this.$sending.get()[owner] ?? []), sending])
+  }
+
+  private dropSending(owner: string, key: string): void {
+    const left = (this.$sending.get()[owner] ?? []).filter(row => row.key !== key)
+    this.$sending.setKey(owner, left.length ? left : undefined)
+  }
+
+  /** The server has the user's words in the conversation: their bubble on its way gives way to the
+   * conversation's own (the first with those words, else the oldest). */
+  private arrived(conversationId: string, text: string): void {
+    const held = this.$sending.get()[conversationId] ?? []
+    const found = held.find(row => row.text === text) ?? held[0]
+
+    if (found) {
+      this.dropSending(conversationId, found.key)
+    }
   }
 
   /**
@@ -2048,6 +2126,15 @@ export class HomeSession {
       this.$threads.setKey(conversationId, after)
     }
 
+    // The user's words reached the conversation: their bubble on its way gives way to it.
+    if (event.type === 'message.start' || event.type === 'message.steered') {
+      const said = event.payload as UserSaid
+
+      if (said.kind !== 'notice') {
+        this.arrived(conversationId, said.text)
+      }
+    }
+
     const ofBot = this.botOf(conversationId) !== undefined
 
     if (event.type === 'message.start' && !ofBot && !this.$conversations.get().some(row => row.id === conversationId)) {
@@ -2060,6 +2147,13 @@ export class HomeSession {
       if (complete.unsent.length) {
         const kept = this.$restored.get()[conversationId] ?? ''
         this.$restored.setKey(conversationId, [kept, ...complete.unsent].filter(Boolean).join('\n\n'))
+      }
+
+      // What waited to enter the turn either entered it or came back to the box with the unsent.
+      const waiting = (this.$sending.get()[conversationId] ?? []).filter(row => row.state === 'queued')
+
+      for (const row of waiting) {
+        this.dropSending(conversationId, row.key)
       }
 
       const notify = !event.replayed && complete.status !== 'interrupted' && this.away(conversationId)
@@ -2119,6 +2213,7 @@ export class HomeSession {
 // -- the home on screen ---------------------------------------------------------------------------
 
 export const $connection = atom<Connection>({ error: null, state: 'idle' })
+export const $read = map<Record<Listed, boolean>>({ bots: false, conversations: false, workbench: false })
 export const $conversations = atom<ConversationRow[]>([])
 export const $selected = atom<null | string>(null)
 export const $threads = map<Record<string, Thread>>({})
@@ -2129,6 +2224,7 @@ export const $keyProviders = atom<KeyProvider[] | null>(null)
 export const $keyLater = atom(false)
 export const $keyNotice = atom<null | ProviderConnected>(null)
 export const $restored = map<Record<string, string | undefined>>({})
+export const $sending = map<Record<string, Sending[] | undefined>>({})
 export const $cards = atom<Card[]>([])
 export const $proposals = atom<ProposalRow[]>([])
 export const $approved = map<Record<string, Approved | undefined>>({})
@@ -2203,6 +2299,7 @@ function mirror<T>(target: WritableAtom<T>, pick: (session: HomeSession) => Read
 /** The screen's stores follow the session on screen. */
 const MIRRORS: Mirror[] = [
   mirror($connection, s => s.$connection),
+  mirror($read, s => s.$read),
   mirror($conversations, s => s.$conversations),
   mirror($selected, s => s.$selected),
   mirror($threads, s => s.$threads),
@@ -2213,6 +2310,7 @@ const MIRRORS: Mirror[] = [
   mirror($keyLater, s => s.$keyLater),
   mirror($keyNotice, s => s.$keyNotice),
   mirror($restored, s => s.$restored),
+  mirror($sending, s => s.$sending),
   mirror($cards, s => s.$cards),
   mirror($proposals, s => s.$proposals),
   mirror($approved, s => s.$approved),
@@ -2978,7 +3076,7 @@ export function putAwayApproved(proposalId: string): void {
 
 /** Start a turn, or steer the one running, with the ids of the files attached. A first message
  * makes the conversation first. */
-export async function send(text: string, attachments: string[] = []): Promise<void> {
+export async function send(text: string, attachments: AttachmentRow[] = []): Promise<void> {
   const trimmed = text.trim()
 
   if (trimmed || attachments.length) {

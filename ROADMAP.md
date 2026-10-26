@@ -3645,6 +3645,22 @@ confiança. **Sem redesenho:** polimento, fluidez, percepção de velocidade e i
   aprovação esperando e depois "Rodou"; a recusada como "Rodar … recusada"; a pergunta esperando; o
   comando do executor esperando a permissão). Fiscais: 2.688 testes do Python com 91,46% de
   cobertura, o `npm run check` e os 67 cenários do e2e.
+- **Entrega 2, abrir, reconectar e trocar de conversa (26/10):** uma lista diz que está lendo até
+  ser lida, com linhas cinzas depois de 400 ms (uma leitura rápida não pisca nada), e nunca "nenhuma
+  conversa" antes disso; enquanto o servidor sobe, o meio diz "Abrindo o Atlas…" e a faixa fica só
+  para a conexão perdida ou uma falha; a conversa aberta pela primeira vez mostra linhas cinzas, não
+  o convite. O servidor grava o título da conversa nova, as primeiras palavras dela, quando a
+  primeira vez começa (`name_untitled`): a lista só mostra conversa com título, e a conversa ficava
+  fora dela enquanto a primeira vez esperava uma aprovação. A mensagem enviada aparece na hora, mais
+  clara, até o servidor mostrar a dele; num turno em andamento, diz que entra quando o passo atual
+  terminar. O texto digitado fica na própria conversa (um Enter mandava para a próxima o que foi
+  escrito para outra), e o ponto onde se estava lendo também. Provado no pytest (a lista lida no
+  começo do turno traz a conversa, e vinha vazia sem a correção), no Vitest e no e2e (reabrir nunca
+  diz "nenhuma conversa" e diz "Abrindo o Atlas…"; a conversa nova na lista esperando a aprovação;
+  o texto de cada conversa), que falham no app de antes. Achado nos fiscais: um teste dos títulos
+  esperava as palavras do título como sinal de que o modelo tinha respondido, e o título provisório
+  já tem as mesmas palavras; agora espera o título do modelo. Fiscais: 2.690 testes do Python com
+  91,46% de cobertura, o `npm run check` (411 do Vitest) e o e2e.
 
 ## Assuntos de desenho ainda abertos
 

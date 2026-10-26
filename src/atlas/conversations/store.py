@@ -339,6 +339,26 @@ class ConversationStore:
             connection.close()
         return True
 
+    def name_untitled(self, conversation_id: str, said: UserMessage) -> bool:
+        """Give a conversation with no title yet the one its first message makes, as that
+        message's turn starts: the list shows only titled conversations, and the save that wrote
+        the title came after the screens read the list, so a new conversation stayed out of it
+        while its first turn ran, waiting for an approval as well (found by the UI review on
+        25/10/2026). `False` when it had a title, or the message makes none (Atlas's own)."""
+        title = _title([said])
+        if not title:
+            return False
+        connection = self._database.connect()
+        try:
+            with transaction(connection):
+                named = connection.execute(
+                    "UPDATE conversations_threads SET title = ? WHERE id = ? AND title = ''",
+                    (title, conversation_id),
+                ).rowcount
+        finally:
+            connection.close()
+        return named > 0
+
     def info(self, conversation_id: str) -> ConversationInfo:
         connection = self._database.connect()
         try:

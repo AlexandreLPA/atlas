@@ -41,6 +41,7 @@ export const ptBR: Override<Messages> = {
     edit: 'Editar',
     editTitle: 'Editar bot',
     empty: 'Nenhum bot ainda. Um bot é um agente com missão, memória e conversa próprias.',
+    reading: 'Lendo os bots…',
     emptyChat: (title: string) => `Esta é a sua conversa com ${title}. Ela nunca recomeça.`,
     everything: 'Tudo o que a casa tem',
     intro: 'Um agente com nome, e missão, memória, skills, conversa e rotinas próprias.',
@@ -115,10 +116,12 @@ export const ptBR: Override<Messages> = {
   connection: {
     closed: 'O Atlas não está respondendo. Tentando de novo…',
     connecting: 'Conectando ao Atlas…',
-    failed: (reason: string) => `Não foi possível falar com o Atlas: ${reason}`
+    failed: (reason: string) => `Não foi possível falar com o Atlas: ${reason}`,
+    opening: 'Abrindo o Atlas…'
   },
   conversations: {
     empty: 'Nenhuma conversa ainda.',
+    reading: 'Lendo as conversas…',
     new: 'Nova conversa',
     tab: 'Conversas',
     untitled: 'Nova conversa',
@@ -546,6 +549,7 @@ export const ptBR: Override<Messages> = {
     newSession: 'Nova sessão',
     newSessionIn: (folder: string) => `Nova sessão em ${folder}`,
     noneOn: 'Nenhum harness ligado ainda.',
+    reading: 'Lendo os harnesses…',
     openSettings: 'Ligar em Configurações',
     notFound: 'não encontrado neste computador',
     notLoggedIn: 'sem login',
@@ -752,6 +756,9 @@ export const ptBR: Override<Messages> = {
     compacted: 'A conversa foi compactada.',
 
     empty: 'Pergunte qualquer coisa ao Atlas.',
+    reading: 'Lendo a conversa…',
+    sending: 'Enviando…',
+    queued: 'Entra quando o passo atual terminar',
     failed: (error: string) => `O turno falhou: ${error}`,
     halted: 'O turno parou: o agente repetiu a mesma chamada.',
     interrupted: 'Parado.',

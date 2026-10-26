@@ -57,6 +57,7 @@ export const en = {
     edit: 'Edit',
     editTitle: 'Edit bot',
     empty: 'No bots yet. A bot is an agent with its own mission, memory and conversation.',
+    reading: 'Reading the bots…',
     emptyChat: (title: string) => `This is your conversation with ${title}. It never starts over.`,
     everything: 'Everything the home has',
     intro: 'A named agent with its own mission, memory, skills, conversation and routines.',
@@ -112,10 +113,13 @@ export const en = {
   connection: {
     closed: 'Atlas is not answering. Trying again…',
     connecting: 'Connecting to Atlas…',
-    failed: (reason: string) => `Could not reach Atlas: ${reason}`
+    failed: (reason: string) => `Could not reach Atlas: ${reason}`,
+    /** The window before its home's server first answered. */
+    opening: 'Opening Atlas…'
   },
   conversations: {
     empty: 'No conversations yet.',
+    reading: 'Reading the conversations…',
     new: 'New conversation',
     tab: 'Conversations',
     untitled: 'New conversation',
@@ -537,6 +541,7 @@ export const en = {
     newSession: 'New session',
     newSessionIn: (folder: string) => `New session in ${folder}`,
     noneOn: 'No harness is turned on yet.',
+    reading: 'Reading the harnesses…',
     openSettings: 'Turn one on in Settings',
     notFound: 'not found on this computer',
     notLoggedIn: 'not logged in',
@@ -745,6 +750,11 @@ export const en = {
     compacted: 'The conversation was compacted.',
 
     empty: 'Ask Atlas anything.',
+    reading: 'Reading the conversation…',
+    /** Under a message on its way to the server, until the server has it. */
+    sending: 'Sending…',
+    /** Under a message the server has, waiting to enter the turn that runs. */
+    queued: 'Enters once the current step ends',
     failed: (error: string) => `The turn failed: ${error}`,
     halted: 'The turn stopped: the agent repeated the same call.',
     interrupted: 'Stopped.',

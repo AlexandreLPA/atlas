@@ -10,6 +10,7 @@ import {
   $openExecutors,
   $openFolders,
   $openSession,
+  $read,
   $sessionFolders,
   $sessions,
   $used,
@@ -61,6 +62,7 @@ import {
   Trash,
   UserCircle
 } from './ui/icons'
+import { SkeletonRows } from './ui/skeleton'
 import { ICON_BUTTON, IconButton } from './ui/tip'
 import { when } from './when'
 
@@ -84,6 +86,7 @@ import { when } from './when'
  */
 export function ExecutorsList() {
   const { executors } = useStore($workbench)
+  const read = useStore($read).workbench
   const home = useStore($home)
   const order = useStore($executorOrder)[home ?? ''] ?? []
   const on = inOrder(
@@ -106,7 +109,8 @@ export function ExecutorsList() {
         {harnesses.map(rows => (
           <Harness key={rows[0] ? harnessOf(rows[0]) : ''} reorder={reorder} rows={rows} />
         ))}
-        {on.length === 0 && (
+        {!read && on.length === 0 && <SkeletonRows count={2} label={t.executors.reading} />}
+        {read && on.length === 0 && (
           <div className="space-y-1 px-2 py-1 text-sm text-neutral-500">
             <p>{t.executors.noneOn}</p>
             <button

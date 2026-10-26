@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { t } from '@/i18n'
@@ -302,5 +302,59 @@ describe('following the reply', () => {
     rerender(<ThreadView thread={{ items: [text('a'), sent], running: true }} />)
     expect(scroll).toHaveBeenCalledWith({ block: 'end' })
     Element.prototype.scrollIntoView = () => undefined
+  })
+})
+
+describe('a conversation read, sent to and come back to (the UI review, 25/10/2026)', () => {
+  it('being read shows a skeleton after a moment, never the invitation to start', () => {
+    vi.useFakeTimers()
+    render(<ThreadView loading thread={{ items: [], running: false }} />)
+
+    expect(screen.queryByText(t.thread.empty)).toBeNull()
+    const skeleton = screen.getByTestId('skeleton')
+    expect(skeleton.getAttribute('aria-label')).toBe(t.thread.reading)
+    // A quick read never flashes it.
+    expect(skeleton.childElementCount).toBe(0)
+    act(() => {
+      vi.advanceTimersByTime(400)
+    })
+    expect(screen.getByTestId('skeleton').childElementCount).toBeGreaterThan(0)
+    vi.useRealTimers()
+  })
+
+  it('shows a message on its way at once, saying whether it is sent or waits to enter the turn', () => {
+    render(
+      <ThreadView
+        sending={[
+          { attachments: [], key: 's1', state: 'sending', text: 'Plan the trip' },
+          { attachments: [], key: 's2', state: 'queued', text: 'Use Vitest' }
+        ]}
+        thread={{ items: [], running: false }}
+      />
+    )
+
+    expect(screen.queryByText(t.thread.empty)).toBeNull()
+    const rows = screen.getAllByTestId('sending-message')
+    expect(rows.map(row => row.getAttribute('data-state'))).toEqual(['sending', 'queued'])
+    expect(within(rows[0] as HTMLElement).getByText(t.thread.sending)).toBeTruthy()
+    expect(within(rows[1] as HTMLElement).getByText(t.thread.queued)).toBeTruthy()
+  })
+
+  it('finds again where the user read to, after another conversation was on screen', () => {
+    const { rerender } = render(<ThreadView place="p-a" thread={{ items: [text('a long answer')], running: false }} />)
+    const thread = screen.getByTestId('thread')
+    Object.defineProperty(thread, 'scrollHeight', { configurable: true, value: 1000 })
+    Object.defineProperty(thread, 'clientHeight', { configurable: true, value: 200 })
+    thread.scrollTop = 800
+    fireEvent.scroll(thread)
+    thread.scrollTop = 300
+    fireEvent.scroll(thread)
+
+    rerender(<ThreadView place="p-b" thread={{ items: [text('another')], running: false }} />)
+    thread.scrollTop = 0
+    rerender(<ThreadView place="p-a" thread={{ items: [text('a long answer')], running: false }} />)
+
+    expect(thread.scrollTop).toBe(300)
+    expect(screen.getByTestId('to-latest')).toBeTruthy()
   })
 })

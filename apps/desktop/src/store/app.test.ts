@@ -136,6 +136,94 @@ describe('a title a model wrote', () => {
   })
 })
 
+describe('a message on its way (the UI review, 25/10/2026)', () => {
+  /** A home on 'c1' whose sends wait for `settle`, and whose events `hear` delivers. */
+  async function home() {
+    let hear: (event: EventParams) => void = () => undefined
+    const sends: { refuse: (error: Error) => void; settle: () => void }[] = []
+    const client = Object.assign(quietClient(), {
+      call: (method: string) =>
+        method === 'conversation.send'
+          ? new Promise<unknown>((resolve, reject) => {
+              sends.push({
+                refuse: reject,
+                settle: () => {
+                  resolve({})
+                }
+              })
+            })
+          : new Promise(() => undefined),
+      onEvent: (handler: (event: EventParams) => void) => {
+        hear = handler
+
+        return () => undefined
+      }
+    })
+    stop = startApp({ client: () => client, shell: { focus: () => undefined, notify: () => undefined } })
+    await openHome('work')
+    const session = current()
+    session.$selected.set('c1')
+    session.$threads.setKey('c1', EMPTY_THREAD)
+    const said = (type: string, text: string, seq: number) => {
+      hear({ conversation_id: 'c1', payload: { attachments: [], kind: 'message', text }, seq, type })
+    }
+
+    return { hear, said, sends, session }
+  }
+
+  const shown = (rows: { state: string; text: string }[] | undefined) => rows?.map(row => `${row.state} ${row.text}`)
+
+  it("shows at once, gives way to the server's own, and goes when the send fails", async () => {
+    const { said, sends, session } = await home()
+
+    const sent = session.send('Plan the trip')
+    expect(shown(session.$sending.get().c1)).toEqual(['sending Plan the trip'])
+    said('message.start', 'Plan the trip', 1)
+    expect(session.$sending.get().c1).toBeUndefined()
+    sends[0]?.settle()
+    await sent
+
+    const failed = session.send('Again')
+    expect(shown(session.$sending.get().c1)).toEqual(['sending Again'])
+    sends[1]?.refuse(new Error('gone'))
+    await expect(failed).rejects.toThrow('gone')
+    expect(session.$sending.get().c1).toBeUndefined()
+  })
+
+  it('in a turn that runs, waits to enter it, and goes when it entered or the turn ended', async () => {
+    const { hear, said, sends, session } = await home()
+    said('message.start', 'First', 1)
+
+    const steering = session.send('Use Vitest')
+    sends[0]?.settle()
+    await steering
+    expect(shown(session.$sending.get().c1)).toEqual(['queued Use Vitest'])
+    said('message.steered', 'Use Vitest', 2)
+    expect(session.$sending.get().c1).toBeUndefined()
+
+    const late = session.send('And the docs')
+    sends[1]?.settle()
+    await late
+    expect(shown(session.$sending.get().c1)).toEqual(['queued And the docs'])
+    // The turn stopped first: the words come back to the box, and the bubble goes.
+    hear({
+      conversation_id: 'c1',
+      payload: {
+        cost_usd: null,
+        error: null,
+        model_calls: 1,
+        status: 'interrupted',
+        text: '',
+        unsent: ['And the docs']
+      },
+      seq: 3,
+      type: 'message.complete'
+    })
+    expect(session.$sending.get().c1).toBeUndefined()
+    expect(session.$restored.get().c1).toBe('And the docs')
+  })
+})
+
 describe("an executor's session on screen after a reconnect", () => {
   it('is read again: the turn that ended while the socket was gone shows its answer', async () => {
     let connected: (state: ConnectionState) => void = () => undefined
