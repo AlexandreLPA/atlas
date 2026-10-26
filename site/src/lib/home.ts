@@ -28,12 +28,6 @@ export const proof = [
 export const tagline =
   'When one plan hits its limit, the task moves on to the next. What Atlas learns stays on your machine, and nothing of yours reaches a server of ours.'
 
-/** The line under the wordmark that opens the home. */
-export const opening = {
-  line: 'The open-source home for Claude Code, Codex, the Gemini CLI and DeepSeek.',
-  cue: 'See how it works'
-}
-
 export interface Chapter {
   id: 'accounts' | 'route' | 'machines' | 'memory' | 'close'
   title: string

@@ -6,21 +6,7 @@ import SphereDrawing from '../components/SphereDrawing.astro'
 import { REPOSITORY } from '../../site.config.mjs'
 import Site from '../layouts/Site.astro'
 import { changes, formatDay } from '../lib/changelog'
-import {
-  catalogue,
-  chapters,
-  compare,
-  faq,
-  gate,
-  hero,
-  install,
-  memory,
-  opening,
-  proof,
-  route,
-  seo,
-  tagline
-} from '../lib/home'
+import { catalogue, chapters, compare, faq, gate, hero, install, memory, proof, route, seo, tagline } from '../lib/home'
 import { installWays, quickWays } from '../lib/install'
 import { application, faqPage } from '../lib/seo'
 
@@ -44,29 +30,6 @@ const schema = [application(site), faqPage(site)]
 ---
 
 <Site title={seo.title} description={seo.description} markdown="/index.md" current="home" schema={schema}>
-  <section class="opening">
-    <div class="page opening-inner">
-      <div
-        class="opening-mark"
-        data-wordmark="Atlas"
-        data-ratio="0.3"
-        data-align="center"
-        data-cellw="6"
-        data-cellh="10"
-        role="img"
-        aria-label="Atlas"
-      >
-        <canvas aria-hidden="true"></canvas>
-      </div>
-      <div class="opening-foot">
-        <p>{opening.line}</p>
-        <a class="button" href="#story">
-          {opening.cue} <span aria-hidden="true">↓</span>
-        </a>
-      </div>
-    </div>
-  </section>
-
   <div class="orrery" id="story" data-orrery>
     <div class="track" aria-hidden="true">
       <div class="stage" data-orrery-stage>
@@ -1546,53 +1509,6 @@ const schema = [application(site), faqPage(site)]
     }
   }
 
-  /* The opening: the name, set large in the site's own characters, before the story starts. */
-  .opening {
-    position: relative;
-    z-index: 1;
-    padding: 7rem 0 2.5rem;
-  }
-
-  .opening-inner {
-    display: grid;
-    gap: 1.5rem;
-  }
-
-  .opening-mark {
-    width: 100%;
-  }
-
-  .opening-mark canvas {
-    width: 100%;
-    min-height: 9rem;
-  }
-
-  .opening-foot {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem 3rem;
-  }
-
-  .opening-foot p {
-    max-width: 34rem;
-    font-family: var(--font-mono);
-    font-size: var(--step-0);
-    line-height: 1.4;
-  }
-
-  .opening-foot a span {
-    display: inline-block;
-    animation: nudge 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-  }
-
-  @keyframes nudge {
-    50% {
-      transform: translateY(4px);
-    }
-  }
-
   /* A band of the agents' names that runs between the story and what follows, faster as the page
      is scrolled (scripts/chrome.ts). It stays orange and black in either theme. */
   .marquee {
@@ -1661,10 +1577,6 @@ const schema = [application(site), faqPage(site)]
 
   @media (prefers-reduced-motion: reduce) {
     .marquee-track {
-      animation: none;
-    }
-
-    .opening-foot a span {
       animation: none;
     }
   }
