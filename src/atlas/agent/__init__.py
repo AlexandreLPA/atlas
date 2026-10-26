@@ -54,7 +54,7 @@ from atlas.agent.model import (
     TurnLimit,
     TurnOutcome,
 )
-from atlas.agent.service import AgentLoop, TurnEvent, report_progress
+from atlas.agent.service import AgentLoop, TurnEvent, current_call_id, report_progress
 from atlas.agent.store import SpillFolder
 
 __all__ = [
@@ -94,6 +94,7 @@ __all__ = [
     "TurnLimit",
     "TurnOutcome",
     "cleared",
+    "current_call_id",
     "cut",
     "estimate_tokens",
     "from_atlas",

@@ -27,6 +27,7 @@ const approval = (params: Partial<ApprovalParams> = {}) => ({
   params: {
     allow_always: true,
     allow_conversation: true,
+    call_id: 'c1-call',
     conversation_id: 'c1',
     guardian_denied: false,
     reason: 'deletes files',

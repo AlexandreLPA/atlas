@@ -162,6 +162,13 @@ def report_progress(event: object) -> None:
         queue.put_nowait(ToolProgress(call.id, call.name, event))
 
 
+def current_call_id() -> str | None:
+    """The id of the tool call this runs inside, so what it asks the user (an approval) names the
+    call it holds; `None` outside a tool call."""
+    target = _reporting.get(None)
+    return None if target is None else target[1].id
+
+
 #: Compactions in one turn: the loop stops compacting when it keeps not helping.
 MAX_COMPACTIONS_PER_TURN = 2
 #: Failed compactions in a row after which the loop stops trying on its own, or a session could

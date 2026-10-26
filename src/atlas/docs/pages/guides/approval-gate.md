@@ -44,6 +44,9 @@ when the conversation came from there, with the command and why it asks. You can
 the agent reads. Silence is not consent: an approval nobody answers in
 `[trust] approval_timeout` seconds (5 minutes unless you change it) counts as refused.
 
+In the app, the command shows on the conversation as waiting for your approval, in amber, until you
+answer: it has not run. Once allowed it runs, and a denied one stays marked as not run.
+
 After three denials in a row from the reviewer, the agent is told to stop trying variations of the
 command and to report to you.
 

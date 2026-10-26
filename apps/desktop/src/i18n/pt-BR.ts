@@ -781,11 +781,16 @@ export const ptBR: Override<Messages> = {
     running: 'rodando',
     spilled: (path: string) => `O resultado inteiro está em ${path}`,
     titles: {
-      read_file: { done: 'Leu', pending: 'Lendo' },
-      run_command: { done: 'Rodou', pending: 'Rodando' },
-      web_search: { done: 'Buscou', pending: 'Buscando' }
+      read_file: { done: 'Leu', pending: 'Lendo', plain: 'Ler' },
+      run_command: { done: 'Rodou', pending: 'Rodando', plain: 'Rodar' },
+      web_search: { done: 'Buscou', pending: 'Buscando', plain: 'Buscar' }
     },
-    waiting: 'esperando a saída…'
+    waiting: 'esperando a saída…',
+    waitingFor: {
+      answer: 'esperando sua resposta',
+      approval: 'esperando sua aprovação',
+      key: 'esperando a chave'
+    }
   },
   machines: {
     onMachine: (conversation: string, machine: string) => `${conversation} (${machine})`,

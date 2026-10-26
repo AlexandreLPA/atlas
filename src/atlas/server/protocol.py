@@ -2961,6 +2961,9 @@ class ApprovalParams:
     allow_always: bool
     #: The guardian judged it dangerous; the user may only overrule it for this one call.
     guardian_denied: bool
+    #: The tool call it holds (`tool.start`'s `call_id`), which the screen shows as waiting for the
+    #: user rather than running; empty when it is asked outside a call.
+    call_id: str = ""
 
 
 @dataclass(frozen=True, slots=True)

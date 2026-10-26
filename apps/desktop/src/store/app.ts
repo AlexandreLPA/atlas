@@ -1077,7 +1077,7 @@ export class HomeSession {
 
       const working = this.instance(now.instanceId)?.state === 'working'
       const notes = this.sessionNotes.get(now.instanceId) ?? []
-      this.$sessionThread.set({ ...withNotes(fromTranscript(read.entries), notes), running: working })
+      this.$sessionThread.set(withNotes(fromTranscript(read.entries, working), notes))
 
       if (read.expired) {
         this.$openSession.set({ ...now, expired: true })

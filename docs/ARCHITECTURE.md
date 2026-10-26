@@ -1233,6 +1233,16 @@ full weight; a click on a tool opens what went in and what came out. Roadmap ste
   text, solid for the final answer, green for a completed tool, red for a failed one, muted for a
   denied or cancelled one, and a pulsing accent for one that runs, which also shows an elapsed
   timer. Success carries no mark. `tool.complete` carries `duration_s`.
+- **A call a card holds waits; it does not run** (step 9d, found by the UI review on 25/10/2026:
+  a command waiting for its approval read "Running"). Its dot is amber and still, as the sidebar's
+  own waiting dot, and its line says what it waits for: the approval, the answers, the key. The
+  approval request names the call it holds (`ApprovalParams.call_id`, read by the server from the
+  loop's own `current_call_id`, since the gate runs inside the call it judges); a question is its
+  `ask_user` call, a key its `secrets` call, an executor's permission or question the call of its
+  session that asked (`store/waiting.ts`), nothing of it stored. The three working dots show only
+  where nothing on the trail shows the turn at work, between a call's end and the model's next
+  words; and an executor's session read while its instance works leaves its last turn going on
+  (its call waiting for a permission once read "cancelled").
 - **Every text is part of the answer**, decided by the user on 2026-10-15. The text of a model call
   that ends asking for tools is interim text: the server says so with `message.interim`,
   at the end of the call and before its first `tool.start`, so the app never guesses.
@@ -1243,8 +1253,10 @@ full weight; a click on a tool opens what went in and what came out. Roadmap ste
   on a prototype. Open, it is Markdown. Reasoning with no readable text, encrypted or only
   counted, is not shown.
 - **A tool**, closed, is its name and a summary of its arguments. Atlas's own tools get a title of
-  their own one at a time (`run_command` its command, `read_file` its path); MCP and
-  plugin tools keep the generic summary. Open, it is a box with IN and OUT: one
+  their own one at a time (`run_command` its command, `read_file` its path), its verb what the
+  call did as it stands: "Ran" once it ran, "Running" while it runs, and "Run" while it waits or
+  when it was denied or stopped first, so a call that never ran never reads as one that did; MCP
+  and plugin tools keep the generic summary. Open, it is a box with IN and OUT: one
   argument bare, several each under its name; the output while it runs and the result once done,
   red when it failed, cut at 20,000 characters with a copy-all button; a spilled result
   names its file. `tool.complete`'s `failed` becomes `status`: `completed`, `failed` (it raised,

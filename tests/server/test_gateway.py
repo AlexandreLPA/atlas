@@ -297,6 +297,8 @@ def test_a_flagged_command_asks_the_client_and_runs_once_approved(
         params = asked["params"]
         assert (params["tool"], params["target"]) == ("run_command", "git reset --hard")
         assert "destroys uncommitted changes" in params["reason"]
+        # The call it holds, so the screen marks that call waiting rather than running.
+        assert params["call_id"] == "c1"
         client.answer(asked["id"], {"choice": "once"})
         complete = client.events_until("message.complete")
 

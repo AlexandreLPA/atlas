@@ -48,6 +48,7 @@ from atlas.agent import (
     ToolProgress,
     ToolStarted,
     TurnEnded,
+    current_call_id,
     is_notice_text,
     is_skill_text,
     is_terminal_text,
@@ -2091,6 +2092,8 @@ class Gateway:
                 request.allow_conversation,
                 request.allow_always,
                 request.guardian_denied,
+                # The gate runs inside the call it judges: the screen marks that call waiting.
+                current_call_id() or "",
             )
             # No deadline here: the approval gate keeps the user's (`[trust] approval_timeout`).
             wait, result = await self._request(conversation_id, "approval", params, None)

@@ -16,8 +16,10 @@ import { type Item, parseTerminal, type Thread } from './thread'
 type Tool = Extract<Item, { kind: 'tool' }>
 
 /** A session read back: the user's prompts, the harness's words, its tools with IN and OUT. In each
- * turn the harness's last words are its answer, the others its interim text (step 9c). */
-export function fromTranscript(entries: TranscriptRow[]): Thread {
+ * turn the harness's last words are its answer, the others its interim text (step 9c). `working`:
+ * its instance is at work, so its last turn goes on, its calls with no result still running (or
+ * waiting for the user), and none of its words the answer yet. */
+export function fromTranscript(entries: TranscriptRow[], working = false): Thread {
   const items: Item[] = []
   const calls = new Map<string, number>()
 
@@ -64,7 +66,7 @@ export function fromTranscript(entries: TranscriptRow[]): Thread {
     }
   })
 
-  return { items: settle(items), running: false }
+  return { items: settle(items, working), running: working }
 }
 
 /** The session after one thing its instance did. `now` starts a running tool's timer. */
@@ -207,10 +209,18 @@ function tool(key: string, toolId: string, name: string, args: string, status: T
 }
 
 /** Each turn's last words from the harness are its answer; a call that never got its result was
- * cut short (the harness stopped first). */
-function settle(items: Item[]): Item[] {
-  const out = items.map(item =>
-    item.kind === 'tool' && item.status === 'running' ? { ...item, status: 'cancelled' as const } : item
+ * cut short (the harness stopped first). While the session `working`, its last turn is left as it
+ * goes on: a session opened while its harness waits for the user's permission showed that call as
+ * cut short (found by the UI review, 25/10/2026). */
+function settle(items: Item[], working = false): Item[] {
+  // Where the turn going on starts: its prompt; with none working, past the end.
+  const going = working
+    ? items.findLastIndex(item => (item.kind === 'user' || item.kind === 'terminal') && !item.steered)
+    : items.length
+  const out = items.map((item, index) =>
+    item.kind === 'tool' && item.status === 'running' && index < going
+      ? { ...item, status: 'cancelled' as const }
+      : item
   )
   let answered = false
 
@@ -219,7 +229,7 @@ function settle(items: Item[]): Item[] {
 
     if ((item?.kind === 'user' || item?.kind === 'terminal') && !item.steered) {
       answered = false
-    } else if (item?.kind === 'text' && !answered) {
+    } else if (item?.kind === 'text' && !answered && index < going) {
       out[index] = { ...item, role: 'final' }
       answered = true
     }

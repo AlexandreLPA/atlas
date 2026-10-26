@@ -777,13 +777,21 @@ export const en = {
     output: 'OUT',
     running: 'running',
     spilled: (path: string) => `The whole result is in ${path}`,
-    // Atlas's own tools get a title of their own, one at a time.
+    // Atlas's own tools get a title of their own, one at a time: what it did once it ran
+    // (`done`), what it does while it runs (`pending`), and what it would do when it waits, was
+    // denied or stopped first (`plain`), so a call that never ran never reads as one that did.
     titles: {
-      read_file: { done: 'Read', pending: 'Reading' },
-      run_command: { done: 'Ran', pending: 'Running' },
-      web_search: { done: 'Searched', pending: 'Searching' }
+      read_file: { done: 'Read', pending: 'Reading', plain: 'Read' },
+      run_command: { done: 'Ran', pending: 'Running', plain: 'Run' },
+      web_search: { done: 'Searched', pending: 'Searching', plain: 'Search' }
     },
-    waiting: 'waiting for its output…'
+    waiting: 'waiting for its output…',
+    /** A call a card holds: what it waits for. */
+    waitingFor: {
+      answer: 'waiting for your answer',
+      approval: 'waiting for your approval',
+      key: 'waiting for the key'
+    }
   },
   /** Settings, and their one section so far: the machines (step 15). */
   machines: {

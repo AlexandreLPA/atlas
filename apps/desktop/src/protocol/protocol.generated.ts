@@ -1319,6 +1319,8 @@ export interface ApprovalParams {
   allow_always: boolean
   /** The guardian judged it dangerous; the user may only overrule it for this one call. */
   guardian_denied: boolean
+  /** The tool call it holds (`tool.start`'s `call_id`), which the screen shows as waiting for the user rather than running; empty when it is asked outside a call. */
+  call_id: string
 }
 export interface ApprovalResult {
   choice: 'once' | 'conversation' | 'always' | 'deny'

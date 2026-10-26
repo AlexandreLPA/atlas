@@ -3,28 +3,34 @@ import { type ReactNode, useState } from 'react'
 
 import { t } from '@/i18n'
 import { $selected, openDelegated } from '@/store/app'
-import type { Item } from '@/store/thread'
+import type { Item, ToolStatus } from '@/store/thread'
+import type { Waiting } from '@/store/waiting'
 
 import { elapsed, useNow } from './use-now'
 
 type Tool = Extract<Item, { kind: 'tool' }>
+
+/** What a call's row shows: how it stands, or that a card holds it (`waiting call`). */
+export type Shown = 'waiting' | ToolStatus
 
 /** Past it the output is cut on screen, and Copy all gives it whole. */
 export const MAX_SHOWN_CHARS = 20_000
 
 /**
  * A tool call on the trail. Closed, one line: its title, or its name and a summary of its
- * arguments, and how it ends (a running timer, its time, or why it did not complete; success
- * carries no mark). Open, a box with what went in and what came out (IN and OUT).
+ * arguments, and how it stands (a running timer, what it waits for, its time, or why it did not
+ * complete; success carries no mark). Open, a box with what went in and what came out (IN and
+ * OUT). `waiting` is what a card holding the call waits for: then it has not run, or waits on the
+ * user to go on, and never reads as running.
  */
-export function ToolRow({ tool }: { tool: Tool }) {
-  const running = tool.status === 'running'
-  const now = useNow(running && tool.startedAt !== null)
-  const title = toolTitle(tool.name, tool.args, running)
+export function ToolRow({ tool, waiting }: { tool: Tool; waiting?: Waiting }) {
+  const shown: Shown = waiting && tool.status === 'running' ? 'waiting' : tool.status
+  const now = useNow(shown === 'running' && tool.startedAt !== null)
+  const title = toolTitle(tool.name, tool.args, shown)
   const input = inputFields(tool.args)
 
   return (
-    <details className="group text-sm" data-status={tool.status} data-testid="tool-row">
+    <details className="group text-sm" data-status={shown} data-testid="tool-row">
       <summary className="flex min-w-0 cursor-pointer list-none items-center gap-2 select-none [&::-webkit-details-marker]:hidden">
         {title ? (
           <span className="min-w-0 truncate">
@@ -37,8 +43,8 @@ export function ToolRow({ tool }: { tool: Tool }) {
             <span className="min-w-0 truncate font-mono text-neutral-500">{summarize(tool.args)}</span>
           </>
         )}
-        <span className={`ml-auto flex-none text-xs ${STATE_COLOR[tool.status]}`} data-testid="tool-state">
-          {stateText(tool, elapsed(tool.startedAt, now))}
+        <span className={`ml-auto flex-none text-xs ${STATE_COLOR[shown]}`} data-testid="tool-state">
+          {stateText(tool, shown, waiting, title !== null, elapsed(tool.startedAt, now))}
         </span>
         <OpenDelegated tool={tool} />
       </summary>
@@ -120,20 +126,33 @@ export function delegatedTo(tool: Pick<Tool, 'args' | 'name' | 'result'>): strin
   }
 }
 
-const STATE_COLOR: Record<Tool['status'], string> = {
+const STATE_COLOR: Record<Shown, string> = {
   cancelled: 'text-neutral-500',
   completed: 'text-neutral-500',
   denied: 'text-neutral-500',
   failed: 'text-red-600 dark:text-red-400',
-  running: 'text-blue-600 dark:text-blue-400'
+  running: 'text-blue-600 dark:text-blue-400',
+  waiting: 'text-amber-700 dark:text-amber-400'
 }
 
-function stateText(tool: Tool, running: null | number): string {
+/** How the call stands, beside its title; `titled`, the title already says it runs. */
+function stateText(
+  tool: Tool,
+  shown: Shown,
+  waiting: undefined | Waiting,
+  titled: boolean,
+  running: null | number
+): string {
   const time = (seconds: null | number) => (seconds === null ? '' : t.duration(seconds))
 
-  switch (tool.status) {
-    case 'running':
-      return [t.tool.running, running === null ? '' : t.elapsed(Math.floor(running))].filter(Boolean).join(' ')
+  switch (shown) {
+    case 'waiting':
+      return t.tool.waitingFor[waiting ?? 'approval']
+    case 'running': {
+      const timer = running === null ? '' : t.elapsed(Math.floor(running))
+
+      return titled ? timer : [t.tool.running, timer].filter(Boolean).join(' ')
+    }
     case 'completed':
       return time(tool.seconds)
     case 'failed':
@@ -228,9 +247,11 @@ export function inputFields(args: string): { name: string; value: string }[] {
 
 type Titled = keyof typeof t.tool.titles
 
-/** Atlas's own tools' titles (`Ran <command>`, `Read <path>`, `Searched “x”`); `null` for
- * the others, MCP's and plugins' included, which keep the generic summary. */
-export function toolTitle(name: string, args: string, running: boolean): null | { action: string; target: string } {
+/** Atlas's own tools' titles (`Ran <command>`, `Read <path>`, `Searched “x”`), the verb saying
+ * what the call did as it stands: done once it ran, pending while it runs, and plain (`Run
+ * <command>`) while it waits or when it was denied or stopped first; `null` for the others, MCP's
+ * and plugins' included, which keep the generic summary. */
+export function toolTitle(name: string, args: string, shown: Shown): null | { action: string; target: string } {
   const field: Record<Titled, string> = { read_file: 'path', run_command: 'command', web_search: 'query' }
 
   if (!(name in field)) {
@@ -246,8 +267,10 @@ export function toolTitle(name: string, args: string, running: boolean): null | 
 
   const words = t.tool.titles[titled]
   const target = titled === 'web_search' ? `“${value}”` : (value.split('\n')[0] ?? value)
+  const action =
+    shown === 'completed' || shown === 'failed' ? words.done : shown === 'running' ? words.pending : words.plain
 
-  return { action: running ? words.pending : words.done, target }
+  return { action, target }
 }
 
 /** The arguments as one short line: the values, not the JSON's braces and keys. */

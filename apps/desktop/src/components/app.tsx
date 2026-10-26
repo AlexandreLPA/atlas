@@ -22,6 +22,7 @@ import {
 import { $panelWidth, $sidebarWidth, toggleSidebar } from '@/store/layout'
 import { $terminals, openTerminal, refreshTerminalAvailable, terminalAvailable, togglePanel } from '@/store/terminals'
 import { EMPTY_THREAD } from '@/store/thread'
+import { waitingCalls } from '@/store/waiting'
 
 import { ApprovalCard } from './approval-card'
 import { AskCard } from './ask-card'
@@ -55,6 +56,8 @@ export function App() {
     (card): card is Extract<typeof card, { kind: 'approval' | 'ask' | 'secret' }> =>
       card.conversationId === selected && (card.kind === 'ask' || card.kind === 'approval' || card.kind === 'secret')
   )
+  // The calls those cards hold wait for the user on the trail; they do not run.
+  const waiting = waitingCalls(shown, thread.items)
   // A proposal shows in the conversation its review read, until it is decided.
   const fromHere = (proposal: { conversation_id: null | string }) =>
     selected !== null && proposal.conversation_id === selected
@@ -135,7 +138,7 @@ export function App() {
         ) : (
           <>
             {bot && <BotHeader bot={bot} />}
-            <ThreadView empty={bot ? <BotEmpty bot={bot} /> : undefined} thread={thread} />
+            <ThreadView empty={bot ? <BotEmpty bot={bot} /> : undefined} thread={thread} waiting={waiting} />
             {shown.length + proposed.length + done.length > 0 && (
               <div className="mx-auto max-h-[50vh] w-full max-w-3xl space-y-3 overflow-y-auto px-6 pb-3">
                 {shown.map(card => {

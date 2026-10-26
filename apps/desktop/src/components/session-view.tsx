@@ -40,6 +40,7 @@ import {
   switchSessionAccount
 } from '@/store/app'
 import { fromNames } from '@/store/slash'
+import { waitingCalls } from '@/store/waiting'
 
 import { type ExecutorCard, ExecutorCardView } from './executor-cards'
 import { baseName } from './executors-list'
@@ -97,6 +98,7 @@ export function SessionView() {
           </p>
         }
         thread={thread}
+        waiting={waitingCalls(asked, thread.items)}
       />
       {(asked.length > 0 || error) && (
         <div className="mx-auto max-h-[50vh] w-full max-w-3xl space-y-3 overflow-y-auto px-6 pb-3">

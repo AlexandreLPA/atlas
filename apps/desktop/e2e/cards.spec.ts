@@ -33,6 +33,10 @@ test("ask_user's card: the choice clicked is what the model receives", async () 
 
   const card = page.getByTestId('ask-card')
   await expect(card).toContainText('Which colour?')
+  // Its call waits for the answer on the trail; it does not run.
+  const call = page.getByTestId('tool-row').filter({ hasText: 'ask_user' })
+  await expect(call).toHaveAttribute('data-status', 'waiting')
+  await expect(call.getByTestId('tool-state')).toHaveText('waiting for your answer')
   await card.getByRole('button', { name: 'Blue' }).click()
   await card.getByRole('button', { name: 'Answer' }).click()
 
@@ -53,12 +57,19 @@ test('approval, once: the command runs only after the click', async () => {
   const card = page.getByTestId('approval-card')
   await expect(card).toContainText('rm -r build')
   expect(existsSync(target)).toBe(true)
+  // Until the click the command waits for the user: never "Running" (found by the UI review).
+  const call = page.getByTestId('tool-row')
+  await expect(call).toHaveAttribute('data-status', 'waiting')
+  await expect(call.locator('summary')).toContainText('Run rm -r build')
+  await expect(call.getByTestId('tool-state')).toHaveText('waiting for your approval')
   await expect(card.getByRole('button')).toHaveText(['Allow once', 'This conversation', 'Always', 'Deny'])
   await card.getByRole('button', { name: 'Allow once' }).click()
 
   await expect(card).toBeHidden()
   await expect(page.getByTestId('assistant-message')).toContainText('Removed the build folder.')
   expect(existsSync(target)).toBe(false)
+  await expect(call).toHaveAttribute('data-status', 'completed')
+  await expect(call.locator('summary')).toContainText('Ran rm -r build')
 })
 
 test('approval, deny with a reason: the command never runs and the model reads why', async () => {
@@ -75,6 +86,11 @@ test('approval, deny with a reason: the command never runs and the model reads w
   await expect(page.getByTestId('assistant-message')).toContainText('Understood, I left it.')
   expect(existsSync(target)).toBe(true)
   expect(await model.seen()).toContain('keep the build, use git clean instead')
+  // What never ran never reads as run.
+  const call = page.getByTestId('tool-row')
+  await expect(call).toHaveAttribute('data-status', 'denied')
+  await expect(call.locator('summary')).toContainText('Run rm -r build')
+  await expect(call.locator('summary')).not.toContainText('Ran')
 })
 
 test('"Auto", on from the start, skips the guardian and the card', async () => {

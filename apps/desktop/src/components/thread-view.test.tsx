@@ -126,19 +126,72 @@ describe('a tool', () => {
   })
 
   it("titles Atlas's own tools by what they do, and leaves the others generic", () => {
-    expect(toolTitle('run_command', '{"command":"uv run pytest -q\\necho"}', false)).toEqual({
+    expect(toolTitle('run_command', '{"command":"uv run pytest -q\\necho"}', 'completed')).toEqual({
       action: t.tool.titles.run_command.done,
       target: 'uv run pytest -q'
     })
-    expect(toolTitle('read_file', '{"path":"a.md"}', true)).toEqual({
+    expect(toolTitle('read_file', '{"path":"a.md"}', 'running')).toEqual({
       action: t.tool.titles.read_file.pending,
       target: 'a.md'
     })
-    expect(toolTitle('web_search', '{"query":"kv cache"}', false)).toEqual({
+    expect(toolTitle('web_search', '{"query":"kv cache"}', 'failed')).toEqual({
       action: t.tool.titles.web_search.done,
       target: '“kv cache”'
     })
-    expect(toolTitle('mcp__notes__add', '{"text":"x"}', false)).toBeNull()
+    expect(toolTitle('mcp__notes__add', '{"text":"x"}', 'completed')).toBeNull()
+  })
+
+  it('never titles a call that did not run as one that did', () => {
+    const command = '{"command":"rm -r build"}'
+
+    for (const shown of ['waiting', 'denied', 'cancelled'] as const) {
+      expect(toolTitle('run_command', command, shown)?.action).toBe(t.tool.titles.run_command.plain)
+    }
+  })
+
+  it('shows a call a card holds as waiting for the user, not as running', () => {
+    const { container } = render(
+      <ThreadView
+        thread={{
+          items: [
+            tool({ args: '{"command":"rm -r build"}', key: 'a', name: 'run_command', startedAt: 0, status: 'running' }),
+            tool({ key: 'b', name: 'ask_user', startedAt: 0, status: 'running', toolId: 't2' }),
+            tool({ key: 'c', name: 'find_files', startedAt: 0, status: 'running', toolId: 't3' })
+          ],
+          running: true
+        }}
+        waiting={
+          new Map([
+            ['t1', 'approval'],
+            ['t2', 'answer']
+          ])
+        }
+      />
+    )
+
+    const parts = [...container.querySelectorAll('[data-testid="part"]')]
+    expect(parts.map(part => part.getAttribute('data-dot'))).toEqual(['waiting', 'waiting', 'running'])
+    const rows = screen.getAllByTestId('tool-row')
+    expect(rows.map(row => row.getAttribute('data-status'))).toEqual(['waiting', 'waiting', 'running'])
+    expect(within(rows[0] as HTMLElement).getByText(t.tool.titles.run_command.plain)).toBeTruthy()
+    expect(screen.getAllByTestId('tool-state')[0]?.textContent).toBe(t.tool.waitingFor.approval)
+    expect(screen.getAllByTestId('tool-state')[1]?.textContent).toBe(t.tool.waitingFor.answer)
+  })
+
+  it('says it runs once: in the title when it has one, else beside the name', () => {
+    render(
+      <ThreadView
+        thread={{
+          items: [
+            tool({ args: '{"command":"ping"}', key: 'a', name: 'run_command', status: 'running' }),
+            tool({ key: 'b', status: 'running', toolId: 't2' })
+          ],
+          running: true
+        }}
+      />
+    )
+
+    expect(screen.getAllByTestId('tool-state').map(state => state.textContent)).toEqual(['', t.tool.running])
   })
 
   it('cuts a long output at 20,000 characters and copies it whole', () => {
@@ -182,6 +235,29 @@ describe('a skill the user invoked', () => {
     expect(screen.getByTestId('user-message').textContent).toContain('/weekly-report May')
     expect(screen.getByTestId('skill-invoked').textContent).toBe(t.thread.skill)
     expect(screen.getByTestId('skill-invoked').getAttribute('data-skill')).toBe('weekly-report')
+  })
+})
+
+describe('a turn at work', () => {
+  const working = () => screen.queryByRole('status', { name: 'Working' })
+
+  it('shows its three dots only where nothing on the trail says it works', () => {
+    const { rerender } = render(<ThreadView thread={{ items: [text('Let me look.', 'interim')], running: true }} />)
+    expect(working()).not.toBeNull()
+
+    rerender(<ThreadView thread={{ items: [tool({ status: 'running' })], running: true }} />)
+    expect(working()).toBeNull()
+
+    rerender(
+      <ThreadView
+        thread={{ items: [{ ...text('Here', 'open'), streaming: true } as Item], running: true }}
+        waiting={new Map()}
+      />
+    )
+    expect(working()).toBeNull()
+
+    rerender(<ThreadView thread={{ items: [tool({ status: 'completed' })], running: false }} />)
+    expect(working()).toBeNull()
   })
 })
 

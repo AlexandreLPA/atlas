@@ -77,7 +77,8 @@ test('a turn draws as a trail of parts, and reopens the same', async () => {
     'text interim Let me read the notes.',
     'tool failed Read missing.md',
     'text interim There are none. I will clear the build folder instead.',
-    'tool denied Ran rm -r build',
+    // Denied, it never ran: never "Ran" (found by the UI review).
+    'tool denied Run rm -r build',
     'text final I left the build folder, as you asked.'
   ])
   expect(existsSync(build)).toBe(true)

@@ -7,6 +7,7 @@ import type { AttachmentRow } from '@/protocol/protocol.generated'
 import { $remote, currentOwner } from '@/store/app'
 import { openPreview, targetOf } from '@/store/previews'
 import { isPart, type Item, type Part, reasoningAbout, type Thread } from '@/store/thread'
+import type { Waiting } from '@/store/waiting'
 
 import { ARTIFACT_LANGUAGES, ArtifactBlock } from './artifact-block'
 import { AttachmentChip, useThumbnail } from './attachment-chip'
@@ -27,8 +28,19 @@ const ANSWER_PLUGINS = {
 // How close to the end, in pixels, still counts as being at it.
 const NEAR_END = 48
 
-/** `empty` is what an empty thread shows in place of the invitation: a bot's face and name. */
-export function ThreadView({ empty, thread }: { empty?: ReactNode; thread: Thread }) {
+const NONE_WAITING: ReadonlyMap<string, Waiting> = new Map()
+
+/** `empty` is what an empty thread shows in place of the invitation: a bot's face and name;
+ * `waiting`, the calls the open cards hold, by call id (store/waiting.ts). */
+export function ThreadView({
+  empty,
+  thread,
+  waiting = NONE_WAITING
+}: {
+  empty?: ReactNode
+  thread: Thread
+  waiting?: ReadonlyMap<string, Waiting>
+}) {
   const scroller = useRef<HTMLDivElement>(null)
   const end = useRef<HTMLDivElement>(null)
   // The thread follows the reply only while the user is at its end: scrolled up to read what came
@@ -77,12 +89,14 @@ export function ThreadView({ empty, thread }: { empty?: ReactNode; thread: Threa
               (empty ?? <p className="pt-24 text-center text-neutral-500">{t.thread.empty}</p>)}
             {segments(thread.items).map(segment =>
               Array.isArray(segment) ? (
-                <Trail key={segment[0]?.key} parts={segment} />
+                <Trail key={segment[0]?.key} parts={segment} waiting={waiting} />
               ) : (
                 <ItemView item={segment} key={segment.key} />
               )
             )}
-            {thread.running && <Working />}
+            {/* Only where nothing on the trail shows the turn at work: between a call's end and
+                the model's next words. */}
+            {thread.running && !atWork(thread.items) && <Working />}
             <div ref={end} />
           </div>
         </AnswerStreaming.Provider>
@@ -134,17 +148,27 @@ function growth(item: Item): number {
   }
 }
 
+/** Something on the trail shows the turn at work already: a part that streams, or a call that runs
+ * or waits for the user. */
+function atWork(items: Item[]): boolean {
+  return items.some(item =>
+    item.kind === 'tool'
+      ? item.status === 'running'
+      : (item.kind === 'text' || item.kind === 'reasoning') && item.streaming
+  )
+}
+
 /**
  * A turn's parts as a trail: a vertical line from the first part to
  * the last, one dot per part, its color the part's state.
  */
-function Trail({ parts }: { parts: Part[] }) {
+function Trail({ parts, waiting }: { parts: Part[]; waiting: ReadonlyMap<string, Waiting> }) {
   return (
     <div className="space-y-3" data-testid="trail">
       {parts.map((part, index) => (
         <div
           className="relative min-w-0 pl-6"
-          data-dot={dot(part)}
+          data-dot={dot(part, waiting)}
           data-kind={part.kind}
           data-testid="part"
           key={part.key}
@@ -157,16 +181,16 @@ function Trail({ parts }: { parts: Part[] }) {
           )}
           <span
             aria-hidden
-            className={`absolute top-[calc(0.75em-4.5px)] left-[2px] size-[9px] rounded-full ${DOT[dot(part)]}`}
+            className={`absolute top-[calc(0.75em-4.5px)] left-[2px] size-[9px] rounded-full ${DOT[dot(part, waiting)]}`}
           />
-          <PartView part={part} />
+          <PartView part={part} waiting={waiting} />
         </div>
       ))}
     </div>
   )
 }
 
-type Dot = 'denied' | 'failed' | 'final' | 'interim' | 'muted' | 'ok' | 'reasoning' | 'running'
+type Dot = 'denied' | 'failed' | 'final' | 'interim' | 'muted' | 'ok' | 'reasoning' | 'running' | 'waiting'
 
 const DOT: Record<Dot, string> = {
   denied: 'bg-neutral-400 dark:bg-neutral-600',
@@ -176,11 +200,13 @@ const DOT: Record<Dot, string> = {
   muted: 'bg-neutral-400 dark:bg-neutral-600',
   ok: 'bg-green-600 dark:bg-green-500',
   reasoning: 'border-[1.5px] border-neutral-400 bg-white dark:border-neutral-500 dark:bg-neutral-950',
-  running: 'animate-pulse bg-blue-600 dark:bg-blue-400'
+  running: 'animate-pulse bg-blue-600 dark:bg-blue-400',
+  // Still, as the sidebar's own waiting dot: the call waits on the user, nothing runs.
+  waiting: 'bg-amber-500'
 }
 
-/** The dot's color is the part's state. */
-function dot(part: Part): Dot {
+/** The dot's color is the part's state; a call a card holds waits, it does not run. */
+function dot(part: Part, waiting: ReadonlyMap<string, Waiting>): Dot {
   switch (part.kind) {
     case 'reasoning':
       return 'reasoning'
@@ -195,7 +221,7 @@ function dot(part: Part): Dot {
         case 'failed':
           return 'failed'
         case 'running':
-          return 'running'
+          return waiting.has(part.toolId) ? 'waiting' : 'running'
         case 'denied':
         case 'cancelled':
           return 'denied'
@@ -203,7 +229,7 @@ function dot(part: Part): Dot {
   }
 }
 
-function PartView({ part }: { part: Part }) {
+function PartView({ part, waiting }: { part: Part; waiting: ReadonlyMap<string, Waiting> }) {
   switch (part.kind) {
     case 'reasoning':
       return <ReasoningPart part={part} />
@@ -228,7 +254,7 @@ function PartView({ part }: { part: Part }) {
       )
 
     case 'tool':
-      return <ToolRow tool={part} />
+      return <ToolRow tool={part} waiting={waiting.get(part.toolId)} />
 
     case 'other':
       // ACP v2: what the app does not know is kept raw and shown generically.

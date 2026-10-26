@@ -61,6 +61,30 @@ describe("an executor's session on screen (step 16f)", () => {
     expect(thread.running).toBe(false)
   })
 
+  it('read while its instance works, leaves the turn going on open: its call runs, nothing is the answer', () => {
+    const entries = [
+      entry('text', 'Clean the build.', { by: 'user' }),
+      entry('tool', '{"command": "ls"}', { call: 't1', tool: 'Bash' }),
+      entry('text', 'Fixed earlier.'),
+      entry('text', 'Run the tests.', { by: 'user' }),
+      entry('text', 'Running them.'),
+      // The harness waits for the user's permission on this one: no result yet.
+      entry('tool', '{"command": "npm test"}', { call: 't2', tool: 'Bash' })
+    ]
+    const thread = fromTranscript(entries, true)
+
+    expect(shape(thread.items)).toEqual([
+      'user: Clean the build.',
+      // A turn before: it stopped there.
+      'tool Bash {"command": "ls"} -> cancelled',
+      'final: Fixed earlier.',
+      'user: Run the tests.',
+      'interim: Running them.',
+      'tool Bash {"command": "npm test"} -> running'
+    ])
+    expect(thread.running).toBe(true)
+  })
+
   it('grows live with what its instance does, and settles when the turn ends', () => {
     let thread = fromTranscript([entry('text', 'Hi.', { by: 'user' }), entry('text', 'Hello.')])
     const steps = [

@@ -135,6 +135,9 @@ test('a task Atlas delegates opens from its line as a session, marked by Atlas, 
   const approval = page.getByTestId('executor-approval-card')
   await expect(approval).toContainText('Claude Code wants to use Bash')
   await expect(approval).toContainText('npm test')
+  // The call it asks for waits for the user: the session read meanwhile does not cut it short
+  // (found by the UI review: it read "cancelled").
+  await expect(page.getByTestId('tool-row').filter({ hasText: 'npm test' })).toHaveAttribute('data-status', 'waiting')
   await approval.getByRole('button', { name: 'Allow' }).click()
   const question = page.getByTestId('executor-question-card')
   await expect(question).toContainText('Which runner?')

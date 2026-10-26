@@ -29,6 +29,7 @@ from atlas.agent import (
     TurnEnded,
     TurnEvent,
     TurnOutcome,
+    current_call_id,
     estimate_tokens,
 )
 from atlas.agent.history import COMPACTION_INSTRUCTIONS, ROUND_CHARS, cut
@@ -152,6 +153,29 @@ def test_a_tool_round_runs_the_tool_and_sends_its_result_back(
     end = events[-1]
     assert isinstance(end, TurnEnded)
     assert (end.outcome, end.text, end.model_calls) == (TurnOutcome.ANSWERED, "Buy bread.", 2)
+
+
+def test_a_tool_knows_the_call_it_runs_in_and_nothing_outside_one_does(
+    fake: FakeModelServer, connect: Connect, run: Run
+) -> None:
+    calls = [FakeCall("look", "{}", id="c1"), FakeCall("look", '{"again": true}', id="c2")]
+    fake.reply(FakeReply(calls=calls), FakeReply(text="Done."))
+    models = connect(fake, "openrouter")
+    seen: list[str | None] = []
+
+    async def look(arguments: dict[str, Any]) -> str:
+        seen.append(current_call_id())
+        return "ok"
+
+    async def scenario() -> list[TurnEvent]:
+        loop = AgentLoop(models.client("openrouter"), [_tool("look", look, read_only=True)])
+        return await _events(loop, [SYSTEM], "Look twice.")
+
+    run(models, scenario)
+
+    # What a call asks the user (an approval) names that call, even when calls run together.
+    assert sorted(id or "" for id in seen) == ["c1", "c2"]
+    assert current_call_id() is None
 
 
 def test_read_only_tools_run_together_and_a_writer_runs_alone(
