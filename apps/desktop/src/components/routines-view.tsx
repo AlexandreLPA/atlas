@@ -3,8 +3,9 @@ import { useState } from 'react'
 
 import { t } from '@/i18n'
 import type { RoutineRow, RunRow } from '@/protocol/protocol.generated'
-import { $readError, $routines, $runs, actOnRoutine, readRuns, selectConversation, showConversation } from '@/store/app'
+import { $readError, $routines, $runs, actOnRoutine, readRuns, selectConversation } from '@/store/app'
 
+import { PageHeader } from './page-header'
 import { ReadFailed } from './read-failed'
 
 /**
@@ -19,19 +20,9 @@ export function RoutinesView() {
   return (
     <div className="flex-1 overflow-y-auto" data-testid="routines-view">
       <div className="mx-auto max-w-3xl space-y-4 px-6 py-6">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-lg font-semibold">{t.routines.title}</h1>
-          <button
-            className="rounded-md px-3 py-1.5 text-sm text-soft hover:bg-muted"
-            onClick={showConversation}
-            type="button"
-          >
-            {t.proposals.back}
-          </button>
-        </div>
-        <p className="text-sm text-muted-foreground">{t.routines.intro}</p>
+        <PageHeader intro={t.routines.intro} title={t.routines.title} />
         {failed && <ReadFailed error={failed} what="routines" />}
-        {!failed && routines.length === 0 && <p className="text-muted-foreground">{t.routines.empty}</p>}
+        {!failed && routines.length === 0 && <p className="text-sm text-muted-foreground">{t.routines.empty}</p>}
         {routines.map(routine => (
           <Routine key={routine.id} routine={routine} />
         ))}

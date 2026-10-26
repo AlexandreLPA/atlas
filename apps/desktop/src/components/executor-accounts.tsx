@@ -93,7 +93,7 @@ export function AddAccount({ executors }: { executors: ExecutorRow[] }) {
   if (!adding) {
     return (
       <button
-        className="flex w-full items-center gap-2 rounded-md border border-border-strong px-2 py-1.5 text-left text-sm font-medium hover:bg-muted"
+        className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-left text-sm text-soft hover:bg-muted"
         data-testid="add-account"
         onClick={() => {
           setAdding(true)

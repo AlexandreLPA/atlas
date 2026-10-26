@@ -14,13 +14,13 @@ import {
   refreshMarketplace,
   setMarketKind,
   setMarketQuery,
-  showConversation,
   storeMarketSecret,
   writePlugin
 } from '@/store/app'
 import { actionOf, counts, KINDS, type MarketKind, resolved, shown } from '@/store/marketplace'
 import { openSettings } from '@/store/settings'
 
+import { PageHeader } from './page-header'
 import { Bulb, Cpu, McpServer, Plug, Robot } from './ui/icons'
 
 /**
@@ -48,53 +48,51 @@ function Listing() {
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-lg font-semibold">{t.marketplace.title}</h1>
-          <p className="text-sm text-muted-foreground">{t.marketplace.intro}</p>
-          {/* Sharing starts with making one: Atlas writes it with the user, and the guide says how
-              it enters (decided by the user on 25/10/2026). */}
-          <p className="mt-1 flex gap-3 text-sm">
+      <PageHeader
+        actions={
+          <>
+            <input
+              aria-label={t.marketplace.search}
+              className="w-56 rounded-md border border-border-strong bg-transparent px-2 py-1 text-sm"
+              data-testid="marketplace-search"
+              onChange={event => {
+                setMarketQuery(event.target.value)
+              }}
+              placeholder={t.marketplace.search}
+              type="search"
+              value={market.query}
+            />
             <button
-              className="link"
-              data-testid="marketplace-make"
-              onClick={writePlugin}
-              title={t.marketplace.makeHint}
+              className={BUTTON}
+              data-testid="marketplace-refresh"
+              disabled={market.reading}
+              onClick={refreshMarketplace}
               type="button"
             >
-              {t.marketplace.makeYourOwn}
+              {market.reading ? t.marketplace.reading : t.marketplace.refresh}
             </button>
-            <a className="link" href={PLUGIN_GUIDE} rel="noreferrer" target="_blank">
-              {t.marketplace.guide}
-            </a>
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <input
-            aria-label={t.marketplace.search}
-            className="w-56 rounded-md border border-border-strong bg-transparent px-2 py-1 text-sm"
-            data-testid="marketplace-search"
-            onChange={event => {
-              setMarketQuery(event.target.value)
-            }}
-            placeholder={t.marketplace.search}
-            type="search"
-            value={market.query}
-          />
+          </>
+        }
+        intro={t.marketplace.intro}
+        title={t.marketplace.title}
+      >
+        {/* Sharing starts with making one: Atlas writes it with the user, and the guide says how it
+            enters (decided by the user on 25/10/2026). */}
+        <p className="mt-1 flex gap-3 text-sm">
           <button
-            className={BUTTON}
-            data-testid="marketplace-refresh"
-            disabled={market.reading}
-            onClick={refreshMarketplace}
+            className="link"
+            data-testid="marketplace-make"
+            onClick={writePlugin}
+            title={t.marketplace.makeHint}
             type="button"
           >
-            {market.reading ? t.marketplace.reading : t.marketplace.refresh}
+            {t.marketplace.makeYourOwn}
           </button>
-          <button className={BUTTON} onClick={showConversation} type="button">
-            {t.proposals.back}
-          </button>
-        </div>
-      </div>
+          <a className="link" href={PLUGIN_GUIDE} rel="noreferrer" target="_blank">
+            {t.marketplace.guide}
+          </a>
+        </p>
+      </PageHeader>
       <Notice />
       <div className="flex gap-1 border-b border-border" role="tablist">
         {KINDS.map(kind => (

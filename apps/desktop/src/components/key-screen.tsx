@@ -57,13 +57,19 @@ export function KeyScreen() {
   )
 }
 
-/** The providers, each with its key field: the key screen's, and the settings screen's Model. */
+/** The provider the screen calls a good first choice: one key, hundreds of models. */
+const FIRST_CHOICE = 'openrouter'
+
+/** The providers, each with its key field: the key screen's, and the settings screen's Model. The
+ * one called a good first choice comes first, open (the UI review, 26/10/2026: it said so second,
+ * under another one open). */
 export function Providers({ providers }: { providers: KeyProvider[] }) {
-  const [picked, setPicked] = useState(providers[0]?.id ?? '')
+  const listed = [...providers].sort((a, b) => Number(b.id === FIRST_CHOICE) - Number(a.id === FIRST_CHOICE))
+  const [picked, setPicked] = useState(listed[0]?.id ?? '')
 
   return (
     <div className="space-y-2" role="radiogroup">
-      {providers.map(provider => (
+      {listed.map(provider => (
         <ProviderRow
           key={provider.id}
           onPick={() => {

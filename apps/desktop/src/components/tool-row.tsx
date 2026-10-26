@@ -35,7 +35,7 @@ export function ToolRow({ tool, waiting }: { tool: Tool; waiting?: Waiting }) {
         {title ? (
           <span className="min-w-0 truncate">
             <span className="font-medium">{title.action}</span>{' '}
-            <span className="font-mono text-soft">{title.target}</span>
+            <span className={title.prose ? 'text-soft' : 'font-mono text-soft'}>{title.target}</span>
           </span>
         ) : (
           <>
@@ -248,32 +248,164 @@ export function inputFields(args: string): { name: string; value: string }[] {
   return args ? [{ name: '', value: args }] : []
 }
 
-type Titled = keyof typeof t.tool.titles
+/** A call's title: the verb as the call stands, what it was about, and whether that is words (a
+ * question, a goal, a browser's step) rather than a path or a command. */
+export interface ToolTitle {
+  action: string
+  prose: boolean
+  target: string
+}
 
-/** Atlas's own tools' titles (`Ran <command>`, `Read <path>`, `Searched “x”`), the verb saying
- * what the call did as it stands: done once it ran, pending while it runs, and plain (`Run
- * <command>`) while it waits or when it was denied or stopped first; `null` for the others, MCP's
- * and plugins' included, which keep the generic summary. */
-export function toolTitle(name: string, args: string, shown: Shown): null | { action: string; target: string } {
-  const field: Record<Titled, string> = { read_file: 'path', run_command: 'command', web_search: 'query' }
+type Args = Record<string, unknown>
 
-  if (!(name in field)) {
+/** What names one call of Atlas's own tools: the key of its verbs in `t.tool.titles`, and its
+ * target. */
+interface Named {
+  key: string
+  prose?: boolean
+  target: string
+}
+
+/** A field's first line, trimmed; empty when it is no text. */
+function line(value: unknown): string {
+  return typeof value === 'string' ? (value.split('\n')[0] ?? '').trim() : ''
+}
+
+/** A list field's first item, as an object; empty when there is none. */
+function first(value: unknown): Args {
+  const item: unknown = Array.isArray(value) ? value[0] : undefined
+
+  return item && typeof item === 'object' ? (item as Args) : {}
+}
+
+/** `target`, and how many more of `list` there are. */
+function andMore(target: string, list: unknown): string {
+  const more = Array.isArray(list) ? list.length - 1 : 0
+
+  return target && more > 0 ? t.tool.andMore(target, more) : target
+}
+
+const quoted = (value: string) => (value ? `“${value}”` : '')
+
+/** The titles that say all with no target: the others, with none, keep the generic line. */
+const ALONE = new Set([
+  'cronjob_manage.list',
+  'delegate.list',
+  'desktop_preview.close',
+  'executor_accounts',
+  'plan',
+  'plan.read',
+  'secrets.list'
+])
+
+/** Atlas's own tools, each naming its call from its arguments (`null`: they name nothing). */
+const NAMED: Record<string, (args: Args) => Named | null> = {
+  ask_user: args => ({
+    key: 'ask_user',
+    prose: true,
+    target: andMore(line(first(args.questions).question), args.questions)
+  }),
+  bot_create: args => ({ key: 'bot_create', target: line(args.title) || line(args.name) }),
+  // Its code starts with a one-line comment saying what the step does.
+  browser_exec: args => {
+    const said = line(args.code)
+
+    return { key: 'browser_exec', prose: true, target: said.startsWith('#') ? said.replace(/^#+\s*/, '') : '' }
+  },
+  conversation_search: args => ({ key: 'conversation_search', target: quoted(line(args.query)) }),
+  cronjob_manage: args => {
+    const action = line(args.action)
+
+    return {
+      key: `cronjob_manage.${action}`,
+      target: action === 'create' ? line(args.name) || line(args.schedule) : line(args.job_id)
+    }
+  },
+  delegate: args => {
+    const action = line(args.action) || 'spawn'
+
+    return action === 'spawn'
+      ? { key: 'delegate.spawn', prose: true, target: andMore(line(first(args.tasks).goal), args.tasks) }
+      : { key: `delegate.${action}`, target: line(args.subagent_id) || line(args.account) }
+  },
+  delegation_search: args => ({ key: 'delegation_search', target: quoted(line(args.query)) }),
+  desktop_preview: args =>
+    line(args.action) === 'close'
+      ? { key: 'desktop_preview.close', target: line(args.label) || line(args.url) }
+      : { key: 'desktop_preview.open', target: line(args.label) || line(args.url) },
+  edit_file: args => (line(args.path) ? { key: 'edit_file', target: line(args.path) } : null),
+  executor_accounts: args => ({ key: 'executor_accounts', target: line(args.executor) }),
+  find_files: args => ({ key: 'find_files', target: quoted(line(args.pattern)) }),
+  memory: args => {
+    const change = Array.isArray(args.operations) ? first(args.operations) : args
+
+    return {
+      key: line(args.target) === 'user' ? 'memory.user' : 'memory.memory',
+      prose: true,
+      target: line(change.content) || line(change.new_text) || line(change.old_text)
+    }
+  },
+  message_agent: args => ({ key: 'message_agent', target: line(args.target) }),
+  plan: args => {
+    const todos = Array.isArray(args.todos) ? (args.todos as unknown[]) : []
+    const doing = todos.find(todo => (todo as Args | null)?.status === 'in_progress') as Args | undefined
+
+    return todos.length ? { key: 'plan', prose: true, target: line(doing?.content) } : { key: 'plan.read', target: '' }
+  },
+  read_file: args => (line(args.path) ? { key: 'read_file', target: line(args.path) } : null),
+  run_command: args =>
+    line(args.stop)
+      ? { key: 'run_command.stop', target: line(args.stop) }
+      : line(args.command)
+        ? { key: 'run_command', target: line(args.command) }
+        : null,
+  secrets: args =>
+    line(args.action) === 'list'
+      ? { key: 'secrets.list', target: '' }
+      : { key: 'secrets.request', target: line(args.name) },
+  skill_manage: args => {
+    const change = Array.isArray(args.operations) ? first(args.operations) : args
+    const action = line(change.action)
+    const key = action === 'create' || action === 'delete' ? `skill_manage.${action}` : 'skill_manage.change'
+
+    return { key, target: line(change.name) }
+  },
+  tool_search: args => ({ key: 'tool_search', target: quoted(line(args.query)) }),
+  use_skill: args => ({ key: 'use_skill', target: line(args.name) }),
+  web_fetch: args => (line(args.url) ? { key: 'web_fetch', target: line(args.url) } : null),
+  web_search: args => (line(args.query) ? { key: 'web_search', target: quoted(line(args.query)) } : null),
+  write_file: args => (line(args.path) ? { key: 'write_file', target: line(args.path) } : null)
+}
+
+/** Atlas's own tools' titles (`Ran <command>`, `Asked “Which colour?”`, `Delegated: <goal>`), the
+ * verb saying what the call did as it stands: done once it ran, pending while it runs, and plain
+ * (`Run <command>`) while it waits or when it was denied or stopped first; `null` for the others,
+ * MCP's and plugins' included, which keep the generic summary, and for a call whose arguments
+ * name nothing. */
+export function toolTitle(name: string, args: string, shown: Shown): null | ToolTitle {
+  const parsed = parsedArgs(args)
+  const named = parsed && Object.hasOwn(NAMED, name) ? NAMED[name]?.(parsed) : null
+  const words = named ? t.tool.titles[named.key] : undefined
+
+  if (!named || !words || (!named.target && !ALONE.has(named.key))) {
     return null
   }
 
-  const titled = name as Titled
-  const value = inputFields(args).find(entry => entry.name === field[titled])?.value
-
-  if (!value) {
-    return null
-  }
-
-  const words = t.tool.titles[titled]
-  const target = titled === 'web_search' ? `“${value}”` : (value.split('\n')[0] ?? value)
   const action =
     shown === 'completed' || shown === 'failed' ? words.done : shown === 'running' ? words.pending : words.plain
 
-  return { action, target }
+  return { action, prose: named.prose ?? false, target: named.target }
+}
+
+/** The arguments as an object, when they are one. */
+function parsedArgs(args: string): Args | null {
+  try {
+    const parsed: unknown = JSON.parse(args || '{}')
+
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Args) : null
+  } catch {
+    return null
+  }
 }
 
 /** The arguments as one short line: the values, not the JSON's braces and keys. */

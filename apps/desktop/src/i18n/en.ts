@@ -16,6 +16,74 @@ const EFFORTS: Record<string, string> = {
   xhigh: 'Extra high'
 }
 
+/** What a call of each of Atlas's own tools does, said three ways: once it ran (`done`), while it
+ * runs (`pending`), and what it would do when it waits, was denied or stopped first (`plain`), so a
+ * call that never ran never reads as one that did. A tool with several actions has one for each
+ * (`tool.action`). */
+const TOOL_TITLES: Record<string, { done: string; pending: string; plain: string }> = {
+  ask_user: { done: 'Asked', pending: 'Asking', plain: 'Ask' },
+  bot_create: { done: 'Created the bot', pending: 'Creating the bot', plain: 'Create the bot' },
+  browser_exec: { done: 'Browser:', pending: 'Browser:', plain: 'Browser:' },
+  conversation_search: {
+    done: 'Searched the conversations for',
+    pending: 'Searching the conversations for',
+    plain: 'Search the conversations for'
+  },
+  'cronjob_manage.create': { done: 'Scheduled', pending: 'Scheduling', plain: 'Schedule' },
+  'cronjob_manage.list': { done: 'Listed the routines', pending: 'Listing the routines', plain: 'List the routines' },
+  'cronjob_manage.pause': { done: 'Paused the routine', pending: 'Pausing the routine', plain: 'Pause the routine' },
+  'cronjob_manage.remove': {
+    done: 'Removed the routine',
+    pending: 'Removing the routine',
+    plain: 'Remove the routine'
+  },
+  'cronjob_manage.resume': {
+    done: 'Resumed the routine',
+    pending: 'Resuming the routine',
+    plain: 'Resume the routine'
+  },
+  'cronjob_manage.run': { done: 'Ran the routine', pending: 'Running the routine', plain: 'Run the routine' },
+  'cronjob_manage.update': {
+    done: 'Changed the routine',
+    pending: 'Changing the routine',
+    plain: 'Change the routine'
+  },
+  'delegate.account': { done: 'Moved the task to', pending: 'Moving the task to', plain: 'Move the task to' },
+  'delegate.list': { done: 'Listed the tasks', pending: 'Listing the tasks', plain: 'List the tasks' },
+  'delegate.resume': { done: 'Resumed', pending: 'Resuming', plain: 'Resume' },
+  'delegate.spawn': { done: 'Delegated:', pending: 'Delegating:', plain: 'Delegate:' },
+  'delegate.steer': { done: 'Steered', pending: 'Steering', plain: 'Steer' },
+  'delegate.stop': { done: 'Stopped', pending: 'Stopping', plain: 'Stop' },
+  delegation_search: {
+    done: 'Searched the delegated tasks for',
+    pending: 'Searching the delegated tasks for',
+    plain: 'Search the delegated tasks for'
+  },
+  'desktop_preview.close': { done: 'Closed the preview', pending: 'Closing the preview', plain: 'Close the preview' },
+  'desktop_preview.open': { done: 'Opened', pending: 'Opening', plain: 'Open' },
+  edit_file: { done: 'Edited', pending: 'Editing', plain: 'Edit' },
+  executor_accounts: { done: 'Read the accounts', pending: 'Reading the accounts', plain: 'Read the accounts' },
+  find_files: { done: 'Searched the files for', pending: 'Searching the files for', plain: 'Search the files for' },
+  'memory.memory': { done: 'Updated its notes:', pending: 'Updating its notes:', plain: 'Update its notes:' },
+  'memory.user': { done: 'Updated your profile:', pending: 'Updating your profile:', plain: 'Update your profile:' },
+  message_agent: { done: 'Messaged', pending: 'Messaging', plain: 'Message' },
+  plan: { done: 'Updated the plan', pending: 'Updating the plan', plain: 'Update the plan' },
+  'plan.read': { done: 'Read the plan', pending: 'Reading the plan', plain: 'Read the plan' },
+  read_file: { done: 'Read', pending: 'Reading', plain: 'Read' },
+  run_command: { done: 'Ran', pending: 'Running', plain: 'Run' },
+  'run_command.stop': { done: 'Stopped', pending: 'Stopping', plain: 'Stop' },
+  'secrets.list': { done: 'Listed the keys', pending: 'Listing the keys', plain: 'List the keys' },
+  'secrets.request': { done: 'Asked for the key', pending: 'Asking for the key', plain: 'Ask for the key' },
+  'skill_manage.change': { done: 'Changed the skill', pending: 'Changing the skill', plain: 'Change the skill' },
+  'skill_manage.create': { done: 'Created the skill', pending: 'Creating the skill', plain: 'Create the skill' },
+  'skill_manage.delete': { done: 'Deleted the skill', pending: 'Deleting the skill', plain: 'Delete the skill' },
+  tool_search: { done: 'Searched the tools for', pending: 'Searching the tools for', plain: 'Search the tools for' },
+  use_skill: { done: 'Loaded the skill', pending: 'Loading the skill', plain: 'Load the skill' },
+  web_fetch: { done: 'Fetched', pending: 'Fetching', plain: 'Fetch' },
+  web_search: { done: 'Searched', pending: 'Searching', plain: 'Search' },
+  write_file: { done: 'Wrote', pending: 'Writing', plain: 'Write' }
+}
+
 /** What Atlas's approval asks, by the tool that asks; another tool is named. */
 const APPROVALS: Record<string, string> = {
   cronjob_manage: 'Schedule this command?',
@@ -590,6 +658,7 @@ export const en = {
     menu: (name: string) => `${name}: account and list`,
     model: 'Model (for this session, from its next request)',
     newSession: 'New session',
+    which: 'On which executor',
     newSessionIn: (folder: string) => `New session in ${folder}`,
     noneOn: 'No harness is turned on yet.',
     reading: 'Reading the harnesses…',
@@ -856,14 +925,9 @@ export const en = {
     output: 'OUT',
     running: 'running',
     spilled: (path: string) => `The whole result is in ${path}`,
-    // Atlas's own tools get a title of their own, one at a time: what it did once it ran
-    // (`done`), what it does while it runs (`pending`), and what it would do when it waits, was
-    // denied or stopped first (`plain`), so a call that never ran never reads as one that did.
-    titles: {
-      read_file: { done: 'Read', pending: 'Reading', plain: 'Read' },
-      run_command: { done: 'Ran', pending: 'Running', plain: 'Run' },
-      web_search: { done: 'Searched', pending: 'Searching', plain: 'Search' }
-    },
+    /** A call's title, what it is about and how many more. */
+    andMore: (target: string, more: number) => `${target} and ${String(more)} more`,
+    titles: TOOL_TITLES,
     /** A call that never ran: nobody answered its approval in time. */
     unanswered: 'not answered in time',
     waiting: 'waiting for its output…',

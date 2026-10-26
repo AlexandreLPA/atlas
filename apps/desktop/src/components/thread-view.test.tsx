@@ -5,7 +5,7 @@ import { t } from '@/i18n'
 import type { Item } from '@/store/thread'
 
 import { ThreadView } from './thread-view'
-import { clampForDisplay, inputFields, MAX_SHOWN_CHARS, toolTitle } from './tool-row'
+import { clampForDisplay, inputFields, MAX_SHOWN_CHARS, type Shown, toolTitle } from './tool-row'
 
 afterEach(cleanup)
 beforeAll(() => {
@@ -126,26 +126,48 @@ describe('a tool', () => {
   })
 
   it("titles Atlas's own tools by what they do, and leaves the others generic", () => {
-    expect(toolTitle('run_command', '{"command":"uv run pytest -q\\necho"}', 'completed')).toEqual({
-      action: t.tool.titles.run_command.done,
-      target: 'uv run pytest -q'
-    })
-    expect(toolTitle('read_file', '{"path":"a.md"}', 'running')).toEqual({
-      action: t.tool.titles.read_file.pending,
-      target: 'a.md'
-    })
-    expect(toolTitle('web_search', '{"query":"kv cache"}', 'failed')).toEqual({
-      action: t.tool.titles.web_search.done,
-      target: '“kv cache”'
-    })
-    expect(toolTitle('mcp__notes__add', '{"text":"x"}', 'completed')).toBeNull()
+    const titled = (name: string, args: unknown, shown: Shown = 'completed') => {
+      const title = toolTitle(name, JSON.stringify(args), shown)
+
+      return title && `${title.action} ${title.target}${title.prose ? ' (words)' : ''}`
+    }
+
+    expect(titled('run_command', { command: 'uv run pytest -q\necho' })).toBe('Ran uv run pytest -q')
+    expect(titled('read_file', { path: 'a.md' }, 'running')).toBe('Reading a.md')
+    expect(titled('web_search', { query: 'kv cache' }, 'failed')).toBe('Searched “kv cache”')
+    expect(titled('write_file', { content: 'x', path: 'notes/today.md' })).toBe('Wrote notes/today.md')
+    expect(
+      titled('ask_user', { questions: [{ question: 'Which colour?' }, { question: 'Which size?' }] }, 'waiting')
+    ).toBe('Ask Which colour? and 1 more (words)')
+    expect(titled('delegate', { tasks: [{ goal: 'Fix the footer' }] }, 'running')).toBe(
+      'Delegating: Fix the footer (words)'
+    )
+    expect(titled('delegate', { action: 'stop', subagent_id: 'sa-1' })).toBe('Stopped sa-1')
+    expect(titled('cronjob_manage', { action: 'create', name: 'Daily digest', schedule: 'every day 9am' })).toBe(
+      'Scheduled Daily digest'
+    )
+    expect(titled('secrets', { action: 'request', name: 'STRIPE_API_KEY' }, 'waiting')).toBe(
+      'Ask for the key STRIPE_API_KEY'
+    )
+    expect(titled('memory', { action: 'add', content: 'Likes tea.', target: 'user' })).toBe(
+      'Updated your profile: Likes tea. (words)'
+    )
+    expect(titled('browser_exec', { code: "# Searching for paper towels\npage.goto('x')" }, 'running')).toBe(
+      'Browser: Searching for paper towels (words)'
+    )
+    expect(titled('plan', {})).toBe('Read the plan ')
+    expect(titled('tool_search', { query: 'secrets' })).toBe('Searched the tools for “secrets”')
+    // A tool with no words for what it does, or whose arguments name nothing, keeps the generic line.
+    expect(titled('mcp__notes__add', { text: 'x' })).toBeNull()
+    expect(titled('cronjob_manage', { action: 'teleport' })).toBeNull()
+    expect(titled('read_file', {})).toBeNull()
   })
 
   it('never titles a call that did not run as one that did', () => {
     const command = '{"command":"rm -r build"}'
 
     for (const shown of ['waiting', 'denied', 'cancelled', 'unanswered'] as const) {
-      expect(toolTitle('run_command', command, shown)?.action).toBe(t.tool.titles.run_command.plain)
+      expect(toolTitle('run_command', command, shown)?.action).toBe(t.tool.titles.run_command?.plain)
     }
   })
 
@@ -173,7 +195,7 @@ describe('a tool', () => {
     expect(parts.map(part => part.getAttribute('data-dot'))).toEqual(['waiting', 'waiting', 'running'])
     const rows = screen.getAllByTestId('tool-row')
     expect(rows.map(row => row.getAttribute('data-status'))).toEqual(['waiting', 'waiting', 'running'])
-    expect(within(rows[0] as HTMLElement).getByText(t.tool.titles.run_command.plain)).toBeTruthy()
+    expect(within(rows[0] as HTMLElement).getByText(t.tool.titles.run_command?.plain ?? '')).toBeTruthy()
     expect(screen.getAllByTestId('tool-state')[0]?.textContent).toBe(t.tool.waitingFor.approval)
     expect(screen.getAllByTestId('tool-state')[1]?.textContent).toBe(t.tool.waitingFor.answer)
   })

@@ -490,6 +490,22 @@ describe("an executor's other accounts (step 16h, redone on 19/10/2026)", () => 
     expect(work.getAttribute('aria-expanded')).toBe('true')
   })
 
+  it("starts a new session from the tab's first button, on the executor chosen, in the folder typed", async () => {
+    await showAccounts()
+    const started = vi.spyOn(current(), 'newSession').mockImplementation(() => undefined)
+
+    // The tab's first button, as a new conversation is in its own (the UI review, 26/10/2026).
+    const top = screen.getByTestId('new-session-top')
+    expect(top.compareDocumentPosition(screen.getByTestId('add-account'))).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    fireEvent.click(top)
+    fireEvent.change(screen.getByTestId('new-session-executor'), { target: { value: 'claude-code@ab12cd34' } })
+    const form = screen.getByTestId('new-session-form')
+    fireEvent.change(within(form).getByRole('textbox'), { target: { value: '/work/shop' } })
+    fireEvent.submit(form)
+
+    expect(started).toHaveBeenCalledWith('claude-code@ab12cd34', '/work/shop')
+  })
+
   it('adds one by its nickname alone, and reads the executors again for its row', async () => {
     const calls = await showAccounts()
 

@@ -33,8 +33,9 @@ test("ask_user's card: the choice clicked is what the model receives", async () 
 
   const card = page.getByTestId('ask-card')
   await expect(card).toContainText('Which colour?')
-  // Its call waits for the answer on the trail; it does not run.
-  const call = page.getByTestId('tool-row').filter({ hasText: 'ask_user' })
+  // Its call waits for the answer on the trail, titled by its question; it does not run.
+  const call = page.getByTestId('tool-row').filter({ hasText: 'Which colour?' })
+  await expect(call.locator('summary')).toContainText('Ask Which colour?')
   await expect(call).toHaveAttribute('data-status', 'waiting')
   await expect(call.getByTestId('tool-state')).toHaveText('waiting for your answer')
   await card.getByRole('button', { name: 'Blue' }).click()

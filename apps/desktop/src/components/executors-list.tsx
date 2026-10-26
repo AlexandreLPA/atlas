@@ -98,9 +98,11 @@ export function ExecutorsList() {
 
   return (
     <>
-      {takeAccounts.length > 0 && (
-        <div className="px-3 pb-2">
-          <AddAccount executors={takeAccounts} />
+      {on.length > 0 && (
+        <div className="space-y-1.5 px-3 pb-2">
+          <NewSessionTop executors={on} />
+          {/* Above the executors' list too (asked for by the user on 19/10/2026). */}
+          {takeAccounts.length > 0 && <AddAccount executors={takeAccounts} />}
         </div>
       )}
       <div className="flex-1 space-y-1 overflow-y-auto px-2 pb-3">
@@ -850,6 +852,60 @@ function SessionButton({ actions, row }: { actions: boolean; row: SessionRow }) 
         </span>
       )}
     </button>
+  )
+}
+
+/** The tab's own first button, as the conversations' and the bots' are (the UI review,
+ * 26/10/2026: adding an account held that place, a rarer act, and a new session hid in each
+ * executor's menu): a new session, on the executor chosen when several are on, in a folder typed or
+ * picked. Adding an account comes next, above the list too. */
+function NewSessionTop({ executors }: { executors: ExecutorRow[] }) {
+  const [opened, setOpened] = useState(false)
+  const [picked, setPicked] = useState('')
+  const executor = executors.find(row => row.name === picked)?.name ?? executors[0]?.name ?? ''
+
+  if (!opened) {
+    return (
+      <button
+        className="flex w-full items-center gap-2 rounded-md border border-border-strong px-2 py-1.5 text-left text-sm font-medium hover:bg-muted"
+        data-testid="new-session-top"
+        onClick={() => {
+          setOpened(true)
+        }}
+        type="button"
+      >
+        <Plus aria-hidden size={16} stroke={1.75} />
+        {t.executors.newSession}
+      </button>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {executors.length > 1 && (
+        <select
+          aria-label={t.executors.which}
+          className="w-full rounded border border-border-strong bg-raised px-2 py-1 text-xs"
+          data-testid="new-session-executor"
+          onChange={event => {
+            setPicked(event.target.value)
+          }}
+          value={executor}
+        >
+          {executors.map(row => (
+            <option key={row.name} value={row.name}>
+              {row.title}
+            </option>
+          ))}
+        </select>
+      )}
+      <NewSession
+        executor={executor}
+        onDone={() => {
+          setOpened(false)
+        }}
+      />
+    </div>
   )
 }
 

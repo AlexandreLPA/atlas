@@ -19,6 +19,62 @@ const EFFORTS: Record<string, string> = {
   xhigh: 'Muito alto'
 }
 
+const TOOL_TITLES: Record<string, { done: string; pending: string; plain: string }> = {
+  ask_user: { done: 'Perguntou', pending: 'Perguntando', plain: 'Perguntar' },
+  bot_create: { done: 'Criou o bot', pending: 'Criando o bot', plain: 'Criar o bot' },
+  browser_exec: { done: 'Navegador:', pending: 'Navegador:', plain: 'Navegador:' },
+  conversation_search: {
+    done: 'Buscou nas conversas',
+    pending: 'Buscando nas conversas',
+    plain: 'Buscar nas conversas'
+  },
+  'cronjob_manage.create': { done: 'Agendou', pending: 'Agendando', plain: 'Agendar' },
+  'cronjob_manage.list': { done: 'Listou as rotinas', pending: 'Listando as rotinas', plain: 'Listar as rotinas' },
+  'cronjob_manage.pause': { done: 'Pausou a rotina', pending: 'Pausando a rotina', plain: 'Pausar a rotina' },
+  'cronjob_manage.remove': { done: 'Removeu a rotina', pending: 'Removendo a rotina', plain: 'Remover a rotina' },
+  'cronjob_manage.resume': { done: 'Retomou a rotina', pending: 'Retomando a rotina', plain: 'Retomar a rotina' },
+  'cronjob_manage.run': { done: 'Rodou a rotina', pending: 'Rodando a rotina', plain: 'Rodar a rotina' },
+  'cronjob_manage.update': { done: 'Mudou a rotina', pending: 'Mudando a rotina', plain: 'Mudar a rotina' },
+  'delegate.account': { done: 'Levou a tarefa para', pending: 'Levando a tarefa para', plain: 'Levar a tarefa para' },
+  'delegate.list': { done: 'Listou as tarefas', pending: 'Listando as tarefas', plain: 'Listar as tarefas' },
+  'delegate.resume': { done: 'Retomou', pending: 'Retomando', plain: 'Retomar' },
+  'delegate.spawn': { done: 'Delegou:', pending: 'Delegando:', plain: 'Delegar:' },
+  'delegate.steer': { done: 'Orientou', pending: 'Orientando', plain: 'Orientar' },
+  'delegate.stop': { done: 'Parou', pending: 'Parando', plain: 'Parar' },
+  delegation_search: {
+    done: 'Buscou nas tarefas delegadas',
+    pending: 'Buscando nas tarefas delegadas',
+    plain: 'Buscar nas tarefas delegadas'
+  },
+  'desktop_preview.close': { done: 'Fechou a prévia', pending: 'Fechando a prévia', plain: 'Fechar a prévia' },
+  'desktop_preview.open': { done: 'Abriu', pending: 'Abrindo', plain: 'Abrir' },
+  edit_file: { done: 'Editou', pending: 'Editando', plain: 'Editar' },
+  executor_accounts: { done: 'Leu as contas', pending: 'Lendo as contas', plain: 'Ler as contas' },
+  find_files: { done: 'Buscou nos arquivos', pending: 'Buscando nos arquivos', plain: 'Buscar nos arquivos' },
+  'memory.memory': {
+    done: 'Atualizou as anotações:',
+    pending: 'Atualizando as anotações:',
+    plain: 'Atualizar as anotações:'
+  },
+  'memory.user': { done: 'Atualizou seu perfil:', pending: 'Atualizando seu perfil:', plain: 'Atualizar seu perfil:' },
+  message_agent: { done: 'Mandou mensagem para', pending: 'Mandando mensagem para', plain: 'Mandar mensagem para' },
+  plan: { done: 'Atualizou o plano', pending: 'Atualizando o plano', plain: 'Atualizar o plano' },
+  'plan.read': { done: 'Leu o plano', pending: 'Lendo o plano', plain: 'Ler o plano' },
+  read_file: { done: 'Leu', pending: 'Lendo', plain: 'Ler' },
+  run_command: { done: 'Rodou', pending: 'Rodando', plain: 'Rodar' },
+  'run_command.stop': { done: 'Parou', pending: 'Parando', plain: 'Parar' },
+  'secrets.list': { done: 'Listou as chaves', pending: 'Listando as chaves', plain: 'Listar as chaves' },
+  'secrets.request': { done: 'Pediu a chave', pending: 'Pedindo a chave', plain: 'Pedir a chave' },
+  'skill_manage.change': { done: 'Mudou a skill', pending: 'Mudando a skill', plain: 'Mudar a skill' },
+  'skill_manage.create': { done: 'Criou a skill', pending: 'Criando a skill', plain: 'Criar a skill' },
+  'skill_manage.delete': { done: 'Apagou a skill', pending: 'Apagando a skill', plain: 'Apagar a skill' },
+  tool_search: { done: 'Buscou nas ferramentas', pending: 'Buscando nas ferramentas', plain: 'Buscar nas ferramentas' },
+  use_skill: { done: 'Carregou a skill', pending: 'Carregando a skill', plain: 'Carregar a skill' },
+  web_fetch: { done: 'Abriu a página', pending: 'Abrindo a página', plain: 'Abrir a página' },
+  web_search: { done: 'Buscou', pending: 'Buscando', plain: 'Buscar' },
+  write_file: { done: 'Escreveu', pending: 'Escrevendo', plain: 'Escrever' }
+}
+
 const APPROVALS: Record<string, string> = {
   cronjob_manage: 'Agendar este comando?',
   delegate: 'Agir na sua própria sessão?',
@@ -592,6 +648,7 @@ export const ptBR: Override<Messages> = {
     menu: (name: string) => `${name}: conta e lista`,
     model: 'Modelo (desta sessão, a partir do próximo pedido)',
     newSession: 'Nova sessão',
+    which: 'Em qual executor',
     newSessionIn: (folder: string) => `Nova sessão em ${folder}`,
     noneOn: 'Nenhum harness ligado ainda.',
     reading: 'Lendo os harnesses…',
@@ -847,11 +904,8 @@ export const ptBR: Override<Messages> = {
     output: 'OUT',
     running: 'rodando',
     spilled: (path: string) => `O resultado inteiro está em ${path}`,
-    titles: {
-      read_file: { done: 'Leu', pending: 'Lendo', plain: 'Ler' },
-      run_command: { done: 'Rodou', pending: 'Rodando', plain: 'Rodar' },
-      web_search: { done: 'Buscou', pending: 'Buscando', plain: 'Buscar' }
-    },
+    andMore: (target: string, more: number) => `${target} e mais ${String(more)}`,
+    titles: TOOL_TITLES,
     unanswered: 'sem resposta a tempo',
     waiting: 'esperando a saída…',
     waitingFor: {

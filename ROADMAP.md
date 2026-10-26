@@ -3758,6 +3758,24 @@ confiança. **Sem redesenho:** polimento, fluidez, percepção de velocidade e i
   com prontidão, uso, modelo, esforço e compactar) e no e2e (a parada adicionada dizendo que está
   pronta, com compactar ligado). Fiscais: 2.700 testes do Python com 91,45% de cobertura, o `npm run
   check` (445 do Vitest), o do site e os 76 do e2e.
+- **Entrega 8, telas e navegação (26/10):** cada uma das ferramentas do Atlas ganhou título no
+  rastro, no lugar do JSON cru que a revisão achou: "Perguntou" e a pergunta, "Delegou:" e o
+  objetivo, "Escreveu" e o arquivo, "Agendou" e a rotina, "Pediu a chave" e o nome, "Buscou nas
+  ferramentas" e a busca, o passo do navegador pelo comentário que o próprio código traz, e um verbo
+  por ação nas que têm várias (rotinas, tarefas delegadas, skills, memória); o que é texto (uma
+  pergunta, um objetivo) sai em letra de texto, o resto em letra de código, e o verbo segue o estado
+  da chamada, como já faziam o comando, a leitura e a busca. As de MCP e de plugins, e uma chamada
+  cujos argumentos não nomeiam nada, ficam com o resumo de antes. As páginas próprias (rotinas,
+  propostas, loja) ganharam um cabeçalho só (`PageHeader`): título, para que servem, os controles
+  delas à direita e a volta à conversa sempre no mesmo lugar. Na aba de executores, "Nova sessão"
+  virou o primeiro botão, como "Nova conversa" e "Novo bot" nas delas, com a escolha do executor
+  quando há mais de um, e "Adicionar uma conta" ficou embaixo dele, mais discreto, ainda acima da
+  lista, como o usuário pediu em 19/10. A tela da chave abre primeiro o OpenRouter, que ela mesma
+  chamava de "uma boa primeira escolha" em segundo lugar, debaixo de outro aberto. Provado no Vitest
+  (os títulos de cada ferramenta e o resumo genérico mantido, a nova sessão pelo primeiro botão, o
+  provedor primeiro e aberto) e no e2e (a pergunta e a tarefa delegada achadas pelo título).
+  Fiscais: 2.700 testes do Python com 91,44% de cobertura, o `npm run check` (447 do Vitest), o do
+  site e os 76 do e2e.
 
 ## Assuntos de desenho ainda abertos
 

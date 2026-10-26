@@ -128,7 +128,9 @@ test('a task Atlas delegates opens from its line as a session, marked by Atlas, 
 
   // The tab says something waits there; the delegate line opens the session.
   await expect(page.getByTestId('tab-executors-alert')).toBeVisible()
-  await page.getByTestId('tool-row').filter({ hasText: 'delegate' }).getByTestId('open-delegated').click()
+  const delegated = page.getByTestId('tool-row').filter({ hasText: 'Fix the failing test.' })
+  await expect(delegated.locator('summary')).toContainText(/Delegat\w+: Fix the failing test\./)
+  await delegated.getByTestId('open-delegated').click()
   await expect(page.getByTestId('session-header')).toContainText('Claude Code')
   await expect(page.getByTestId('session-header')).toContainText('someone@example.com')
 

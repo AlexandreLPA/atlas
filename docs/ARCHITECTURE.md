@@ -1244,6 +1244,11 @@ Cut to what a first screen needs: about 6 runtime packages.
   restored tab is never blank, a closed one never comes back, and one whose conversation was
   deleted closes as it opens (`NOT_FOUND`). An executor's session shown before shows its trail at
   once while it is read anew.
+- **A page of its own has one head** (step 9d, `PageHeader`): the routines, the memory proposals
+  and the marketplace each say their title and what they are for, with their own controls on the
+  right and the way back to the conversation always in the same place; an empty page says so in the
+  intro's size. The key screen lists first, open, the provider it calls a good first choice
+  (OpenRouter: one key, hundreds of models), where it said so second under another one open.
 - **Colors with a name and one meaning each, and short movement** (step 9d; the review found green
   meaning "at work" in the list and "done" on the trail, and the Markdown's code blocks drawn in
   black: they paint with color names the app had never defined). The app paints with the colors
@@ -1321,11 +1326,15 @@ full weight; a click on a tool opens what went in and what came out. Roadmap ste
   what the reasoning is about, its latest bold title or its first words: ours, approved by the user
   on a prototype. Open, it is Markdown. Reasoning with no readable text, encrypted or only
   counted, is not shown.
-- **A tool**, closed, is its name and a summary of its arguments. Atlas's own tools get a title of
-  their own one at a time (`run_command` its command, `read_file` its path), its verb what the
-  call did as it stands: "Ran" once it ran, "Running" while it runs, and "Run" while it waits or
-  when it was denied or stopped first, so a call that never ran never reads as one that did; MCP
-  and plugin tools keep the generic summary. Open, it is a box with IN and OUT: one
+- **A tool**, closed, is its name and a summary of its arguments. Each of Atlas's own tools has a
+  title of its own instead (every one since 26/10/2026, the UI review having found raw JSON on the
+  trail), named from its arguments: `run_command` its command, `read_file` its path, `ask_user`
+  its first question, `delegate` its first goal, `cronjob_manage` and the others with several
+  actions a verb for each, words (a question, a goal, a browser step's own comment) drawn as
+  words and the rest as code. Its verb says what the call did as it stands: "Ran" once it ran,
+  "Running" while it runs, and "Run" while it waits or when it was denied or stopped first, so a
+  call that never ran never reads as one that did. MCP and plugin tools, and a call whose
+  arguments name nothing, keep the generic summary. Open, it is a box with IN and OUT: one
   argument bare, several each under its name; the output while it runs and the result once done,
   red when it failed, cut at 20,000 characters with a copy-all button; a spilled result
   names its file. `tool.complete`'s `failed` becomes `status`: `completed`, `failed` (it raised,
@@ -2886,7 +2895,9 @@ Claude Code, the terminal with ▶ and `!`, the preview.
   session", and its folders, the most recent first; a folder opened lists its sessions. One
   executor is open at a time, its tab in the side panel. "New session" takes
   a folder typed or chosen in the system's dialog (only when the app started its server: a folder
-  of this machine is no remote server's).
+  of this machine is no remote server's). Since 26/10/2026 it is also the tab's first button, as
+  "New conversation" and "New bot" are in theirs, choosing the executor when several are on;
+  "Add an account" comes under it, above the list as the user asked on 19/10/2026.
 - **A folder archived leaves the list** (asked for by the user on 18/10/2026, so the list stays
   short), without touching it, kept per home and
   executor. An archived folder stays listed

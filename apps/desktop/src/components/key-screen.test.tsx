@@ -48,6 +48,15 @@ describe('when the key screen shows', () => {
 })
 
 describe('the key screen', () => {
+  it('lists first, open, the provider it calls a good first choice', () => {
+    app.$keyProviders.set([provider('openai', 'OpenAI'), provider('openrouter', 'OpenRouter')])
+    render(<KeyScreen />)
+
+    const choices = screen.getAllByRole('radio')
+    expect(choices.map(choice => choice.querySelector('span')?.textContent)).toEqual(['OpenRouter', 'OpenAI'])
+    expect(choices.map(choice => choice.getAttribute('aria-checked'))).toEqual(['true', 'false'])
+  })
+
   it('connects the picked provider with the pasted key, and links to where keys are made', async () => {
     const connected = vi.spyOn(app, 'connectProvider').mockResolvedValue(answer('valid', 'The key opens OpenRouter.'))
     app.$keyProviders.set([provider('openai', 'OpenAI'), provider('openrouter', 'OpenRouter')])
