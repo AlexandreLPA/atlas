@@ -61,5 +61,6 @@ export function place(label: Label, at: [number, number] | null, alpha: number) 
     return
   }
   label.element.style.transform = `translate3d(${at[0].toFixed(1)}px, ${at[1].toFixed(1)}px, 0)`
-  label.element.style.opacity = Math.min(alpha, 1).toFixed(3)
+  // A name comes in faster than its body, so it is never half faded while the scene is read.
+  label.element.style.opacity = Math.min(alpha * 1.8, 1).toFixed(3)
 }

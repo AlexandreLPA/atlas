@@ -6,7 +6,21 @@ import SphereDrawing from '../components/SphereDrawing.astro'
 import { REPOSITORY } from '../../site.config.mjs'
 import Site from '../layouts/Site.astro'
 import { changes, formatDay } from '../lib/changelog'
-import { catalogue, chapters, compare, faq, gate, hero, install, memory, opening, proof, route, seo } from '../lib/home'
+import {
+  catalogue,
+  chapters,
+  compare,
+  faq,
+  gate,
+  hero,
+  install,
+  memory,
+  opening,
+  proof,
+  route,
+  seo,
+  tagline
+} from '../lib/home'
 import { installWays, quickWays } from '../lib/install'
 import { application, faqPage } from '../lib/seo'
 
@@ -201,6 +215,16 @@ const schema = [application(site), faqPage(site)]
       ))}
     </div>
   </div>
+
+  <section class="tagline" aria-label="What Atlas promises">
+    <div class="page">
+      <p data-words>
+        {tagline.split(' ').map(word => (
+          <span class="word">{word} </span>
+        ))}
+      </p>
+    </div>
+  </section>
 
   <section class="section compare" aria-labelledby="compare-title">
     <div class="page">
@@ -410,6 +434,29 @@ const schema = [application(site), faqPage(site)]
 <script>
   import { startOrrery } from '../scripts/orrery'
 
+  // The statement lights word by word as each crosses a line a third up from the bottom, once.
+  const statement = document.querySelector<HTMLElement>('[data-words]')
+  if (statement) {
+    const words = Array.from(statement.querySelectorAll<HTMLElement>('.word'))
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      words.forEach(word => word.classList.add('lit'))
+    } else {
+      statement.classList.add('armed')
+      const watch = new IntersectionObserver(
+        entries => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('lit')
+              watch.unobserve(entry.target)
+            }
+          }
+        },
+        { rootMargin: '0px 0px -33% 0px' }
+      )
+      words.forEach(word => watch.observe(word))
+    }
+  }
+
   const root = document.querySelector<HTMLElement>('[data-orrery]')
   if (root) {
     startOrrery(root)
@@ -483,7 +530,7 @@ const schema = [application(site), faqPage(site)]
     height: auto;
   }
 
-  canvas {
+  .scene canvas {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -514,8 +561,8 @@ const schema = [application(site), faqPage(site)]
     padding: 0.15rem 0.35rem;
     visibility: hidden;
     color: var(--starlight);
-    font-size: 0.75rem;
-    font-weight: 540;
+    font-size: 0.8125rem;
+    font-weight: 560;
     font-stretch: var(--narrow);
     letter-spacing: 0.01em;
     line-height: 1.25;
@@ -1479,7 +1526,7 @@ const schema = [application(site), faqPage(site)]
       transition: none;
     }
 
-    canvas,
+    .scene canvas,
     .drawing {
       transition: none;
     }
@@ -1523,7 +1570,7 @@ const schema = [application(site), faqPage(site)]
 
   .opening-foot a span {
     display: inline-block;
-    animation: nudge 1.6s ease-in-out infinite;
+    animation: nudge 1.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
   }
 
   @keyframes nudge {
@@ -1606,5 +1653,29 @@ const schema = [application(site), faqPage(site)]
     .opening-foot a span {
       animation: none;
     }
+  }
+
+  /* The statement: large type that lights word by word as it is read. Plain, fully lit, without script. */
+  .tagline {
+    position: relative;
+    z-index: 1;
+    padding: clamp(5rem, 14vw, 11rem) 0;
+  }
+
+  .tagline p {
+    max-width: 22em;
+    font-size: clamp(2rem, 5.2vw, 4.25rem);
+    font-weight: 600;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  .tagline p.armed .word {
+    opacity: 0.28;
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .tagline p.armed .word.lit {
+    opacity: 1;
   }
 </style>
