@@ -95,6 +95,22 @@ export function TabStrip() {
     }
   }, [])
 
+  // On macOS ⌘W comes from the main process, which takes it before the menu would close the
+  // window (electron/keys.ts): the tab on screen closes, else the window, as a browser's does.
+  useEffect(() => {
+    const bridge = (window as { atlas?: AtlasBridge }).atlas
+
+    return bridge?.tabs?.onClose(() => {
+      const shown = activeTab()
+
+      if (shown) {
+        closeTab(shown.id)
+      } else {
+        window.close()
+      }
+    })
+  }, [])
+
   // The tab on screen is never out of sight, however many are open.
   useEffect(() => {
     list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })

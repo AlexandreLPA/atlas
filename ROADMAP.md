@@ -3776,6 +3776,20 @@ confiança. **Sem redesenho:** polimento, fluidez, percepção de velocidade e i
   provedor primeiro e aberto) e no e2e (a pergunta e a tarefa delegada achadas pelo título).
   Fiscais: 2.700 testes do Python com 91,44% de cobertura, o `npm run check` (447 do Vitest), o do
   site e os 76 do e2e.
+- **Entrega 9, Mac, janela estreita e acessibilidade (26/10):** no Mac, o Cmd+W fecha a aba da tela,
+  e não a janela: o processo principal pega a tecla antes do menu padrão do Electron, que fecharia a
+  janela (`electron/keys.ts`), e avisa a janela; sem aba na tela, a janela fecha, como num
+  navegador. O Cmd+1 a 9 já valiam desde a entrega 6, e o Cmd+Tab é do sistema, então a próxima aba
+  segue no Ctrl+Tab. O atalho da barra lateral aceita Cmd+B no Mac, e o rótulo dos botões diz ⌘B lá
+  e Ctrl+B nos outros sistemas; o do terminal segue igual em todos. Na janela estreita, a dica longa
+  da caixa ("Corrija o rumo: isto entra depois das ferramentas em curso") ficava cortada ao meio
+  numa segunda linha: agora fica numa linha só, com reticências. Conferido na acessibilidade: nenhum
+  texto usa a cor `faint`, só enfeites; o foco do teclado, o "reduzir movimento", os números dos
+  cartões com `aria-keyshortcuts` e as abas com o foco que anda pelas setas vieram das entregas
+  anteriores. Provado no Vitest (o Cmd+W só no Mac, sem outro modificador; a aba da tela fechada
+  pelo aviso do processo principal, e a janela quando não há aba) e no print da janela estreita.
+  Fiscais: 2.700 testes do Python com 91,44% de cobertura, o `npm run check` (450 do Vitest), o do
+  site e os 76 do e2e.
 
 ## Assuntos de desenho ainda abertos
 

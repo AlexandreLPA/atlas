@@ -1238,7 +1238,10 @@ Cut to what a first screen needs: about 6 runtime packages.
   session's tab follows its ids as they come and its account as it changes. Ctrl+1 to 8 show a tab
   and Ctrl+9 the last, Ctrl+Tab the next, Ctrl+W closes the one on screen (to the next, else the
   one before, else a new conversation), all left to the shell inside the terminal; a tab is
-  dragged to another place, and a middle click closes it. Beside them, how many cards wait away
+  dragged to another place, and a middle click closes it. On macOS ⌘1 to ⌘9 do the same, and ⌘W,
+  which Electron's default menu would answer by closing the window, is taken by the main process
+  first (`electron/keys.ts`) and closes the tab, or the window when no tab is on screen; the
+  sidebar's Ctrl+B takes ⌘B there too, and its buttons say so. Beside them, how many cards wait away
   from the screen, a click going to the first. The window keeps each home's tabs by machine and
   name (`atlas.tabs`), and the home reopens on them and on the one it showed, read as it opens: a
   restored tab is never blank, a closed one never comes back, and one whose conversation was

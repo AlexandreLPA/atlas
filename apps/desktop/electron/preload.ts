@@ -25,6 +25,20 @@ contextBridge.exposeInMainWorld('atlas', {
     ipcRenderer.invoke('atlas:backup:write', file, offset, data),
   /** The last part came (`whole`), or the backup failed. */
   backupFinish: (file: string, whole: boolean): Promise<void> => ipcRenderer.invoke('atlas:backup:finish', file, whole),
+  /** The window's tabs: on macOS âW, which the main process takes before the menu would close
+   * the window, closes the tab on screen (electron/keys.ts). */
+  tabs: {
+    onClose: (listener: () => void): (() => void) => {
+      const handler = () => {
+        listener()
+      }
+      ipcRenderer.on('atlas:tabs:close', handler)
+
+      return () => {
+        ipcRenderer.removeListener('atlas:tabs:close', handler)
+      }
+    }
+  },
   /** A folder, from the system's open dialog: where a new executor session works (step 16f). */
   chooseFolder: (): Promise<null | string> => ipcRenderer.invoke('atlas:choose-folder'),
   /** A home's server, started if needed; `null` is the home that opens first. */

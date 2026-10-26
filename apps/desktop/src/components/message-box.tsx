@@ -366,7 +366,7 @@ export function MessageBox(props: MessageBoxProps) {
         {actions}
         <textarea
           aria-label={label}
-          className="max-h-[40vh] min-h-11 flex-1 resize-none overflow-y-auto rounded-lg border border-border-strong bg-raised px-3 py-2.5"
+          className="max-h-[40vh] min-h-11 flex-1 resize-none overflow-y-auto rounded-lg border border-border-strong bg-raised px-3 py-2.5 placeholder:truncate"
           data-testid={props.testId}
           disabled={blocked}
           onChange={event => {

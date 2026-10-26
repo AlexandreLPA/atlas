@@ -6,6 +6,7 @@ import { t } from '@/i18n'
 import { $contributions, $pluginPage, inArea } from '@/plugins/registry'
 import { host } from '@/plugins/sdk'
 import type { ConversationRow } from '@/protocol/protocol.generated'
+import { shortcut } from '@/shortcuts'
 import {
   $bots,
   $cards,
@@ -83,7 +84,7 @@ export function Sidebar() {
       >
         <IconButton
           icon={LayoutSidebar}
-          label={t.layout.showSidebar}
+          label={t.layout.showSidebar(shortcut('B'))}
           onClick={() => {
             toggleSidebar(true)
           }}
@@ -108,7 +109,7 @@ export function Sidebar() {
         <div className="flex items-center gap-1 pb-1">
           <IconButton
             icon={LayoutSidebar}
-            label={t.layout.hideSidebar}
+            label={t.layout.hideSidebar(shortcut('B'))}
             onClick={() => {
               toggleSidebar(false)
             }}

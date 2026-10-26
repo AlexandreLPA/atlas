@@ -818,11 +818,11 @@ export const en = {
   },
   layout: {
     hidePanel: 'Hide the panel',
-    hideSidebar: 'Hide the sidebar (Ctrl+B)',
+    hideSidebar: (keys: string) => `Hide the sidebar (${keys})`,
     resizePanel: "The panel's width: drag, or double-click to reset",
     resizeSidebar: "The sidebar's width: drag, or double-click to reset",
     showPanel: 'Show the panel',
-    showSidebar: 'Show the sidebar (Ctrl+B)'
+    showSidebar: (keys: string) => `Show the sidebar (${keys})`
   },
   updates: {
     apply: 'Update and reopen',

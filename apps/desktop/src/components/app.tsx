@@ -3,6 +3,7 @@ import { type CSSProperties, useEffect } from 'react'
 
 import { t } from '@/i18n'
 import { PluginPage } from '@/plugins/view'
+import { MAC } from '@/shortcuts'
 import {
   $approved,
   $bots,
@@ -101,7 +102,13 @@ export function App() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.ctrlKey && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'b') {
+      // Ctrl+B, and ⌘B on a Mac as its own apps take it.
+      if (
+        (event.ctrlKey || (MAC && event.metaKey)) &&
+        !event.altKey &&
+        !event.shiftKey &&
+        event.key.toLowerCase() === 'b'
+      ) {
         event.preventDefault()
         toggleSidebar()
       }

@@ -31,12 +31,19 @@ interface AtlasBridge {
   remote: boolean
   /** Only under the end-to-end tests: how long a command runs before it is "still running". */
   terminalWait: null | number
+  /** The window's tabs, as the main process tells of them (electron/keys.ts). */
+  tabs?: TabsBridge
   /** The app's update (electron/updates.ts). */
   updates: UpdatesBridge
   /** The other machines' Atlas this app opens (step 15, electron/machines.ts). */
   machines: MachinesBridge
   /** This machine's home: always on, open to the user's machines (step 15, electron/always-on.ts). */
   thisMachine: ThisMachineBridge
+}
+
+interface TabsBridge {
+  /** On macOS, âW: close the tab on screen. */
+  onClose: (listener: () => void) => () => void
 }
 
 /** What a call to the main process says: its value, or why not in words. */

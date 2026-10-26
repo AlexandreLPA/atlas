@@ -86,6 +86,34 @@ describe('the tabs above the central area', () => {
     terminal.remove()
   })
 
+  it("close the tab on screen on macOS's ⌘W, which the main process hands over, else the window", () => {
+    const closed = vi.spyOn(app, 'closeTab').mockImplementation(() => undefined)
+    const quit = vi.spyOn(window, 'close').mockImplementation(() => undefined)
+    let heard: () => void = () => undefined
+    Object.assign(window, {
+      atlas: {
+        tabs: {
+          onClose: (listener: () => void) => {
+            heard = listener
+
+            return () => undefined
+          }
+        }
+      }
+    })
+    const tabs = [tab('a', 'Groceries')]
+    const active = vi.spyOn(app, 'activeTab').mockReturnValue(tabs[0] ?? null)
+    app.$tabs.set(tabs)
+    render(<TabStrip />)
+
+    heard()
+    expect(closed).toHaveBeenCalledWith('a')
+    active.mockReturnValue(null)
+    heard()
+    expect(quit).toHaveBeenCalled()
+    Reflect.deleteProperty(window, 'atlas')
+  })
+
   it('close a tab by its button or a middle click, and keep the passing one by a double click', () => {
     const closed = vi.spyOn(app, 'closeTab').mockImplementation(() => undefined)
     const kept = vi.spyOn(app, 'keepTab').mockImplementation(() => undefined)

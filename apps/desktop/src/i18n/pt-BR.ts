@@ -804,11 +804,11 @@ export const ptBR: Override<Messages> = {
   },
   layout: {
     hidePanel: 'Esconder o painel',
-    hideSidebar: 'Esconder a barra lateral (Ctrl+B)',
+    hideSidebar: (keys: string) => `Esconder a barra lateral (${keys})`,
     resizePanel: 'Largura do painel: arraste, ou clique duas vezes para voltar ao padrão',
     resizeSidebar: 'Largura da barra lateral: arraste, ou clique duas vezes para voltar ao padrão',
     showPanel: 'Mostrar o painel',
-    showSidebar: 'Mostrar a barra lateral (Ctrl+B)'
+    showSidebar: (keys: string) => `Mostrar a barra lateral (${keys})`
   },
   updates: {
     apply: 'Atualizar e reabrir',

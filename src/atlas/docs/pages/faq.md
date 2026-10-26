@@ -97,9 +97,10 @@ your approval. See [Memory](/docs/guides/memory/).
 Yes. Each conversation, bot and coding agent session you open has a tab above it, one row of tabs
 per home. A click in the list opens it in the passing tab, in italics, which your next click reuses;
 it stays once you send a message there or double-click it. **Ctrl+1** to **Ctrl+8** show a tab and
-**Ctrl+9** the last, **Ctrl+Tab** the next, and **Ctrl+W** closes the one on screen. When a question
-or an approval waits somewhere else, the tabs say how many, and a click takes you there. The app
-reopens on the tabs you left, and a closed tab stays closed.
+**Ctrl+9** the last, **Ctrl+Tab** the next, and **Ctrl+W** closes the one on screen; on a Mac,
+**⌘1** to **⌘9** and **⌘W** do the same. When a question or an approval waits somewhere else, the
+tabs say how many, and a click takes you there. The app reopens on the tabs you left, and a closed
+tab stays closed.
 
 ## Can I add my own tools?
 

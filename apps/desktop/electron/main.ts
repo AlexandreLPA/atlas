@@ -48,6 +48,7 @@ import { BackupDownloads } from './backup-down'
 import { Bar, e2ePowers, registerDesktopPowers, systemKeys } from './desktop-powers'
 import { openInEditor } from './editor'
 import { backupName, homesRoot, lastHome, rememberHome } from './homes'
+import { closesTab } from './keys'
 import { type Machine, MachineError, Machines, type Transport } from './machines'
 import { PREVIEW_SCHEME, registerPreviews } from './preview-ipc'
 import { RemoteMachine } from './remote-machine'
@@ -275,6 +276,13 @@ function createWindow(): void {
     openOutside(url)
 
     return { action: 'deny' }
+  })
+  // âW closes the tab on screen, not the window, which the menu's Close Window would (keys.ts).
+  window.webContents.on('before-input-event', (event, input) => {
+    if (closesTab(input, process.platform)) {
+      event.preventDefault()
+      window?.webContents.send('atlas:tabs:close')
+    }
   })
   window.webContents.on('will-navigate', (event, url) => {
     if ((devServer && url.startsWith(devServer)) || (!devServer && url.startsWith('file:'))) {
