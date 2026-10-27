@@ -29,7 +29,8 @@ make it wider than the panel's other tabs; the conversation keeps its minimum wi
 can look for the local servers running on this computer, such as a site you are building.
 
 It opens only web pages (`http` and `https`), refuses downloads, and says no to a site that asks
-for the camera, the microphone, your location or notifications.
+for the camera, the microphone, your location or notifications. On macOS, ⌘W in a page closes its
+tab.
 
 A tab belongs to the conversation that was on screen when it opened, and to the home. The tabs on
 top are the ones of the conversation and home you are looking at; the others stay open, hidden,

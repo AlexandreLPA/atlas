@@ -45,6 +45,7 @@ import {
   permissionGranted,
   type Rect
 } from './app-browser-rules'
+import { closesTab } from './keys'
 import { lookForServers, parsePorts, portsToLook } from './local-servers'
 
 /** A browser tab as the window shows it. */
@@ -469,6 +470,13 @@ export class AppBrowser implements AgentBrowser {
     })
     contents.on('will-redirect', (event, url) => {
       refuse(event, url)
+    })
+    // ⌘W in a page closes its tab, as in a browser; the menu's Close Window would close the app's (keys.ts).
+    contents.on('before-input-event', (event, input) => {
+      if (closesTab(input, process.platform)) {
+        event.preventDefault()
+        this.remove(tab, true)
+      }
     })
     contents.setWindowOpenHandler(({ url }) =>
       pageAllowed(url)
