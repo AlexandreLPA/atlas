@@ -655,4 +655,28 @@ describe("the sidebar's dots (asked for by the user on 20/10/2026)", () => {
     expect(session.$openExecutors.get()).toEqual({})
     expect(session.$openExecutor.get()).toBe('claude-code@ab12')
   })
+
+  it("a session's tab takes the panel to its executor, whatever the sidebar chose last", async () => {
+    const { session } = await hearing()
+    const place = {
+      kind: 'session' as const,
+      session: {
+        choice: null,
+        elsewhere: '',
+        executor: 'claude-code@ab12',
+        expired: false,
+        folder: 'C:/work/api',
+        instanceId: '',
+        sessionId: 's-1',
+        title: 'Example'
+      }
+    }
+    session.tabs.show(place, 'Example')
+    const tab = session.tabs.find(place)
+    toggleExecutor('claude-code')
+    expect(session.$openExecutor.get()).toBe('claude-code')
+
+    void session.showTab(tab?.id ?? '')
+    expect(session.$openExecutor.get()).toBe('claude-code@ab12')
+  })
 })

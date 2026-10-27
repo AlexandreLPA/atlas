@@ -589,7 +589,9 @@ export class HomeSession {
     return this.botOf(conversationId)?.title ?? this.$conversations.get().find(row => row.id === conversationId)?.title
   }
 
-  /** Show what a tab holds; a tab whose conversation was deleted since closes. */
+  /** Show what a tab holds; a tab whose conversation was deleted since closes. A session's tab
+   * takes the side panel to its executor, so its plan usage is its account's (asked for by the
+   * user on 27/10/2026, where the panel kept the one chosen in the sidebar). */
   async showTab(id: string): Promise<void> {
     const tab = this.tabs.$tabs.get().find(open => open.id === id)
 
@@ -602,6 +604,7 @@ export class HomeSession {
         await this.selectConversation(tab.place.conversationId)
       } else {
         const { session } = tab.place
+        this.followExecutor(session.executor)
         await this.openSession({
           elsewhere: session.elsewhere,
           executor: session.executor,
@@ -1271,6 +1274,21 @@ export class HomeSession {
     if (usageStale(this.$executorUsage.get()[executor], Date.now())) {
       void this.refreshExecutorUsage(executor)
     }
+  }
+
+  /** The side panel's executor becomes `executor`, its tab left as it is: what it has is read the
+   * first time, its plan usage when the last read is old. */
+  followExecutor(executor: string): void {
+    this.$openExecutor.set(executor)
+    // An account's row is its executor's on that account: the accounts are its executor's.
+    const row = this.$workbench.get().executors.find(found => found.name === executor)
+    void this.refreshAccounts(row?.base || executor)
+
+    if (this.$executorConnectors.get()[executor] === undefined) {
+      void this.refreshExecutorConnectors(executor)
+    }
+
+    this.readUsageIfStale(executor)
   }
 
   /** A new session of `executor` in `folder`, not started yet: its first prompt starts it. */
@@ -3079,18 +3097,8 @@ export function showExecutor(executor: null | string): void {
 /** The side panel's tab goes to `executor`, its list left as it is: any click on its rows (itself,
  * a folder, a session) shows its plan usage there (asked for by the user on 22/10/2026). */
 function focusExecutor(executor: string): void {
-  const session = current()
-  session.$openExecutor.set(executor)
-  // An account's row is its executor's on that account: the accounts are its executor's.
-  const row = session.$workbench.get().executors.find(found => found.name === executor)
-  void session.refreshAccounts(row?.base || executor)
+  current().followExecutor(executor)
   showExecutorTab()
-
-  if (session.$executorConnectors.get()[executor] === undefined) {
-    void session.refreshExecutorConnectors(executor)
-  }
-
-  session.readUsageIfStale(executor)
 }
 
 /** Where an executor's slash commands are kept: a project adds its own. */
