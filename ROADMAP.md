@@ -3874,6 +3874,20 @@ Cada um é decidido quando o passo que depende dele chegar.
 Um passo de cada vez, na ordem. O passo atual é o primeiro sem ✅ cuja coluna "Só depois de" já se
 cumpriu.
 
+**A ordem até o fim, decidida pelo usuário em 27/10,** vale no lugar da ordem da tabela para os
+passos que faltam:
+
+1. O app redondo: o 9e, e as vulnerabilidades das dependências que o GitHub aponta na `main`.
+2. Distribuir: o 18b, o 18c e o resto do 19 (o domínio, o português, as News e o link do guia no
+   app). Sem a conta paga da Apple, o app do Mac abre só depois do "Abrir mesmo assim" nos Ajustes
+   na primeira vez e se atualiza pelo atualizador nosso; a conta vale quando o Atlas for para quem
+   não é técnico.
+3. Crescer: o 14c, o 16r e o 17.
+4. Um dia de provas, as adiadas todas juntas, perguntando antes de gastar crédito: o 15, o 17a e o
+   17b na OpenAI, o 16q com uma chave da DeepSeek, o 19 com um modelo real, o Cmd+W do 9d num Mac
+   e o uso da tela do 15b.
+5. O 20, o Atlas Cloud.
+
 | Passo | O quê | Só depois de | Status |
 |---|---|---|---|
 | 1 | Arquitetura decidida. Esqueleto com `pyproject`, `uv`, ruff, pyright, import-linter, CI, e um Dockerfile que sobe e responde "saudável" | — | ✅ 07/10. Os cinco fiscais passam, 5 testes com 92% de cobertura. O container responde `/health` em 2 s, roda como usuário `atlas` e o Docker o marca "healthy" (imagem de 268 MB) |
