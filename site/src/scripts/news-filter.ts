@@ -1,4 +1,6 @@
 // The news page's tabs and search: every item is already in the page, so filtering only hides rows.
+import { hasTopic } from '../lib/news-topics'
+
 const root = document.querySelector<HTMLElement>('[data-news]')
 
 if (root) {
@@ -13,8 +15,7 @@ if (root) {
     let shown = 0
     for (const row of rows) {
       const matches =
-        (!topic || (row.dataset.topics ?? '').split(' ').includes(topic)) &&
-        (!query || (row.dataset.text ?? '').includes(query))
+        (!topic || hasTopic(row.dataset.topics ?? '', topic)) && (!query || (row.dataset.text ?? '').includes(query))
       row.hidden = !matches
       if (matches) {
         shown += 1

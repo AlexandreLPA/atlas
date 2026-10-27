@@ -4,6 +4,7 @@ import { getCollection } from 'astro:content'
 import NewsPicture from '../../components/NewsPicture.astro'
 import AsciiTitle from '../../components/AsciiTitle.astro'
 import Site from '../../layouts/Site.astro'
+import { joinTopics } from '../../lib/news-topics'
 
 const items = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
 const topics = new Map<string, number>()
@@ -69,7 +70,7 @@ const description =
             <li
               class="reveal"
               data-news-row
-              data-topics={item.data.topics.join(' ')}
+              data-topics={joinTopics(item.data.topics)}
               data-text={`${item.data.title} ${item.data.source} ${item.data.topics.join(' ')}`.toLowerCase()}
               style={`--n: '${String(index + 1).padStart(2, '0')}'`}
             >
