@@ -61,6 +61,12 @@ models = [
     "anthropic/claude-haiku-5.5", "openai/gpt-6.1-sol", "openai/gpt-6-sol", "openai/gpt-6-luna",
     "google/gemini-3.1-pro-preview", "google/gemini-3.8-flash", "x-ai/grok-4.7",
     "deepseek/deepseek-v4-pro", "moonshotai/kimi-k3", "z-ai/glm-5.3",
+    # Free (":free"): no cost, a daily limit on calls, and some of their hosts may keep the prompts.
+    # openrouter/free routes to whichever free model is up.
+    "openrouter/free", "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "nvidia/nemotron-3-super-120b-a12b:free", "nvidia/nemotron-3.5-lightning:free",
+    "thinkingmachines/inkling:free", "thinkingmachines/inkling-small:free",
+    "google/gemma-4-31b-it:free", "poolside/laguna-s-2.1:free", "cohere/north-mini-code:free",
 ]
 
 [providers.gemini]

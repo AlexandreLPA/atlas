@@ -58,6 +58,11 @@ Each provider's picker offers a short list of current models, and the default on
 `· default`. The same settings are in `config.toml`, under `[model]`
 ([Settings](/docs/reference/settings/)).
 
+OpenRouter's list ends with free models, the ones whose name ends in `(free)`, and the **Free Models
+Router**, which sends each call to whichever free model is up. They cost nothing, but OpenRouter
+limits how many calls a day they take, and some of the companies that serve them may keep what is
+sent to train their models: leave private data out of those conversations.
+
 ## A local model
 
 Ollama and vLLM need no key: start the server on your machine, then tell Atlas which model to use,
