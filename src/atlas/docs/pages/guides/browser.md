@@ -16,15 +16,17 @@ Ask in plain words, and say when you want it to use the browser:
 
 > Open the dashboard at status.example.com in the browser and tell me which services are degraded.
 
-For a page it only needs to read, Atlas usually fetches it without a browser, which is quicker. The
-browser is for what needs one: a page drawn by JavaScript, a login, a form, a screenshot.
+To search the web or read a page, Atlas usually fetches it without a browser, which is quicker. The
+browser is for what needs one: a page drawn by JavaScript, a login, a form, a screenshot, a site you
+are building.
 
 ## The Browser tab
 
 The side panel has a **Browser** tab: a browser you use by hand, beside the conversation. Open it
 from the globe at the panel's edge or with **Ctrl+Shift+B**. Its tabs are on top, with an address
-bar, back, forward and reload, and a button that expands it over the conversation. A new tab can
-look for the local servers running on this computer, such as a site you are building.
+bar, back, forward and reload, and a button that expands it over the conversation. Drag its edge to
+make it wider than the panel's other tabs; the conversation keeps its minimum width. A new tab
+can look for the local servers running on this computer, such as a site you are building.
 
 It opens only web pages (`http` and `https`), refuses downloads, and says no to a site that asks
 for the camera, the microphone, your location or notifications.
@@ -61,7 +63,7 @@ Two more modes are thrown away when Atlas closes them, for when no history shoul
 run in Chrome, Edge or Chromium:
 
 - **clean**: a new, empty profile, in a window;
-- **headless**: a new, empty profile, with no window at all.
+- **headless**: a new, empty profile, with no window at all, only when you ask for no window.
 
 There is one browser per mode, and each conversation works in a tab of its own.
 
@@ -103,7 +105,7 @@ chrome = ["/usr/bin/chromium", "--lang=en"]
 - **A site asks to sign in again.** The call ran in the other browser, which keeps its own
   sign-ins: in the Chrome window because the app was closed, or in the app's browser after it
   opened.
-- **A site shows its phone layout in the panel.** The panel is narrow: expand it.
+- **A site shows its phone layout in the panel.** The panel is narrow: expand it or drag it wider.
   Atlas can ask a page for its desktop layout when it needs one.
 - **You want to use your everyday profile.** Chrome refuses to be driven on it, so Atlas keeps its
   own: sign in there once.

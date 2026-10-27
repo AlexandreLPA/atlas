@@ -45,6 +45,8 @@ def test_the_description_follows_what_the_model_sees() -> None:
         assert "list_tabs() also shows the pages the user opened" in text
         assert "cdp('Emulation.setDeviceMetricsOverride', width=1280" in text
         assert "the browser beside the conversation in the app" in text
+        assert "web_search and web_fetch are faster" in text
+        assert "only when the user asks for no window" in text
 
 
 def test_the_timeout_stays_within_bounds() -> None:

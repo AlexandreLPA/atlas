@@ -106,11 +106,15 @@ _HELPERS = (
 #: Atlas's modes, the app browser's tabs, and the stop at logins, CAPTCHAs and payments (decided
 #: with the user).
 _MODES = (
-    "\n\nMODES: 'profile' (default) is Atlas's own browser: the browser beside the conversation "
-    "in the app when the app is open on this computer, otherwise Atlas's Chrome window; the user "
-    "signed into their sites there, so use it to act as them. 'clean' is a fresh profile signed "
-    "into nothing; 'headless' is a fresh profile with no window, for reading and extracting; both "
-    "always run in Chrome.\n\n"
+    "\n\nWHEN: to search the web or read a page's text, web_search and web_fetch are faster and "
+    "cheaper than any browser. Come here when a page has to be used: clicked, filled, signed "
+    "into, or seen working (a local server, say).\n\n"
+    "MODES: 'profile' (default) is Atlas's own browser: the browser beside the conversation "
+    "in the app when the app is open on this computer, otherwise Atlas's Chrome window. The user "
+    "sees the page there and signed into their sites there, so use it unless they ask for "
+    "another. 'clean' is a fresh profile signed into nothing, in a window; 'headless' is a fresh "
+    "profile with no window, only when the user asks for no window; both always run in "
+    "Chrome.\n\n"
     "TABS: in the app's browser, list_tabs() also shows the pages the user opened in this "
     "conversation, the one on their screen first. new_tab() never takes over a page of the "
     "user's; to go on where the user is (after they sign in, say), switch_tab(list_tabs()[0]). "

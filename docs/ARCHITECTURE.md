@@ -2503,7 +2503,10 @@ the user is on. A computer with no Chrome gets a browser too.
   the strip in the background, marked as opened by Atlas; `Target.activateTarget` brings one
   forward. A conversation off the screen never opens the panel.
 - **`profile` mode in the app browser when a host is accepted, else Chrome**; `clean` and
-  `headless` always in Chrome. The engine's session is its own (`atlas-app-<hash>`), in the profile
+  `headless` always in Chrome. The description sends reading and searching to `web_fetch` and
+  `web_search`, and keeps `headless` for when the user asks for no window: in the manual proof of
+  27/10/2026 a model asked for a page's title chose `headless`, since it was "for reading", and
+  the user saw nothing. The engine's session is its own (`atlas-app-<hash>`), in the profile
   mode's workspace folder, so the agent's files stay when the browser changes; its first call in a
   conversation in this server's life restarts it, since an old daemon would hold a token no longer
   known. A call after the browser changed says the tabs of the earlier calls are not there. **The
@@ -3757,7 +3760,10 @@ the right keeps its place with another use, the terminal and the previews in tab
   conversation drags each between 224 and 640px, the arrows move it, a double click puts it back;
   the conversation keeps its 24rem, and a narrower window narrows both rails before it (below 960px
   the panel lies over it, as before). A width dragged is kept in the window's storage, as the theme
-  is (`store/layout.ts`).
+  is (`store/layout.ts`). **The Browser tab goes wider** (asked for in the contributor's manual
+  proof on 27/10/2026, as a page of the web wants room): on it the panel drags past 640px, as far as
+  the conversation keeps its 24rem; on any other tab it shows within 640px again, the wider width
+  kept for the browser.
 - **An executor's session opens its folder in VS Code** (asked for by the user on 18/10/2026), a
   button in its header: by VS Code's own link, `vscode://file/<folder>`, which its installer
   registers, so no shell runs and `code` need not be on the PATH (`electron/editor.ts`). Only with

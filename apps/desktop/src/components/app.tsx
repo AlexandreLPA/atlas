@@ -29,7 +29,7 @@ import {
 } from '@/store/app'
 import { $browserExpanded, browserHost, followBrowser, toggleBrowser } from '@/store/browser'
 import { followScreen } from '@/store/browser-screen'
-import { $panelWidth, $sidebarWidth, toggleSidebar } from '@/store/layout'
+import { $panelWide, $panelWidth, $sidebarWidth, shownWidth, toggleSidebar } from '@/store/layout'
 import { $firstRun, firstRunOf } from '@/store/setup'
 import { $terminals, openTerminal, refreshTerminalAvailable, terminalAvailable, togglePanel } from '@/store/terminals'
 import { EMPTY_THREAD } from '@/store/thread'
@@ -122,7 +122,7 @@ export function App() {
   }, [executorsOn, home, keyed, read.workbench, state])
   const keyBand = state === 'open' && later && keyScreenShown(options, false, null)
   // The rails' widths, which styles.css gives the sidebar and the side panel.
-  const panelWidth = useStore($panelWidth)
+  const panelWidth = shownWidth(useStore($panelWidth), useStore($panelWide))
   const sidebarWidth = useStore($sidebarWidth)
   // The browser asked to take the conversation's place (store/browser.ts).
   const expanded = useStore($browserExpanded)

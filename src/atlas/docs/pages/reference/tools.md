@@ -161,8 +161,10 @@ instructions.
 
 ### `browser_exec` — deferred, failure-tolerant
 
-Drives the browser beside the conversation when the app is open on the server's computer, and
-Atlas's own Chrome otherwise (ARCHITECTURE, Browser and The app browser). `code` is Python with the browser helpers
+For a page that has to be used: clicked, filled, signed into or seen working; its description sends
+searching and reading to `web_search` and `web_fetch`. Drives the browser beside the conversation
+when the app is open on the server's computer, and Atlas's own Chrome otherwise (ARCHITECTURE,
+Browser and The app browser). `code` is Python with the browser helpers
 imported: `new_tab`, `goto_url`, `wait_for_load`, `page_info`, `js`, `fill_input`, `click_at_xy`,
 `capture_screenshot`, raw `cdp`, `ensure_real_tab`. The browser and the workspace folder
 (`$BH_AGENT_WORKSPACE`) last across calls; Python variables do not. A screenshot path printed in
@@ -173,7 +175,8 @@ one: it opens its own.
 
 - `code` (required): start it with a one-line comment naming the step.
 - `mode`: `profile` (default: the app's browser when it is lent, otherwise Atlas's signed-in Chrome
-  profile), `clean` or `headless` (both always in Chrome).
+  profile), `clean` or `headless` (both always in Chrome; `headless` only when the user asks for no
+  window).
 - `timeout_s`: default 300, at most 1,800.
 
 ## Memory, skills and the past

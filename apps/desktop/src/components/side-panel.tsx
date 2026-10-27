@@ -20,6 +20,7 @@ import {
   currentOwner
 } from '@/store/app'
 import { $browserExpanded, BROWSER_TAB, browserHost, toggleBrowser } from '@/store/browser'
+import { $panelWide } from '@/store/layout'
 import { $previews, closePreview, type PreviewTab } from '@/store/previews'
 import {
   $panelOpen,
@@ -87,6 +88,11 @@ export function SidePanel() {
   // The app's browser (electron/app-browser.ts): a tab of its own, which none of the others shows with.
   const expanded = useStore($browserExpanded)
   const showsBrowser = !showsExecutor && !showsChanges && panelTab === BROWSER_TAB && browserHost() !== undefined
+  // On the Browser tab the panel may drag past the rails' bound (store/layout.ts).
+  const wide = open && showsBrowser
+  useEffect(() => {
+    $panelWide.set(wide)
+  }, [wide])
   const selected =
     showsExecutor || showsChanges || showsBrowser || preview || panel
       ? null
