@@ -1,0 +1,53 @@
+---
+// A thumbnail drawn at build time from the story's title: a field of dots whose size follows a
+// seeded wave pattern, so every story has its own picture without borrowing anyone's image.
+interface Props {
+  seed: string
+}
+
+const COLS = 32
+const ROWS = 18
+const { seed } = Astro.props
+
+let hash = 2166136261
+for (const char of seed) {
+  hash = Math.imul(hash ^ char.charCodeAt(0), 16777619)
+}
+const unit = (shift: number) => ((hash >>> shift) & 255) / 255
+const fx = 0.18 + unit(0) * 0.3
+const fy = 0.22 + unit(8) * 0.3
+const phase = unit(16) * Math.PI * 2
+const cx = 8 + unit(24) * 16
+const cy = 4 + unit(4) * 10
+
+const dots: { x: number; y: number; r: number; accent: boolean }[] = []
+for (let y = 0; y < ROWS; y++) {
+  for (let x = 0; x < COLS; x++) {
+    const wave = Math.sin(x * fx + phase) * Math.cos(y * fy - phase) * 0.5 + 0.5
+    const pull = Math.max(0, 1 - Math.hypot((x - cx) / 14, (y - cy) / 8))
+    const value = Math.min(1, wave * 0.55 + pull * 0.75)
+    if (value > 0.22) {
+      dots.push({ x: x * 10 + 5, y: y * 10 + 5, r: 0.8 + value * 3.6, accent: pull > 0.62 })
+    }
+  }
+}
+---
+
+<svg class="thumb" viewBox="0 0 320 180" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
+  {dots.map(dot => (
+    <circle cx={dot.x} cy={dot.y} r={dot.r.toFixed(2)} class:list={{ accent: dot.accent }} />
+  ))}
+</svg>
+
+<style>
+  .thumb {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 30% 20%, var(--night-lift), var(--night));
+    fill: var(--haze);
+  }
+
+  .thumb .accent {
+    fill: var(--brass);
+  }
+</style>

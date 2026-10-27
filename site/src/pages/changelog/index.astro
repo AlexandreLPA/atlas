@@ -1,5 +1,6 @@
 ---
 import { REPOSITORY } from '../../../site.config.mjs'
+import AsciiTitle from '../../components/AsciiTitle.astro'
 import Site from '../../layouts/Site.astro'
 import { byDay, changes, formatDay } from '../../lib/changelog'
 
@@ -16,7 +17,7 @@ const description =
 >
   <div class="page listing">
     <header class="listing-head">
-      <h1>Changelog</h1>
+      <AsciiTitle word="Changelog" />
       <p>{description}</p>
       <p class="feed">
         <a href="/changelog/rss.xml">Follow the feed</a>
@@ -56,16 +57,12 @@ const description =
   .listing-head {
     display: grid;
     gap: 1.1rem;
-    max-width: 40rem;
     margin-bottom: 4.5rem;
   }
 
-  h1 {
-    font-size: var(--step-5);
-  }
-
   .listing-head p {
-    color: rgb(232 236 244 / 0.82);
+    max-width: 40rem;
+    color: rgb(var(--fg-rgb) / 0.82);
     font-size: var(--step-1);
     line-height: 1.5;
   }
@@ -111,7 +108,7 @@ const description =
   }
 
   li p {
-    color: rgb(232 236 244 / 0.88);
+    color: rgb(var(--fg-rgb) / 0.88);
   }
 
   .sha {

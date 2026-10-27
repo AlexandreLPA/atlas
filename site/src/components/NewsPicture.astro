@@ -1,0 +1,49 @@
+---
+// The picture of a story: the one its publisher made, linked from where it is published and not
+// copied here, or, for a story without one, a drawing made from its title.
+import NewsThumb from './NewsThumb.astro'
+
+interface Props {
+  image?: string | undefined
+  seed: string
+  eager?: boolean
+}
+
+const { image, seed, eager = false } = Astro.props
+---
+
+{image ? (
+  <span class="picture">
+    <NewsThumb seed={seed} />
+    <img
+      src={image}
+      alt=""
+      width="1200"
+      height="630"
+      loading={eager ? 'eager' : 'lazy'}
+      decoding="async"
+      referrerpolicy="no-referrer"
+      onerror="this.remove()"
+    />
+  </span>
+) : (
+  <NewsThumb seed={seed} />
+)}
+
+<style>
+  .picture {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: var(--night-lift);
+  }
+</style>

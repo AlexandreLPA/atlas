@@ -6,7 +6,7 @@ import SphereDrawing from '../components/SphereDrawing.astro'
 import { REPOSITORY } from '../../site.config.mjs'
 import Site from '../layouts/Site.astro'
 import { changes, formatDay } from '../lib/changelog'
-import { catalogue, chapters, compare, faq, gate, hero, install, memory, proof, route, seo } from '../lib/home'
+import { catalogue, chapters, compare, faq, gate, hero, install, memory, proof, route, seo, tagline } from '../lib/home'
 import { installWays, quickWays } from '../lib/install'
 import { application, faqPage } from '../lib/seo'
 
@@ -22,6 +22,7 @@ const routeChapter = chapter('route')
 const machines = chapter('machines')
 const memoryChapter = chapter('memory')
 const close = chapter('close')
+const agents = ['Claude Code', 'Codex', 'Gemini CLI', 'DeepSeek']
 const latest = changes(4)
 const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3)
 const site = Astro.site ?? new URL(Astro.url.origin)
@@ -29,7 +30,7 @@ const schema = [application(site), faqPage(site)]
 ---
 
 <Site title={seo.title} description={seo.description} markdown="/index.md" current="home" schema={schema}>
-  <div class="orrery" data-orrery>
+  <div class="orrery" id="story" data-orrery>
     <div class="track" aria-hidden="true">
       <div class="stage" data-orrery-stage>
         <div class="glow"></div>
@@ -165,6 +166,28 @@ const schema = [application(site), faqPage(site)]
       </div>
     </section>
   </div>
+
+  <div class="marquee" aria-hidden="true">
+    <div class="marquee-track">
+      {[0, 1].map(() => (
+        <ul>
+          {agents.map(name => (
+            <li>{name}</li>
+          ))}
+        </ul>
+      ))}
+    </div>
+  </div>
+
+  <section class="tagline" aria-label="What Atlas promises">
+    <div class="page">
+      <p data-words>
+        {tagline.split(' ').map(word => (
+          <span class="word">{word} </span>
+        ))}
+      </p>
+    </div>
+  </section>
 
   <section class="section compare" aria-labelledby="compare-title">
     <div class="page">
@@ -342,7 +365,7 @@ const schema = [application(site), faqPage(site)]
           <ul>
             {news.map(item => (
               <li>
-                <a href={item.data.url}>{item.data.title}</a>
+                <a href={`/news/${item.id}/`}>{item.data.title}</a>
                 <span class="meta">{item.data.source}</span>
               </li>
             ))}
@@ -373,6 +396,29 @@ const schema = [application(site), faqPage(site)]
 
 <script>
   import { startOrrery } from '../scripts/orrery'
+
+  // The statement lights word by word as each crosses a line a third up from the bottom, once.
+  const statement = document.querySelector<HTMLElement>('[data-words]')
+  if (statement) {
+    const words = Array.from(statement.querySelectorAll<HTMLElement>('.word'))
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      words.forEach(word => word.classList.add('lit'))
+    } else {
+      statement.classList.add('armed')
+      const watch = new IntersectionObserver(
+        entries => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('lit')
+              watch.unobserve(entry.target)
+            }
+          }
+        },
+        { rootMargin: '0px 0px -33% 0px' }
+      )
+      words.forEach(word => watch.observe(word))
+    }
+  }
 
   const root = document.querySelector<HTMLElement>('[data-orrery]')
   if (root) {
@@ -430,8 +476,8 @@ const schema = [application(site), faqPage(site)]
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(42% 52% at 66% 50%, rgb(28 40 82 / 0.42), transparent 70%),
-      radial-gradient(28% 34% at 66% 50%, rgb(231 179 106 / 0.05), transparent 70%);
+      radial-gradient(42% 52% at 66% 50%, rgb(60 60 60 / 0.42), transparent 70%),
+      radial-gradient(28% 34% at 66% 50%, rgb(255 90 31 / 0.05), transparent 70%);
   }
 
   .drawing {
@@ -447,7 +493,7 @@ const schema = [application(site), faqPage(site)]
     height: auto;
   }
 
-  canvas {
+  .scene canvas {
     position: absolute;
     inset: 0;
     width: 100%;
@@ -478,8 +524,8 @@ const schema = [application(site), faqPage(site)]
     padding: 0.15rem 0.35rem;
     visibility: hidden;
     color: var(--starlight);
-    font-size: 0.75rem;
-    font-weight: 540;
+    font-size: 0.8125rem;
+    font-weight: 560;
     font-stretch: var(--narrow);
     letter-spacing: 0.01em;
     line-height: 1.25;
@@ -525,7 +571,7 @@ const schema = [application(site), faqPage(site)]
   .scrim {
     position: absolute;
     inset: 0;
-    background: linear-gradient(90deg, var(--night) 0%, rgb(5 7 15 / 0.82) 24%, rgb(5 7 15 / 0) 46%);
+    background: linear-gradient(90deg, var(--night) 0%, rgb(var(--bg-rgb) / 0.82) 24%, rgb(var(--bg-rgb) / 0) 46%);
   }
 
   .chapter {
@@ -547,7 +593,7 @@ const schema = [application(site), faqPage(site)]
   }
 
   .chapter-body > p {
-    color: rgb(232 236 244 / 0.82);
+    color: rgb(var(--fg-rgb) / 0.82);
     font-size: var(--step-1);
     line-height: 1.5;
   }
@@ -569,7 +615,21 @@ const schema = [application(site), faqPage(site)]
     letter-spacing: -0.032em;
     line-height: 0.98;
     margin-bottom: 0.4rem;
+    text-wrap: balance;
     animation: unfold 1.6s var(--ease-out) both;
+  }
+
+  /* Wider than the text column so each sentence of the headline sits on its own line. */
+  @media (min-width: 861px) {
+    .chapter--hero h1 {
+      width: min(50vw, 44rem);
+    }
+  }
+
+  @media (max-width: 860px) {
+    .chapter--hero h1 {
+      font-size: clamp(2rem, 9vw, 2.6rem);
+    }
   }
 
   @keyframes unfold {
@@ -607,8 +667,8 @@ const schema = [application(site), faqPage(site)]
     justify-self: start;
     padding: 0.3rem 0.8rem 0.3rem 0.65rem;
     border: 1px solid var(--rule-strong);
-    border-radius: 999px;
-    background: rgb(13 19 34 / 0.6);
+    border-radius: 0;
+    background: var(--ink-raised);
     color: var(--haze);
     font-size: var(--step--2);
     font-weight: 540;
@@ -704,8 +764,8 @@ const schema = [application(site), faqPage(site)]
     margin: 0.9rem 0 0;
     padding: 1.15rem 1.25rem 1.25rem;
     border: 1px solid var(--rule);
-    border-radius: var(--radius);
-    background: rgb(13 19 34 / 0.7);
+    border-radius: 0;
+    background: var(--ink-raised);
     backdrop-filter: blur(10px);
   }
 
@@ -740,8 +800,8 @@ const schema = [application(site), faqPage(site)]
   .meter-bar {
     position: relative;
     height: 4px;
-    border-radius: 2px;
-    background: rgb(232 236 244 / 0.1);
+    border-radius: 0;
+    background: rgb(var(--fg-rgb) / 0.1);
     overflow: hidden;
   }
 
@@ -879,7 +939,7 @@ const schema = [application(site), faqPage(site)]
   }
 
   .section-intro > p {
-    color: rgb(232 236 244 / 0.82);
+    color: rgb(var(--fg-rgb) / 0.82);
     font-size: var(--step-1);
     line-height: 1.5;
   }
@@ -914,7 +974,7 @@ const schema = [application(site), faqPage(site)]
     justify-self: end;
     padding: 0.1rem 0.65rem;
     border: 1px solid var(--rule-strong);
-    border-radius: 999px;
+    border-radius: 0;
     font-size: var(--step--2);
     font-weight: 600;
     font-stretch: var(--wide);
@@ -927,7 +987,7 @@ const schema = [application(site), faqPage(site)]
   }
 
   [data-verdict='asks-you'] .verdict {
-    border-color: rgb(231 179 106 / 0.55);
+    border-color: rgb(255 90 31 / 0.55);
     background: var(--brass-soft);
   }
 
@@ -958,7 +1018,7 @@ const schema = [application(site), faqPage(site)]
   }
 
   .section-head > p {
-    color: rgb(232 236 244 / 0.82);
+    color: rgb(var(--fg-rgb) / 0.82);
     font-size: var(--step-1);
     line-height: 1.5;
   }
@@ -969,7 +1029,7 @@ const schema = [application(site), faqPage(site)]
 
   .more a {
     color: var(--brass);
-    text-decoration-color: rgb(231 179 106 / 0.4);
+    text-decoration-color: rgb(255 90 31 / 0.4);
   }
 
   .more a::after {
@@ -1059,7 +1119,7 @@ const schema = [application(site), faqPage(site)]
     padding: 1.5rem 1.5rem 1.35rem;
     border: 1px solid var(--rule);
     border-radius: calc(var(--radius) + 4px);
-    background: linear-gradient(180deg, rgb(13 19 34 / 0.75), rgb(5 7 15 / 0.4));
+    background: linear-gradient(180deg, rgb(var(--bg-rgb) / 0.75), rgb(var(--bg-rgb) / 0.4));
     color: inherit;
     text-decoration: none;
     overflow: hidden;
@@ -1074,14 +1134,14 @@ const schema = [application(site), faqPage(site)]
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: radial-gradient(22rem circle at var(--x, 50%) var(--y, -30%), rgb(231 179 106 / 0.11), transparent 60%);
+    background: radial-gradient(22rem circle at var(--x, 50%) var(--y, -30%), rgb(255 90 31 / 0.11), transparent 60%);
     opacity: 0;
     transition: opacity 0.35s;
   }
 
   .card a:hover,
   .card a:focus-visible {
-    border-color: rgb(231 179 106 / 0.35);
+    border-color: rgb(255 90 31 / 0.35);
     translate: 0 -2px;
   }
 
@@ -1212,7 +1272,7 @@ const schema = [application(site), faqPage(site)]
     gap: 0.6rem;
     max-width: 40rem;
     padding: 0 3rem 1.5rem 0;
-    color: rgb(232 236 244 / 0.8);
+    color: rgb(var(--fg-rgb) / 0.8);
     font-size: var(--step--1);
     line-height: 1.65;
   }
@@ -1248,7 +1308,7 @@ const schema = [application(site), faqPage(site)]
   .steps li {
     position: relative;
     padding-left: 2.6rem;
-    color: rgb(232 236 244 / 0.86);
+    color: rgb(var(--fg-rgb) / 0.86);
     counter-increment: step;
   }
 
@@ -1345,7 +1405,7 @@ const schema = [application(site), faqPage(site)]
     }
 
     .glow {
-      background: radial-gradient(60% 55% at 50% 58%, rgb(28 40 82 / 0.5), transparent 75%);
+      background: radial-gradient(60% 55% at 50% 58%, rgb(60 60 60 / 0.5), transparent 75%);
     }
 
     .drawing {
@@ -1443,9 +1503,105 @@ const schema = [application(site), faqPage(site)]
       transition: none;
     }
 
-    canvas,
+    .scene canvas,
     .drawing {
       transition: none;
     }
+  }
+
+  /* A band of the agents' names that runs between the story and what follows, faster as the page
+     is scrolled (scripts/chrome.ts). It stays orange and black in either theme. */
+  .marquee {
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    padding: 0.9rem 0;
+    background: var(--brass);
+    color: #000;
+  }
+
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: run 38s linear infinite;
+  }
+
+  .marquee ul {
+    display: flex;
+    flex: none;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .marquee li {
+    display: flex;
+    align-items: center;
+    padding-right: 2rem;
+    font-family: var(--font-mono);
+    font-size: clamp(1rem, 1.8vw, 1.35rem);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .marquee li::after {
+    content: '';
+    width: 0.5em;
+    height: 0.5em;
+    margin-left: 2rem;
+    background: #000;
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  }
+
+  @keyframes run {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  /* The scene is drawn as light on night; on the light page it is inverted, hue kept, so it reads
+     as ink on paper. */
+  :global(:root[data-theme='light']) .scene canvas {
+    filter: invert(1) hue-rotate(180deg);
+  }
+
+  :global(:root[data-theme='light']) .glow {
+    display: none;
+  }
+
+  :global(:root[data-theme='light']) .labels :global(.orrery-label--core) {
+    color: var(--starlight);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+      animation: none;
+    }
+  }
+
+  /* The statement: large type that lights word by word as it is read. Plain, fully lit, without script. */
+  .tagline {
+    position: relative;
+    z-index: 1;
+    padding: clamp(5rem, 14vw, 11rem) 0;
+  }
+
+  .tagline p {
+    max-width: 22em;
+    font-size: clamp(2rem, 5.2vw, 4.25rem);
+    font-weight: 600;
+    line-height: 1.12;
+    text-wrap: balance;
+  }
+
+  .tagline p.armed .word {
+    opacity: 0.28;
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .tagline p.armed .word.lit {
+    opacity: 1;
   }
 </style>

@@ -1,0 +1,26 @@
+---
+// A page's title set in the site's characters: the page's one `h1`, read as plain text by anyone
+// who does not see the canvas, drawn as the animated field of scripts/ascii-field.ts for the rest.
+interface Props {
+  word: string
+}
+
+const { word } = Astro.props
+---
+
+<h1 class="ascii-title" data-wordmark={word} data-ratio="0.26" data-align="start" data-cellw="5" data-cellh="8">
+  <span class="visually-hidden">{word}</span>
+  <canvas aria-hidden="true"></canvas>
+</h1>
+
+<style>
+  .ascii-title {
+    width: 100%;
+    margin: 0;
+  }
+
+  .ascii-title canvas {
+    width: 100%;
+    min-height: 6rem;
+  }
+</style>

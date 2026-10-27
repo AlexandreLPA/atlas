@@ -1,19 +1,23 @@
 /* The site's tokens, shared by the home, the news, the changelog and the documentation.
-   Night is the observatory, Brass is Atlas and the routes between its executors, Signal is only
+   Night is black, Brass (an orange) is Atlas and the routes between its executors, Signal is only
    for other machines. Mona Sans carries every role through its width axis: wide for statements,
    normal for reading, narrow for the small labels on the orrery. */
 :root {
-  --night: #05070f;
-  --night-lift: #0b1124;
-  --ink: #0d1322;
-  --ink-raised: #121a2e;
-  --rule: rgb(232 236 244 / 0.12);
-  --rule-strong: rgb(232 236 244 / 0.22);
-  --starlight: #e8ecf4;
-  --haze: #8d96ab;
-  --brass: #e7b36a;
-  --brass-soft: rgb(231 179 106 / 0.16);
-  --signal: #86b6ff;
+  --night: #000000;
+  --night-lift: #0a0a0a;
+  --ink: #080808;
+  --ink-raised: #0f0f0f;
+  --rule: rgb(255 255 255 / 0.16);
+  --rule-strong: rgb(255 255 255 / 0.34);
+  --starlight: #f4f4f4;
+  --haze: #8f8f8f;
+  --brass: #ff5a1f;
+  --brass-soft: rgb(255 90 31 / 0.16);
+  --signal: #ffffff;
+  /* The text and the page as bare colours, for the washes and overlays that need an alpha. */
+  --fg-rgb: 255 255 255;
+  --bg-rgb: 0 0 0;
+  --hover: #1a1a1a;
 
   --font-sans: 'Mona Sans Variable', ui-sans-serif, system-ui, 'Segoe UI', sans-serif;
   --font-mono: 'Martian Mono Variable', ui-monospace, 'Cascadia Code', Consolas, monospace;
@@ -34,6 +38,44 @@
 
   --measure: 34rem;
   --gutter: clamp(1.25rem, 5vw, 4.5rem);
-  --radius: 10px;
+  --radius: 0;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* The light page: paper for night, ink for starlight, a deeper orange that holds on white. */
+:root[data-theme='light'] {
+  --night: #eceef0;
+  --night-lift: #e1e4e8;
+  --ink: #f3f4f6;
+  --ink-raised: #f8f9fa;
+  --rule: rgb(10 14 20 / 0.15);
+  --rule-strong: rgb(10 14 20 / 0.34);
+  --starlight: #0b0e14;
+  --haze: #566070;
+  --brass: #d93f0b;
+  --brass-soft: rgb(217 63 11 / 0.12);
+  --signal: #0a0a0a;
+  --fg-rgb: 10 10 10;
+  --bg-rgb: 236 238 240;
+  --hover: #e0e3e7;
+}
+
+/* A part of the page that stays dark in either theme, such as the scene of the home. */
+.theme-dark {
+  --night: #000000;
+  --night-lift: #0a0a0a;
+  --ink: #080808;
+  --ink-raised: #0f0f0f;
+  --rule: rgb(255 255 255 / 0.16);
+  --rule-strong: rgb(255 255 255 / 0.34);
+  --starlight: #f4f4f4;
+  --haze: #8f8f8f;
+  --brass: #ff5a1f;
+  --brass-soft: rgb(255 90 31 / 0.16);
+  --signal: #ffffff;
+  --fg-rgb: 255 255 255;
+  --bg-rgb: 0 0 0;
+  --hover: #1a1a1a;
+  background: var(--night);
+  color: var(--starlight);
 }

@@ -14,6 +14,10 @@ html {
   text-size-adjust: 100%;
 }
 
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
 body {
   margin: 0;
   min-height: 100svh;
@@ -59,12 +63,21 @@ a:hover {
 :focus-visible {
   outline: 2px solid var(--brass);
   outline-offset: 3px;
-  border-radius: 4px;
+  border-radius: 0;
 }
 
 ::selection {
   background: var(--brass);
   color: var(--night);
+}
+
+/* The small labels of the site: the type of a terminal, in capitals. */
+.label {
+  color: var(--haze);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 code,
@@ -98,7 +111,7 @@ svg {
   top: -100px;
   z-index: 100;
   padding: 0.6rem 1rem;
-  border-radius: var(--radius);
+  border-radius: 0;
   background: var(--brass);
   color: var(--night);
   font-weight: 600;
@@ -118,13 +131,14 @@ svg {
   min-height: 2.75rem;
   padding: 0 1.15rem;
   border: 1px solid var(--rule-strong);
-  border-radius: 999px;
+  border-radius: 0;
   background: transparent;
   color: var(--starlight);
-  font: inherit;
-  font-size: var(--step--1);
-  font-weight: 560;
-  font-stretch: var(--normal);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
   transition:
@@ -190,5 +204,41 @@ svg {
 @media (prefers-reduced-motion: reduce) {
   @view-transition {
     navigation: none;
+  }
+}
+
+/* The line that fills as the page is read, drawn by scripts/chrome.ts. */
+.progress {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 60;
+  height: 2px;
+  background: var(--brass);
+  transform: scaleX(0);
+  transform-origin: left;
+  pointer-events: none;
+}
+
+/* Every control answers the hand: it lifts on hover and presses on click. */
+.button {
+  transition:
+    transform 0.25s var(--ease-out),
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.button:hover {
+  transform: translateY(-2px);
+}
+
+.button:active {
+  transform: translateY(0) scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button:hover,
+  .button:active {
+    transform: none;
   }
 }

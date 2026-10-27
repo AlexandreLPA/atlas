@@ -24,6 +24,10 @@ export const proof = [
   { label: 'Local or remote', detail: 'Your laptop, a home lab, a VPS' }
 ]
 
+/** The statement set large between the story and the details; its words light up as it is read. */
+export const tagline =
+  'When one plan hits its limit, the task moves on to the next. What Atlas learns stays on your machine, and nothing of yours reaches a server of ours.'
+
 export interface Chapter {
   id: 'accounts' | 'route' | 'machines' | 'memory' | 'close'
   title: string
