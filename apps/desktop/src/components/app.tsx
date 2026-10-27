@@ -163,7 +163,14 @@ export function App() {
         toggleSidebar()
       }
 
-      if (event.ctrlKey && event.shiftKey && !event.altKey && event.key.toLowerCase() === 'b' && browserHost()) {
+      // Ctrl+Shift+B for the browser, and ⇧⌘B on a Mac.
+      if (
+        (event.ctrlKey || (MAC && event.metaKey)) &&
+        event.shiftKey &&
+        !event.altKey &&
+        event.key.toLowerCase() === 'b' &&
+        browserHost()
+      ) {
         event.preventDefault()
         toggleBrowser()
       }

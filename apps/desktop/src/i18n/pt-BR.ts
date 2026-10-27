@@ -1274,7 +1274,7 @@ export const ptBR: Override<Messages> = {
     expand: 'Ocupar o lugar da conversa',
     noServers: 'Nenhum servidor respondeu neste computador.',
     servers: 'Servidores neste computador',
-    show: 'Mostrar o navegador (Ctrl+Shift+B)',
+    show: (keys: string) => `Mostrar o navegador (${keys})`,
     failed: (why: string) => `A página não carregou: ${why}`,
     forward: 'Avançar',
     invalid: 'Isso não é um endereço da web.',

@@ -23,10 +23,11 @@ are building.
 ## The Browser tab
 
 The side panel has a **Browser** tab: a browser you use by hand, beside the conversation. Open it
-from the globe at the panel's edge or with **Ctrl+Shift+B**. Its tabs are on top, with an address
-bar, back, forward and reload, and a button that expands it over the conversation. Drag its edge to
-make it wider than the panel's other tabs; the conversation keeps its minimum width. A new tab
-can look for the local servers running on this computer, such as a site you are building.
+from the globe at the panel's edge or with **Ctrl+Shift+B** (**⇧⌘B** on a Mac). Its tabs are on top,
+with an address bar, back, forward and reload, and a button that expands it over the conversation.
+Drag its edge to make it wider than the panel's other tabs; the conversation keeps its minimum
+width. A new tab can look for the local servers running on this computer, such as a site you are
+building.
 
 It opens only web pages (`http` and `https`), refuses downloads, and says no to a site that asks
 for the camera, the microphone, your location or notifications. On macOS, ⌘W in a page closes its

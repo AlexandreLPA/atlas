@@ -9,6 +9,7 @@ import { useEffect, useRef } from 'react'
 import { t } from '@/i18n'
 import { $contributions, inArea } from '@/plugins/registry'
 import { ContributionView } from '@/plugins/view'
+import { shiftShortcut } from '@/shortcuts'
 import {
   $openExecutor,
   $openSession,
@@ -302,7 +303,13 @@ export function PanelShow() {
   return (
     <div className="mx-1.5 my-auto flex items-center gap-1">
       {browserHost() && (
-        <IconButton icon={Web} label={t.browser.show} onClick={toggleBrowser} side="bottom" testId="browser-show" />
+        <IconButton
+          icon={Web}
+          label={t.browser.show(shiftShortcut('B'))}
+          onClick={toggleBrowser}
+          side="bottom"
+          testId="browser-show"
+        />
       )}
       <IconButton
         icon={LayoutSidebarRight}

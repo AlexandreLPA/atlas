@@ -3698,10 +3698,10 @@ the right keeps its place with another use, the terminal and the previews in tab
   real browser beside the conversation, a native view laid over the panel, with tabs on top, an
   address bar, an empty page that offers the local servers a conversation showed or a quick look
   found on the common ports (only with the server on this computer), a button that widens it over
-  the conversation, the globe on the panel's strip and Ctrl+Shift+B. The view hides with the panel,
-  with another tab of it and under a dialog or menu, since a native view lies above the page. Only
-  `http(s)` loads; permissions and downloads are refused; a pop-up becomes a tab. Its tabs are the
-  conversation's and the home's on screen, the agent's among them.
+  the conversation, the globe on the panel's strip and Ctrl+Shift+B (⇧⌘B on a Mac). The view hides
+  with the panel, with another tab of it and under a dialog or menu, since a native view lies above
+  the page. Only `http(s)` loads; permissions and downloads are refused; a pop-up becomes a tab. Its
+  tabs are the conversation's and the home's on screen, the agent's among them.
 - **The executor's tab** (asked for by the user on 16/10/2026): choosing an executor in the
   sidebar gives the panel a tab with what it has, now its connectors, as its own `/mcp` lists
   them: each MCP server with its state (connected with how many tools, needs login, failed with

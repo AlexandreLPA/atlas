@@ -1286,7 +1286,7 @@ export const en = {
     expand: 'Take the conversation’s place',
     noServers: 'No server answered on this machine.',
     servers: 'Servers on this machine',
-    show: 'Show the browser (Ctrl+Shift+B)',
+    show: (keys: string) => `Show the browser (${keys})`,
     failed: (why: string) => `The page did not load: ${why}`,
     forward: 'Forward',
     invalid: 'That is not a web address.',
