@@ -154,12 +154,14 @@ async def close_chrome(chrome: Chrome) -> None:
             await asyncio.wait_for(process.wait(), CLOSE_SECONDS)
         await stop_tree(process)
     # A browser whose launcher handed off is not the process waited on: it is gone when it stops
-    # listening, and only then does its profile stop being held.
+    # listening, and only then does its profile stop being held. One that still listens keeps its
+    # endpoint, so the next start uses it: a second launcher on the profile would only hand its
+    # window to it and leave.
     with contextlib.suppress(TimeoutError):
         async with asyncio.timeout(CLOSE_SECONDS):
             while await listening(chrome.endpoint):
                 await asyncio.sleep(0.1)
-    (chrome.profile / DEVTOOLS_FILE).unlink(missing_ok=True)
+            (chrome.profile / DEVTOOLS_FILE).unlink(missing_ok=True)
 
 
 @dataclass(frozen=True, slots=True)

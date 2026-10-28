@@ -2101,7 +2101,8 @@ Step 14 (`atlas.browser`). Decided with the user on 12/10/2026.
   Edge's launcher on Windows can end with code 0 and leave the browser running in another process,
   which writes `DevToolsActivePort` a moment later (found on 25/10/2026, where Edge was the only one
   installed): a launcher that ends with 0 gets 5 seconds for the file before it counts as a browser
-  that did not start, and closing waits for the endpoint to stop listening before the profile goes.
+  that did not start, and closing waits for the endpoint to stop listening before the profile goes
+  (a browser still listening keeps its `DevToolsActivePort`, so the next start uses it).
 - **The agent stops at logins, CAPTCHAs and payments** and asks the user to do that part in the
   window, then reads the page again once they say it is done; it never guesses credentials. A
   password manager (1Password) is left for later, by the user's
