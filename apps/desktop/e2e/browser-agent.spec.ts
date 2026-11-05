@@ -63,9 +63,12 @@ async function serve(): Promise<string> {
 const search = { calls: [{ arguments: JSON.stringify({ query: 'browser' }), name: 'tool_search' }] }
 const run = (code: string) => ({ calls: [{ arguments: JSON.stringify({ code }), name: 'browser_exec' }] })
 
-/** The browser_exec rows of the conversation on screen. */
+/** The browser_exec rows of the conversation on screen: a tab off screen keeps its thread drawn, hidden. */
 const calls = (page: Page): Locator =>
-  page.getByTestId('tool-row').filter({ has: page.locator('summary', { hasText: /^browser_exec/ }) })
+  page
+    .getByTestId('tool-row')
+    .filter({ visible: true })
+    .filter({ has: page.locator('summary', { hasText: /^browser_exec/ }) })
 
 /** What the nth browser_exec call printed. */
 async function printed(page: Page, nth: number): Promise<string> {
