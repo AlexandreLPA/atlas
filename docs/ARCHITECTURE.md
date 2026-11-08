@@ -2515,9 +2515,14 @@ the user is on. A computer with no Chrome gets a browser too.
   Chrome, where the user may have to sign in again.
 - **What it may reach**: the endpoint lets through only a list of DevTools domains (`Page`,
   `Runtime`, `DOM`, `Input`, `Network`, `Emulation`, `Accessibility` and the like; never `Target`,
-  `Browser`, `Storage`, `IO`, `SystemInfo`), and the main process checks the same list
-  (`cdpAllowed`), tested on one shared table. `Page.setDownloadBehavior` and `Page.close` are
-  refused. `Page.navigate` and `Target.createTarget` go through `browser_exec`'s own rules on the
+  `Browser`, `Storage`, `IO`, `SystemInfo`, nor `DOMStorage`, `IndexedDB` and `CacheStorage`, which
+  take any origin), and the main process checks the same list (`cdpAllowed`), tested on one shared
+  table. Within those domains, what reaches past the page is refused too: `Page.setDownloadBehavior`
+  and `Page.close`; the cookies and the cache of the home's partition, every site's and every
+  conversation's (`Network.getAllCookies`, `getCookies`, which takes any URL, `setCookie`,
+  `setCookies`, `deleteCookies`, `clearBrowserCookies`, `clearBrowserCache`); and certificate
+  errors ignored for every page (`Security.setIgnoreCertificateErrors` and its two older forms).
+  `Page.navigate` and `Target.createTarget` go through `browser_exec`'s own rules on the
   wire too (only `http(s)` and `about:blank`, no cloud metadata address, no URL with a secret of the
   vault), and every partition cancels any request to a cloud metadata address, whatever made it.
 - **Left out**: frames of another process (`iframe_target` finds none); the app browser of this

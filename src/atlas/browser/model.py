@@ -251,17 +251,29 @@ TO_CHROME = (
 # -- the app browser: what the engine may ask of it ------------------------------------------------
 
 #: The CDP domains a page's session may use in the app browser. What is not here (`Target`,
-#: `Browser`, `Storage`, `IO`, the tracing and profiling ones…) reaches past the page.
+#: `Browser`, `Storage`, `IO`, the tracing and profiling ones…) reaches past the page, and so do
+#: `DOMStorage`, `IndexedDB` and `CacheStorage`, which take any origin.
 CDP_DOMAINS = frozenset(
     {
         "Page", "Runtime", "DOM", "DOMSnapshot", "DOMDebugger", "CSS", "Input", "Network", "Fetch",
         "Emulation", "Accessibility", "Log", "Console", "Overlay", "Performance", "Security",
-        "Animation", "IndexedDB", "DOMStorage", "CacheStorage", "Audits", "Debugger", "Inspector",
+        "Animation", "Audits", "Debugger", "Inspector",
     }
 )  # fmt: skip
-#: Methods of an allowed domain that stay refused: one writes files wherever it likes, the other
-#: closes the view behind the app's back (a tab is closed with `Target.closeTarget`).
-CDP_REFUSED = frozenset({"Page.setDownloadBehavior", "Page.close"})
+#: Methods of an allowed domain that stay refused, since they reach past the page: one writes files
+#: wherever it likes; one closes the view behind the app's back (a tab is closed with
+#: `Target.closeTarget`); the cookies and the cache are the home's partition's, every site's and
+#: every conversation's (`getCookies` takes any URL); and certificate errors would be ignored for
+#: every page.
+CDP_REFUSED = frozenset(
+    {
+        "Page.setDownloadBehavior", "Page.close",
+        "Network.getAllCookies", "Network.getCookies", "Network.setCookie", "Network.setCookies",
+        "Network.deleteCookies", "Network.clearBrowserCookies", "Network.clearBrowserCache",
+        "Security.setIgnoreCertificateErrors", "Security.setOverrideCertificateErrors",
+        "Security.handleCertificateError",
+    }
+)  # fmt: skip
 #: The one origin the app browser's contexts report.
 BROWSER_CONTEXT = "atlas-app"
 #: What a session that does not exist is told: the engine looks for this very sentence to attach

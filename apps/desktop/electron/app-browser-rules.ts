@@ -179,23 +179,21 @@ export function parseCommand(value: unknown): BrowserCommand | null {
 // -- what the agent may do through the server (the browser host) ------------------------------------
 
 /** The DevTools domains a page may be driven through. What is not here (`Target`, `Browser`,
- * `Storage`, `IO`, tracing, profiling…) reaches past the page. The server keeps the same list
+ * `Storage`, `IO`, tracing, profiling…) reaches past the page, and so do `DOMStorage`, `IndexedDB`
+ * and `CacheStorage`, which take any origin. The server keeps the same list
  * (`atlas/browser/model.py`), and both tests hold the same table. */
 const CDP_DOMAINS = new Set([
   'Accessibility',
   'Animation',
   'Audits',
   'CSS',
-  'CacheStorage',
   'Console',
   'DOM',
   'DOMDebugger',
   'DOMSnapshot',
-  'DOMStorage',
   'Debugger',
   'Emulation',
   'Fetch',
-  'IndexedDB',
   'Input',
   'Inspector',
   'Log',
@@ -206,9 +204,25 @@ const CDP_DOMAINS = new Set([
   'Runtime',
   'Security'
 ])
-/** Methods of an allowed domain that stay refused: one writes files wherever it likes, the other
- * closes the view behind the browser's back (a tab closes through the browser's own command). */
-const CDP_REFUSED = new Set(['Page.setDownloadBehavior', 'Page.close'])
+/** Methods of an allowed domain that stay refused, since they reach past the page: one writes files
+ * wherever it likes; one closes the view behind the browser's back (a tab closes through the
+ * browser's own command); the cookies and the cache are the home's partition's, every site's and
+ * every conversation's (`getCookies` takes any URL); and certificate errors would be ignored for
+ * every page. */
+const CDP_REFUSED = new Set([
+  'Page.setDownloadBehavior',
+  'Page.close',
+  'Network.getAllCookies',
+  'Network.getCookies',
+  'Network.setCookie',
+  'Network.setCookies',
+  'Network.deleteCookies',
+  'Network.clearBrowserCookies',
+  'Network.clearBrowserCache',
+  'Security.setIgnoreCertificateErrors',
+  'Security.setOverrideCertificateErrors',
+  'Security.handleCertificateError'
+])
 
 /** Whether a DevTools command may reach a page's debugger. */
 export function cdpAllowed(method: string): boolean {
