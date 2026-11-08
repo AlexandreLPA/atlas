@@ -213,7 +213,8 @@ export class BrowserHost {
       case 'cdp': {
         browser.cdp(home, asked.id, asked.method, asked.params).then(
           result => {
-            const size = JSON.stringify(result ?? null).length
+            // In UTF-8 bytes, as the server's frame limit counts them: `length` counts UTF-16 units.
+            const size = Buffer.byteLength(JSON.stringify(result ?? null), 'utf8')
 
             if (size > MAX_RESULT_BYTES) {
               request.fail(SERVER_ERROR, `The result of ${asked.method} is too large (${String(size)} bytes).`)

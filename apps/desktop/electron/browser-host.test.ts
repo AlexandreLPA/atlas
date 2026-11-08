@@ -294,6 +294,11 @@ describe("the server's requests", () => {
     browser.cdpResult = { data: 'x'.repeat(MAX_RESULT_BYTES + 1) }
     const big = await connection.ask('browser.cdp', { id: 't1', method: 'Page.captureScreenshot', params: {} }).outcome
     expect(big.error?.message).toContain('too large')
+
+    // Fewer characters than the cap, more bytes: each "é" is one UTF-16 unit and two UTF-8 bytes.
+    browser.cdpResult = { data: 'é'.repeat(Math.ceil(MAX_RESULT_BYTES / 2) + 1) }
+    const wide = await connection.ask('browser.cdp', { id: 't1', method: 'Page.captureScreenshot', params: {} }).outcome
+    expect(wide.error?.message).toContain('too large')
   })
 })
 
